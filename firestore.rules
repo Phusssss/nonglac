@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to all users for posts
+    match /posts/{document} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write access to all users for users collection
+    match /users/{document} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write access to all users for prices
+    match /prices/{document} {
+      allow read, write: if true;
+    }
+  }
+}
