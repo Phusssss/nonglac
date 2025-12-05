@@ -1,5 +1,5 @@
 const GITHUB_API_BASE = 'https://api.github.com';
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN || '';
 const GITHUB_OWNER = 'Phusssss';
 const GITHUB_REPO = 'task-files';
 
