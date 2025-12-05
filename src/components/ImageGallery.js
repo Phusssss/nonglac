@@ -8,6 +8,14 @@ const ImageGallery = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!images || images.length === 0) return null;
+  
+  // Chỉ hiển thị ảnh URL, loại bỏ base64
+  const validImages = images.filter(image => 
+    typeof image === 'string' && 
+    (image.startsWith('http') || image.startsWith('https'))
+  );
+  
+  if (validImages.length === 0) return null;
 
   const handleImageClick = (index) => {
     setCurrentIndex(index);
@@ -15,16 +23,16 @@ const ImageGallery = ({ images }) => {
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    setCurrentIndex((prev) => (prev + 1) % validImages.length);
   };
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentIndex((prev) => (prev - 1 + validImages.length) % validImages.length);
   };
 
   const getGridCols = () => {
-    if (images.length === 1) return 1;
-    if (images.length === 2) return 2;
+    if (validImages.length === 1) return 1;
+    if (validImages.length === 2) return 2;
     return 3;
   };
 
@@ -37,10 +45,10 @@ const ImageGallery = ({ images }) => {
           sx={{ 
             borderRadius: 2, 
             overflow: 'hidden',
-            maxHeight: images.length === 1 ? 400 : 300
+            maxHeight: { xs: validImages.length === 1 ? 300 : 250, md: 'none' }
           }}
         >
-          {images.map((image, index) => (
+          {validImages.map((image, index) => (
             <ImageListItem 
               key={index}
               sx={{ 
@@ -56,8 +64,9 @@ const ImageGallery = ({ images }) => {
                 loading="lazy"
                 style={{
                   width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
+                  height: validImages.length === 1 ? 'auto' : '100%',
+                  objectFit: validImages.length === 1 ? 'contain' : 'cover',
+                  maxHeight: validImages.length === 1 ? '500px' : undefined
                 }}
               />
             </ImageListItem>
@@ -82,7 +91,7 @@ const ImageGallery = ({ images }) => {
             <Close />
           </IconButton>
 
-          {images.length > 1 && (
+          {validImages.length > 1 && (
             <>
               <IconButton
                 onClick={handlePrev}
@@ -102,7 +111,7 @@ const ImageGallery = ({ images }) => {
           <AnimatePresence mode="wait">
             <motion.img
               key={currentIndex}
-              src={images[currentIndex]}
+              src={validImages[currentIndex]}
               alt={`Image ${currentIndex + 1}`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}

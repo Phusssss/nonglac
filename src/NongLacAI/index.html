@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LẠC LẠC - Trợ lý Nông Nghiệp AI</title>
+    <link rel="stylesheet" href="index.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <!-- Welcome/Start Modal -->
+    <div id="start-modal">
+        <div class="modal-content">
+            <img src="mascot-logo.png" alt="Lạc Lạc Mascot" class="modal-mascot">
+            <h2>Chào bà con! Tui là LẠC LẠC</h2>
+            <p>Tui ở đây để giúp bà con trồng trọt, chẩn đoán bệnh cây và tám chuyện nhà nông.</p>
+            <button id="btn-start-app" class="primary-btn">
+                <span class="material-symbols-rounded">video_call</span>
+                Bắt đầu trò chuyện ngay
+            </button>
+        </div>
+    </div>
+
+    <!-- Training Modal -->
+    <div id="training-modal" class="hidden">
+        <div class="modal-content">
+            <h2>Đào tạo Lạc Lạc</h2>
+            <p>Nhập những thông tin hoặc quy tắc bạn muốn Lạc Lạc ghi nhớ vĩnh viễn (Ví dụ: Vườn ở Lâm Đồng, chỉ dùng thuốc sinh học...).</p>
+            <textarea id="training-input" placeholder="Nhập kiến thức đào tạo tại đây..."></textarea>
+            <div class="modal-actions">
+                <button id="save-training-btn" class="primary-btn">
+                    <span class="material-symbols-rounded">save</span> Lưu lại
+                </button>
+                <button id="close-training-btn" class="secondary-btn">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-container">
+      <header id="chat-header">
+        <div class="header-branding">
+            <img src="mascot-logo.png" alt="Logo" class="app-logo">
+            <div>
+                <h1>LẠC LẠC</h1>
+                <p>Trợ lý ảo của nhà nông</p>
+            </div>
+        </div>
+        <div class="header-controls">
+            <button id="open-train-btn" class="icon-btn" aria-label="Đào tạo Lạc Lạc">
+                <span class="material-symbols-rounded">school</span>
+            </button>
+            <button id="toggle-voice-btn" class="icon-btn" aria-label="Bật/Tắt đọc tự động">
+                <span class="material-symbols-rounded">volume_up</span>
+            </button>
+        </div>
+      </header>
+      
+      <main id="message-list"></main>
+      
+      <div id="suggested-questions-container">
+        <button class="suggested-question">Cách trị sâu cuốn lá lúa?</button>
+        <button class="suggested-question">Giá phân bón hôm nay?</button>
+        <button class="suggested-question">Vẽ hình minh họa sâu đục thân</button>
+      </div>
+      
+      <!-- Image Preview Container -->
+      <div id="image-preview-container" class="hidden">
+        <div class="preview-wrapper">
+          <img id="image-preview" src="" alt="Image preview" />
+          <button id="remove-image-button" aria-label="Xóa ảnh">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Mode Container (Overlay) -->
+      <div id="live-container" class="hidden">
+        <div class="live-wrapper">
+          <!-- Mascot in Live View -->
+          <div class="live-mascot-container">
+              <img src="mascot-live.png" id="live-mascot" alt="Lạc Lạc đang nói">
+          </div>
+
+          <video id="live-video" autoplay playsinline muted></video>
+          <canvas id="live-canvas" style="display:none;"></canvas>
+          
+          <div class="live-info-panel">
+              <div id="live-transcription" class="transcription-box"></div>
+              <div class="live-status">
+                <span class="status-dot"></span>
+                <span id="live-status-text">Đang kết nối...</span>
+              </div>
+          </div>
+
+          <div class="live-controls">
+             <button id="switch-camera-button" class="secondary-btn icon-only" aria-label="Đổi Camera">
+                <span class="material-symbols-rounded">switch_camera</span>
+             </button>
+             <button id="replay-live-button" class="secondary-btn">
+                <span class="material-symbols-rounded">replay</span>
+                Nói lại
+             </button>
+             <button id="end-live-button" class="danger-btn">
+                <span class="material-symbols-rounded">call_end</span>
+                Kết thúc
+             </button>
+          </div>
+        </div>
+      </div>
+
+      <footer id="chat-footer">
+        <form id="message-form">
+          <!-- Hidden File Input -->
+          <input type="file" id="image-input" accept="image/*" style="display: none;" />
+          
+          <!-- Live Button -->
+          <button type="button" id="start-live-button" aria-label="Bắt đầu gọi video">
+             <span class="material-symbols-rounded">videocam</span>
+          </button>
+
+          <!-- Upload Button -->
+          <button type="button" id="upload-button" aria-label="Tải ảnh lên">
+             <span class="material-symbols-rounded">add_photo_alternate</span>
+          </button>
+
+          <!-- Mic Button (New) -->
+          <button type="button" id="mic-button" class="mic-btn" aria-label="Nhập bằng giọng nói">
+             <span class="material-symbols-rounded">mic</span>
+          </button>
+
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Hỏi Lạc Lạc hoặc gửi ảnh cây bệnh..."
+            aria-label="Tin nhắn của bạn"
+            autocomplete="off"
+          />
+          <button type="submit" id="send-button" aria-label="Gửi tin nhắn">
+            <span class="material-symbols-rounded">send</span>
+          </button>
+        </form>
+      </footer>
+    </div>
+    <script type="module" src="index.tsx"></script>
+  </body>
+</html>

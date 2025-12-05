@@ -13,7 +13,7 @@ const MarketData = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const categories = ['all', 'Lúa gạo', 'Cà phê', 'Gia vị', 'Cao su', 'Thủy sản', 'Chăn nuôi', 'Trái cây'];
+  const categories = ['all', 'Lúa gạo', 'Cà phê', 'Gia vị', 'Cao su', 'Thủy sản', 'Nông sản khác', 'Khác'];
 
   useEffect(() => {
     loadPrices();
@@ -38,10 +38,7 @@ const MarketData = () => {
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
+    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   };
 
   const getPriceChange = (current, previous) => {
@@ -57,8 +54,8 @@ const MarketData = () => {
 
   const filteredPrices = prices.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.market.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (item.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (item.market || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -172,8 +169,11 @@ const MarketData = () => {
                   <Typography variant="body2" color="text.secondary">
                     Giá trước: {formatPrice(item.previousPrice)}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Thay đổi: {item.change}
+                  </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    Cập nhật: {moment(item.updatedAt).format('DD/MM/YYYY HH:mm')}
+                    Ngày: {item.date}
                   </Typography>
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Paper, Box, Avatar, TextField, Button, Divider } from '@mui/material';
-import { Image, Poll, Event } from '@mui/icons-material';
+import { Card, CardContent, Box, Avatar, TextField, Button, Divider } from '@mui/material';
+import { PhotoLibrary, Videocam, EmojiEmotions } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 
 const CreatePostCard = ({ onCreatePost }) => {
@@ -9,53 +9,86 @@ const CreatePostCard = ({ onCreatePost }) => {
   if (!user) return null;
 
   return (
-    <Paper sx={{ p: 2, mb: 2 }}>
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-        <Avatar sx={{ width: 40, height: 40 }}>
-          {userProfile?.displayName?.charAt(0) || user.email?.charAt(0)}
-        </Avatar>
-        <TextField
-          fullWidth
-          placeholder="Bạn đang nghĩ gì về nông nghiệp?"
-          variant="outlined"
-          multiline
-          rows={2}
-          onClick={onCreatePost}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              backgroundColor: 'grey.50'
-            }
-          }}
-        />
-      </Box>
-      
-      <Divider sx={{ my: 2 }} />
-      
-      <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
-        <Button
-          startIcon={<Image />}
-          sx={{ color: 'text.secondary', textTransform: 'none' }}
-          onClick={onCreatePost}
-        >
-          Ảnh/Video
-        </Button>
-        <Button
-          startIcon={<Poll />}
-          sx={{ color: 'text.secondary', textTransform: 'none' }}
-          onClick={onCreatePost}
-        >
-          Thăm dò ý kiến
-        </Button>
-        <Button
-          startIcon={<Event />}
-          sx={{ color: 'text.secondary', textTransform: 'none' }}
-          onClick={onCreatePost}
-        >
-          Sự kiện
-        </Button>
-      </Box>
-    </Paper>
+    <Card sx={{ 
+      mb: 2, 
+      bgcolor: 'background.paper',
+      borderRadius: '8px',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+    }}>
+      <CardContent sx={{ pb: '8px !important' }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+          <Avatar 
+            sx={{ width: 40, height: 40 }}
+            src={userProfile?.avatar}
+          >
+            {!userProfile?.avatar && (userProfile?.displayName?.charAt(0) || user.email?.charAt(0))}
+          </Avatar>
+          <TextField
+            fullWidth
+            placeholder={`${userProfile?.displayName || 'Bạn'} ơi, bạn đang nghĩ gì?`}
+            variant="outlined"
+            onClick={onCreatePost}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '20px',
+                backgroundColor: '#F0F2F5',
+                border: 'none',
+                '&:hover': {
+                  backgroundColor: '#E4E6EA',
+                },
+                '& fieldset': {
+                  border: 'none',
+                },
+              },
+              '& .MuiInputBase-input': {
+                cursor: 'pointer',
+                color: '#65676B',
+                fontSize: '16px',
+              }
+            }}
+          />
+        </Box>
+        
+        <Divider sx={{ mb: 1 }} />
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
+          <Button
+            startIcon={<PhotoLibrary sx={{ color: '#45BD62' }} />}
+            onClick={onCreatePost}
+            sx={{
+              color: '#65676B',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 3,
+              py: 1,
+              '&:hover': {
+                backgroundColor: '#F0F2F5',
+              }
+            }}
+          >
+            Ảnh/Video
+          </Button>
+          <Button
+            startIcon={<EmojiEmotions sx={{ color: '#F7B928' }} />}
+            onClick={onCreatePost}
+            sx={{
+              color: '#65676B',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 3,
+              py: 1,
+              '&:hover': {
+                backgroundColor: '#F0F2F5',
+              }
+            }}
+          >
+            Cảm xúc
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

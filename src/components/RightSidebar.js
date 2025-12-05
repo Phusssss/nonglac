@@ -17,7 +17,7 @@ const RightSidebar = () => {
   ];
 
   return (
-    <Box sx={{ width: 280 }}>
+    <Box sx={{ width: '100%' }}>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Chuyên gia hàng đầu
@@ -32,14 +32,7 @@ const RightSidebar = () => {
               </ListItemAvatar>
               <ListItemText
                 primary={user.name}
-                secondary={
-                  <>
-                    <Chip label={`${user.reputation} uy tín`} size="small" color="primary" sx={{ mr: 1 }} />
-                    <span style={{ fontSize: '0.75rem', color: 'rgba(0, 0, 0, 0.6)' }}>
-                      {user.specialty}
-                    </span>
-                  </>
-                }
+                secondary={`${user.reputation} uy tín • ${user.specialty}`}
               />
             </ListItem>
           ))}

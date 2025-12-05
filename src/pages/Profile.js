@@ -1,33 +1,182 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Paper, Typography, Avatar, Box, Grid, Card, CardContent, Chip } from '@mui/material';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, updateDoc, doc, limit, startAfter, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { githubStorage } from '../services/githubStorage';
 import { useAuth } from '../hooks/useAuth';
 import PostCard from '../components/PostCard';
+import PostSkeleton from '../components/PostSkeleton';
 
 const Profile = () => {
   const { user, userProfile } = useAuth();
   const [userPosts, setUserPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState(null);
+  
+  const POSTS_PER_PAGE = 10;
+  const [activeTab, setActiveTab] = useState('posts');
+  const [editDialog, setEditDialog] = useState(false);
+  const [editData, setEditData] = useState({ displayName: userProfile?.displayName || '' });
+  const [followers, setFollowers] = useState(0);
+  const [following, setFollowing] = useState(0);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
+  const throttle = (func, delay) => {
+    let timeoutId;
+    let lastExecTime = 0;
+    return function (...args) {
+      const currentTime = Date.now();
+      
+      if (currentTime - lastExecTime > delay) {
+        func.apply(this, args);
+        lastExecTime = currentTime;
+      } else {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          func.apply(this, args);
+          lastExecTime = Date.now();
+        }, delay - (currentTime - lastExecTime));
+      }
+    };
+  };
+
+  const loadInitialPosts = async () => {
     if (!user) return;
-
-    const q = query(
-      collection(db, 'posts'),
-      where('authorId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, 'posts'),
+        where('authorId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(POSTS_PER_PAGE)
+      );
+      
+      const snapshot = await getDocs(q);
       const posts = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
       setUserPosts(posts);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const loadMorePosts = async () => {
+    if (!hasMore || loadingMore || !lastDoc || !user) return;
+    
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db, 'posts'),
+        where('authorId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        startAfter(lastDoc),
+        limit(POSTS_PER_PAGE)
+      );
+      
+      const snapshot = await getDocs(q);
+      const newPosts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      if (newPosts.length > 0) {
+        setUserPosts(prev => [...prev, ...newPosts]);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(newPosts.length === POSTS_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error loading more posts:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+  
+  useEffect(() => {
+    loadInitialPosts();
+  }, [user]);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return;
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = window.innerHeight;
+      
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+        loadMorePosts();
+      }
+    };
+    
+    const throttledScroll = throttle(handleScroll, 200);
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    return () => window.removeEventListener('scroll', throttledScroll);
+  }, [loadMorePosts, loadingMore, hasMore]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const followersQuery = query(
+      collection(db, 'follows'),
+      where('followingId', '==', user.uid)
+    );
+    const unsubscribeFollowers = onSnapshot(followersQuery, (snapshot) => {
+      setFollowers(snapshot.docs.length);
     });
 
-    return unsubscribe;
+    const followingQuery = query(
+      collection(db, 'follows'),
+      where('followerId', '==', user.uid)
+    );
+    const unsubscribeFollowing = onSnapshot(followingQuery, (snapshot) => {
+      setFollowing(snapshot.docs.length);
+    });
+
+    return () => {
+      unsubscribeFollowers();
+      unsubscribeFollowing();
+    };
   }, [user]);
+
+  const handleUpdateProfile = async () => {
+    setUploading(true);
+    try {
+      let updateData = { displayName: editData.displayName };
+      
+      if (avatarFile) {
+        const avatarUrl = await githubStorage.uploadImage(avatarFile, 'avatars');
+        updateData.avatar = avatarUrl;
+      }
+      
+      await updateDoc(doc(db, 'users', user.uid), updateData);
+      setEditDialog(false);
+      setAvatarFile(null);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Lỗi cập nhật hồ sơ: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setAvatarFile(file);
+    }
+  };
 
   if (!user) return null;
 
@@ -40,88 +189,245 @@ const Profile = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', mb: 3, textAlign: { xs: 'center', sm: 'left' } }}>
-          <Avatar sx={{ width: 80, height: 80, mr: { sm: 3 }, mb: { xs: 2, sm: 0 }, fontSize: '2rem' }}>
-            {userProfile?.displayName?.charAt(0)}
-          </Avatar>
-          <Box>
-            <Typography variant="h4">
-              {userProfile?.displayName}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {user.email}
-            </Typography>
-            <Box sx={{ mt: 1 }}>
-              <Chip 
-                label={getReputationLevel(userProfile?.reputation || 0)}
-                color="primary"
-                sx={{ mr: 1, mb: { xs: 1, sm: 0 } }}
-              />
-              <Chip 
-                label={`${userProfile?.reputation || 0} điểm uy tín`}
-                variant="outlined"
-              />
-            </Box>
-          </Box>
-        </Box>
+    <div className="min-h-screen bg-green-50">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col gap-8">
+          {/* Profile Header */}
+          <div className="bg-white p-6 rounded-xl border border-green-100">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex gap-6 items-center">
+                <div className="relative">
+                  <div className="w-24 h-24 md:w-32 md:h-32 bg-green-200 rounded-full border-2 border-green-300" style={{
+                    backgroundImage: userProfile?.avatar ? `url(${userProfile.avatar})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}>
+                    {!userProfile?.avatar && (
+                      <div className="w-full h-full flex items-center justify-center text-green-700 font-bold text-2xl">
+                        {userProfile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => setEditDialog(true)}
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">{userProfile?.displayName || 'Người dùng'}</h1>
+                  <p className="text-green-600">{getReputationLevel(userProfile?.reputation || 0)}</p>
+                  <p className="text-gray-500 text-sm">{user?.email}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setEditDialog(true)}
+                  className="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 font-medium"
+                >
+                  Chỉnh sửa
+                </button>
+                <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                  Chia sẻ
+                </button>
+              </div>
+            </div>
+          </div>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" color="primary">
-                  {userPosts.length}
-                </Typography>
-                <Typography variant="body2">
-                  Bài viết
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" color="primary">
-                  {userProfile?.likesReceived || 0}
-                </Typography>
-                <Typography variant="body2">
-                  Lượt thích
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h4" color="primary">
-                  {userProfile?.reputation || 0}
-                </Typography>
-                <Typography variant="body2">
-                  Uy tín
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Paper>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column */}
+            <aside className="lg:col-span-1 flex flex-col gap-6">
+              <div className="bg-white p-6 rounded-xl border border-green-100">
+                <h3 className="text-lg font-bold mb-3">Giới thiệu</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {userProfile?.bio || 'Chưa có thông tin giới thiệu. Hãy cập nhật hồ sơ để chia sẻ về bản thân bạn!'}
+                </p>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl border border-green-100">
+                <h3 className="text-lg font-bold mb-4">Chuyên môn</h3>
+                <div className="flex gap-2 flex-wrap">
+                  {['Trồng trọt', 'Chăn nuôi', 'Thủy sản', 'Nông nghiệp bền vững', 'Công nghệ nông nghiệp'].map((skill) => (
+                    <span key={skill} className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm border border-green-200">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl border border-green-100">
+                <div className="flex justify-around text-center">
+                  <div>
+                    <p className="text-xl font-bold">{followers}</p>
+                    <p className="text-sm text-gray-500">Người theo dõi</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{following}</p>
+                    <p className="text-sm text-gray-500">Đang theo dõi</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{userPosts.length}</p>
+                    <p className="text-sm text-gray-500">Bài viết</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
 
-      <Typography variant="h5" gutterBottom>
-        Bài viết của tôi
-      </Typography>
-      
-      {userPosts.length === 0 ? (
-        <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-          Bạn chưa có bài viết nào. Hãy đăng bài viết đầu tiên!
-        </Typography>
-      ) : (
-        userPosts.map(post => (
-          <PostCard key={post.id} post={post} />
-        ))
+            {/* Right Column */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <div className="bg-white rounded-xl border border-green-100">
+                {/* Tab Navigation */}
+                <div className="border-b border-green-100 px-6">
+                  <nav className="-mb-px flex space-x-6">
+                    <button 
+                      onClick={() => setActiveTab('posts')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === 'posts' 
+                          ? 'border-green-500 text-green-500' 
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Bài viết gần đây
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('articles')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === 'articles' 
+                          ? 'border-green-500 text-green-500' 
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Bài báo
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('qa')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === 'qa' 
+                          ? 'border-green-500 text-green-500' 
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Hỏi đáp
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Content Feed */}
+                <div className="p-6 flex flex-col gap-6">
+                  {loading ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <PostSkeleton key={index} />
+                    ))
+                  ) : userPosts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Bạn chưa có bài viết nào. Hãy đăng bài viết đầu tiên!</p>
+                    </div>
+                  ) : (
+                    <>
+                      {userPosts.map((post, index) => (
+                        <div key={post.id} className="animate-fadeInUp" style={{animationDelay: `${index * 0.1}s`}}>
+                          <PostCard post={post} />
+                        </div>
+                      ))}
+                      {loadingMore && (
+                        <div className="flex justify-center py-4">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Edit Dialog */}
+      {editDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold mb-4">Chỉnh sửa hồ sơ</h3>
+            <div className="text-center mb-4">
+              <div className="w-20 h-20 bg-green-200 rounded-full mx-auto mb-3" style={{
+                backgroundImage: avatarFile ? `url(${URL.createObjectURL(avatarFile)})` : userProfile?.avatar ? `url(${userProfile.avatar})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}>
+                {!avatarFile && !userProfile?.avatar && (
+                  <div className="w-full h-full flex items-center justify-center text-green-700 font-bold text-xl">
+                    {userProfile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </div>
+                )}
+              </div>
+              <label className="cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100">
+                Chọn ảnh
+                <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
+              </label>
+            </div>
+            <input
+              type="text"
+              placeholder="Tên hiển thị"
+              value={editData.displayName}
+              onChange={(e) => setEditData({...editData, displayName: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setEditDialog(false);
+                  setAvatarFile(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button 
+                onClick={handleUpdateProfile}
+                disabled={uploading}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+              >
+                {uploading ? 'Đang lưu...' : 'Lưu'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-    </Container>
+    </div>
   );
 };
 
 export default Profile;
+
+// Add CSS for animations
+const styles = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}

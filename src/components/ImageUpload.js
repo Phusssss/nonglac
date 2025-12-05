@@ -1,112 +1,149 @@
-import React, { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Box, Typography, IconButton, Paper, Grid } from '@mui/material';
-import { CloudUpload, Delete, Image } from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { Box, Button, Typography, LinearProgress, Alert, IconButton } from '@mui/material';
+import { CloudUpload, Delete } from '@mui/icons-material';
+import { githubStorage } from '../services/githubStorage';
 
-const ImageUpload = ({ onImagesChange, maxFiles = 5 }) => {
-  const [images, setImages] = useState([]);
+const ImageUpload = ({ onUploadComplete, maxSize = 5, allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] }) => {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef();
 
-  const onDrop = useCallback((acceptedFiles) => {
-    const newImages = acceptedFiles.map(file => ({
-      file,
-      preview: URL.createObjectURL(file)
-    }));
-    
-    const updatedImages = [...images, ...newImages].slice(0, maxFiles);
-    setImages(updatedImages);
-    onImagesChange(updatedImages.map(img => img.file));
-  }, [images, maxFiles, onImagesChange]);
+  const compressImage = (file, maxWidth = 800, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
-    },
-    maxFiles: maxFiles - images.length
-  });
+      img.onload = () => {
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
 
-  const removeImage = (index) => {
-    const updatedImages = images.filter((_, i) => i !== index);
-    setImages(updatedImages);
-    onImagesChange(updatedImages.map(img => img.file));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(resolve, file.type, quality);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const validateFile = (file) => {
+    if (!allowedTypes.includes(file.type)) {
+      return 'Định dạng file không được hỗ trợ';
+    }
+    if (file.size > maxSize * 1024 * 1024) {
+      return `File quá lớn. Tối đa ${maxSize}MB`;
+    }
+    return null;
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError('');
+    setPreview(URL.createObjectURL(file));
+
+    try {
+      setUploading(true);
+      setProgress(20);
+
+      const compressedFile = await compressImage(file);
+      setProgress(50);
+      
+      setProgress(80);
+      const downloadURL = await githubStorage.uploadImage(compressedFile, 'nonglac-images');
+      
+      setProgress(100);
+      if (onUploadComplete) {
+        onUploadComplete(downloadURL);
+      }
+    } catch (error) {
+      setError('Lỗi upload: ' + error.message);
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  const clearPreview = () => {
+    setPreview(null);
+    setError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
     <Box>
-      {images.length < maxFiles && (
-        <Paper
-          {...getRootProps()}
-          sx={{
-            p: 3,
-            border: '2px dashed',
-            borderColor: isDragActive ? 'primary.main' : 'grey.300',
-            bgcolor: isDragActive ? 'primary.50' : 'grey.50',
-            cursor: 'pointer',
-            textAlign: 'center',
-            mb: 2,
-            transition: 'all 0.2s'
-          }}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept={allowedTypes.join(',')}
+        style={{ display: 'none' }}
+      />
+
+      {!preview ? (
+        <Button
+          variant="outlined"
+          startIcon={<CloudUpload />}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          fullWidth
         >
-          <input {...getInputProps()} />
-          <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
-          <Typography variant="h6" color="text.secondary">
-            {isDragActive ? 'Thả hình ảnh vào đây' : 'Kéo thả hoặc click để chọn hình'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Tối đa {maxFiles} hình ảnh (JPG, PNG, GIF)
-          </Typography>
-        </Paper>
+          Chọn ảnh
+        </Button>
+      ) : (
+        <Box>
+          <Box position="relative" mb={2}>
+            <img
+              src={preview}
+              alt="Preview"
+              style={{
+                width: '100%',
+                maxHeight: '200px',
+                objectFit: 'cover',
+                borderRadius: '8px'
+              }}
+            />
+            <IconButton
+              onClick={clearPreview}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                bgcolor: 'rgba(0,0,0,0.5)',
+                color: 'white'
+              }}
+            >
+              <Delete />
+            </IconButton>
+          </Box>
+        </Box>
       )}
 
-      {images.length > 0 && (
-        <Grid container spacing={2}>
-          {images.map((image, index) => (
-            <Grid item xs={6} sm={4} md={3} key={index}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Paper
-                  sx={{
-                    position: 'relative',
-                    paddingTop: '100%',
-                    overflow: 'hidden',
-                    borderRadius: 2
-                  }}
-                >
-                  <img
-                    src={image.preview}
-                    alt={`Preview ${index}`}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                  <IconButton
-                    onClick={() => removeImage(index)}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      bgcolor: 'rgba(0,0,0,0.5)',
-                      color: 'white',
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
-                    }}
-                    size="small"
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
-                </Paper>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
+      {uploading && (
+        <Box mt={2}>
+          <LinearProgress variant="determinate" value={progress} />
+          <Typography variant="caption" color="text.secondary">
+            Đang upload... {progress}%
+          </Typography>
+        </Box>
+      )}
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
       )}
     </Box>
   );

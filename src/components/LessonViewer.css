@@ -1,0 +1,108 @@
+/* Responsive styles for lesson content */
+.lesson-content {
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+/* Responsive images */
+.lesson-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin: 16px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive tables */
+.lesson-content table {
+  width: 100% !important;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+  overflow-x: auto;
+  display: block;
+  white-space: nowrap;
+}
+
+.lesson-content table th,
+.lesson-content table td {
+  padding: 12px 8px !important;
+  border: 1px solid #d9d9d9 !important;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.lesson-content table th {
+  background-color: #f5f5f5 !important;
+  font-weight: 600;
+}
+
+/* Responsive table wrapper */
+@media (max-width: 768px) {
+  .lesson-content table {
+    font-size: 12px;
+  }
+  
+  .lesson-content table th,
+  .lesson-content table td {
+    padding: 8px 4px !important;
+  }
+}
+
+/* Typography responsive */
+.lesson-content h1 {
+  font-size: 28px;
+  margin: 24px 0 16px 0;
+  color: #1890ff;
+}
+
+.lesson-content h2 {
+  font-size: 24px;
+  margin: 20px 0 12px 0;
+  color: #1890ff;
+}
+
+.lesson-content h3 {
+  font-size: 20px;
+  margin: 16px 0 8px 0;
+  color: #1890ff;
+}
+
+.lesson-content p {
+  margin: 12px 0;
+  text-align: justify;
+}
+
+.lesson-content ul, .lesson-content ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.lesson-content li {
+  margin: 4px 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .lesson-content {
+    font-size: 14px;
+    padding: 16px !important;
+  }
+  
+  .lesson-content h1 {
+    font-size: 24px;
+  }
+  
+  .lesson-content h2 {
+    font-size: 20px;
+  }
+  
+  .lesson-content h3 {
+    font-size: 18px;
+  }
+  
+  .lesson-content img {
+    margin: 12px auto;
+  }
+}
