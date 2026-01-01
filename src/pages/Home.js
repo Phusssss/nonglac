@@ -2,12 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, query, orderBy, where, limit, startAfter, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
+
+import { logUserAction, ACTIONS } from '../utils/analytics';
 import PostCard from '../components/PostCard';
 import GitHubImageUpload from '../components/GitHubImageUpload';
+
 import CoffeePrices from '../components/CoffeePrices';
 import RightSidebar from '../components/RightSidebar';
+import WeatherWidget from '../components/WeatherWidget';
+import SEO from '../components/SEO';
 import { Heart, MessageCircle, Share2, TrendingUp, Users, MapPin, Bookmark, MoreHorizontal, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 const Home = () => {
   const { user, userProfile } = useAuth();
@@ -32,6 +38,22 @@ const Home = () => {
   
   const POSTS_PER_PAGE = 10;
   const categories = ['Trồng trọt', 'Chăn nuôi', 'Thủy sản', 'Công nghệ nông nghiệp', 'Thị trường', 'Khác'];
+
+  const categoryMapping = {
+    'Cây trồng': 'Trồng trọt',
+    'Chăn nuôi': 'Chăn nuôi',
+    'Công nghệ': 'Công nghệ nông nghiệp',
+    'Thị trường': 'Thị trường'
+  };
+
+  const handleCategoryClick = (displayName) => {
+    const category = categoryMapping[displayName] || displayName;
+    setSelectedCategory(category);
+  };
+
+  const handleTopicClick = (topic) => {
+    setSelectedCategory(topic);
+  };
 
   const toggleLike = (postId) => {
     setLikedPosts((prev) => {
@@ -105,76 +127,60 @@ const Home = () => {
     setNewComment(prev => ({ ...prev, [postId]: '' }));
   };
 
-  const featuredFarms = [
-    {
-      id: 1,
-      name: "Trang trại hữu cơ Green Valley",
-      location: "Đà Lạt, Việt Nam",
-      image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop",
-      specialty: "Rau hữu cơ",
-      followers: 1250,
-    },
-    {
-      id: 2,
-      name: "Trang trại bò sữa Sunrise",
-      location: "Mộc Châu, Việt Nam",
-      image: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=400&h=300&fit=crop",
-      specialty: "Chăn nuôi & Sữa",
-      followers: 890,
-    },
-    {
-      id: 3,
-      name: "Công ty nông nghiệp thông minh Tech Harvest",
-      location: "Cần Thơ, Việt Nam",
-      image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop",
-      specialty: "Nông nghiệp công nghệ cao",
-      followers: 2100,
-    },
-  ];
+  // Removed fake data - will load from Firebase
 
-  const samplePosts = [
-    {
-      id: 1,
-      author: "Nguyễn Văn An",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=50&h=50&fit=crop&crop=face",
-      time: "2 giờ trước",
-      content: "Vừa thu hoạch được lô cà chua hữu cơ đầu tiên của mùa này! Năng suất tuyệt vời nhờ hệ thống tưới nước mới. 🍅",
-      image: "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=600&h=400&fit=crop",
-      likes: 45,
-      comments: 12,
-      category: "🌾 Cây trồng",
-    },
-    {
-      id: 2,
-      author: "Trần Thị Bình",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-      time: "4 giờ trước",
-      content: "Máy kéo John Deere mới đã tới hôm nay! Không thể chờ để thử nghiệm trên cánh đồng ngô. Hệ thống GPS tuyệt vời. 🚜",
-      image: "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=600&h=400&fit=crop",
-      likes: 78,
-      comments: 23,
-      category: "🚜 Công nghệ",
-    },
-    {
-      id: 3,
-      author: "Lê Văn Cường",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-      time: "6 giờ trước",
-      content: "Những con bò Holstein của chúng tôi đang sản xuất lượng sữa kỷ lục tháng này! Dinh dưỡng và chăm sóc đúng cách thực sự quan trọng. 🐄",
-      image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=600&h=400&fit=crop",
-      likes: 62,
-      comments: 18,
-      category: "🐄 Chăn nuôi",
-    },
-  ];
+  const [trendingTopics, setTrendingTopics] = useState([]);
+  const [topContributors, setTopContributors] = useState([]);
 
-  const trendingTopics = [
-    { topic: "Nông nghiệp bền vững", posts: 234 },
-    { topic: "Nông nghiệp chính xác", posts: 189 },
-    { topic: "Chứng chỉ hữu cơ", posts: 156 },
-    { topic: "Biến đổi khí hậu", posts: 143 },
-    { topic: "Xoay vòng cây trồng", posts: 128 },
-  ];
+  // Load trending topics and top contributors from Firestore
+  useEffect(() => {
+    const loadTrendingTopics = async () => {
+      try {
+        const postsSnapshot = await getDocs(collection(db, 'posts'));
+        const categoryCount = {};
+        const userPosts = {};
+        
+        postsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const category = data.category;
+          if (category) {
+            categoryCount[category] = (categoryCount[category] || 0) + 1;
+          }
+          
+          const authorId = data.authorId;
+          if (authorId) {
+            if (!userPosts[authorId]) {
+              userPosts[authorId] = {
+                name: data.authorName || 'Anonymous',
+                avatar: data.authorAvatar,
+                reputation: data.authorReputation || 0,
+                posts: 0
+              };
+            }
+            userPosts[authorId].posts += 1;
+          }
+        });
+        
+        const trending = Object.entries(categoryCount)
+          .map(([topic, posts]) => ({ topic, posts }))
+          .sort((a, b) => b.posts - a.posts)
+          .slice(0, 5);
+          
+        const contributors = Object.values(userPosts)
+          .sort((a, b) => b.reputation - a.reputation)
+          .slice(0, 5);
+          
+        setTrendingTopics(trending);
+        setTopContributors(contributors);
+      } catch (error) {
+        console.error('Error loading trending topics:', error);
+        setTrendingTopics([]);
+        setTopContributors([]);
+      }
+    };
+    
+    loadTrendingTopics();
+  }, [posts]);
 
   const loadInitialPosts = useCallback(async () => {
     setLoading(true);
@@ -308,7 +314,7 @@ const Home = () => {
 
   useEffect(() => {
     if (!searchTerm.trim()) {
-      setFilteredPosts(posts.length > 0 ? posts : samplePosts);
+      setFilteredPosts(posts);
     } else {
       const filtered = posts.filter(post => 
         post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -343,7 +349,8 @@ const Home = () => {
         comments: 0
       };
 
-      await addDoc(collection(db, 'posts'), postData);
+      const docRef = await addDoc(collection(db, 'posts'), postData);
+      await logUserAction(user.uid, userProfile?.displayName || user.email, ACTIONS.CREATE_POST, { postId: docRef.id, category: postData.category });
       setNewPost({ title: '', content: '', category: '', images: [] });
       setOpen(false);
     } catch (error) {
@@ -355,11 +362,113 @@ const Home = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex">
-      {/* Left Sidebar - Trending Topics */}
-      <div className="hidden lg:block w-96 bg-white border-r border-gray-200 overflow-y-auto">
-        <div className="sticky top-0 p-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    <>
+      <SEO 
+        title="NôngLạc - Mạng xã hội nông nghiệp Việt Nam"
+        description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản mới nhất."
+        keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
+      />
+      <main className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      {/* Left Sidebar - User Profile & Categories */}
+      <div className="hidden lg:block lg:col-span-3 space-y-6">
+          {/* User Profile Card */}
+          {user ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+              <img 
+                src={userProfile?.avatar || `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.email || 'User'}&background=4CAF50&color=fff`}
+                alt={userProfile?.displayName || 'User'}
+                className="w-20 h-20 rounded-full mx-auto border-4 border-agri-50 mb-3 object-cover"
+              />
+              <h3 className="font-bold text-gray-800 text-lg">{userProfile?.displayName || user?.email || 'Guest'}</h3>
+              <span className="inline-block bg-agri-100 text-agri-700 text-xs px-2 py-1 rounded-full font-medium mt-1 mb-4">
+                {userProfile?.reputation >= 100 ? 'Chuyên gia' : 'Nông dân tiên tiến'}
+              </span>
+              <div className="flex justify-center gap-6 text-sm text-gray-600 border-t border-gray-100 pt-4">
+                <div className="text-center">
+                  <span className="block font-bold text-gray-900">{userProfile?.postsCount || 0}</span>
+                  <span className="text-xs">Bài viết</span>
+                </div>
+                <div className="text-center">
+                  <span className="block font-bold text-gray-900">{userProfile?.reputation || 0}</span>
+                  <span className="text-xs">Uy tín</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+              <div className="w-20 h-20 rounded-full mx-auto bg-gray-200 flex items-center justify-center mb-3">
+                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-gray-800 text-lg mb-4">Chào mừng đến NôngLạc</h3>
+              <button 
+                onClick={() => navigate('/login')}
+                className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Đăng nhập
+              </button>
+              <p className="text-xs text-gray-500 mt-2">Đăng nhập để tham gia cộng đồng</p>
+            </div>
+          )}
+
+          {/* Categories Menu */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <h4 className="font-bold text-gray-700 p-4 border-b border-gray-100 bg-gray-50">Danh mục thảo luận</h4>
+            <div className="p-2">
+              {[
+                { name: 'Trồng trọt', icon: '🌾' },
+                { name: 'Chăn nuôi', icon: '🐖' },
+                { name: 'Thủy sản', icon: '🐟' },
+                { name: 'Máy nông nghiệp', icon: '🚜' },
+                { name: 'Thị trường & Giá cả', icon: '💰' },
+                { name: 'Chính sách', icon: '📜' },
+              ].map((cat) => (
+                <button 
+                  key={cat.name} 
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg hover:bg-agri-50 text-gray-700 flex items-center gap-3 transition-colors text-sm font-medium ${
+                    selectedCategory === cat.name ? 'bg-agri-50 border-l-4 border-agri-600' : ''
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Post Tags Filter */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider">Lọc theo tag</h4>
+            <div className="flex flex-wrap gap-2">
+              {trendingTopics.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedCategory(item.topic)}
+                  className={`text-xs px-2 py-1 rounded cursor-pointer transition-colors ${
+                    selectedCategory === item.topic 
+                      ? 'bg-agri-100 text-agri-700 border border-agri-300' 
+                      : 'bg-gray-100 hover:bg-agri-100 text-gray-600 hover:text-agri-700'
+                  }`}
+                >
+                  #{item.topic} ({item.posts})
+                </button>
+              ))}
+              {trendingTopics.length === 0 && (
+                <span className="text-xs text-gray-500 italic">Chưa có tag nào</span>
+              )}
+            </div>
+          </div>
+      </div>
+
+      {/* Main Content - Posts Feed */}
+      <div className="lg:col-span-6 space-y-6">
+          {/* Trending Topics - Mobile Only */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 lg:hidden">
             <div className="flex items-center space-x-2 mb-4">
               <TrendingUp className="w-5 h-5 text-[#4CAF50]" />
               <h3 className="font-semibold text-[#795548]">
@@ -370,43 +479,18 @@ const Home = () => {
               {trendingTopics.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                  onClick={() => handleTopicClick(item.topic)}
+                  className={`flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
+                    selectedCategory === item.topic ? 'bg-green-50 border-l-4 border-[#4CAF50]' : ''
+                  }`}
                 >
-                  <span className="text-sm text-gray-700">{item.topic}</span>
+                  <span className="text-sm text-gray-700 font-medium">{item.topic}</span>
                   <span className="text-xs text-gray-500">{item.posts}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Quick Categories */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="font-semibold text-[#795548] mb-4">Danh mục</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                <span className="text-lg">🌾</span>
-                <span className="text-sm text-gray-700">Cây trồng</span>
-              </div>
-              <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                <span className="text-lg">🐄</span>
-                <span className="text-sm text-gray-700">Chăn nuôi</span>
-              </div>
-              <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                <span className="text-lg">🚜</span>
-                <span className="text-sm text-gray-700">Công nghệ</span>
-              </div>
-              <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                <span className="text-lg">💰</span>
-                <span className="text-sm text-gray-700">Thị trường</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Posts Feed */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-3 sm:p-6">
           {/* Create Post */}
           <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -423,6 +507,7 @@ const Home = () => {
               />
               <button 
                 onClick={() => setOpen(true)}
+                aria-label="Tạo bài viết mới"
                 className="px-3 py-2 sm:px-6 bg-[#4CAF50] text-white rounded-full hover:bg-[#45a049] transition-colors text-sm sm:text-base font-medium"
               >
                 Đăng
@@ -486,135 +571,69 @@ const Home = () => {
               </>
             )}
           </div>
-        </div>
       </div>
 
-      {/* Right Sidebar - Featured Farms & More */}
-      <div className="hidden lg:block w-96 bg-white border-l border-gray-200 overflow-y-auto">
-        <div className="sticky top-0 p-6">
-          <CoffeePrices />
-          <div className="mt-6">
-            <RightSidebar />
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-lg">☕</span>
-              <h3 className="font-semibold text-[#795548]">
-                Giá cà phê hôm nay
-              </h3>
+      {/* Right Sidebar - Weather & Market Prices */}
+      <div className="hidden lg:block lg:col-span-3 space-y-6">
+          <WeatherWidget />
+
+          {/* Quick Market Prices */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-bold text-gray-700">Giá nông sản 24h</h4>
+              <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Live</span>
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between items-center p-2 bg-green-50 rounded-lg">
-                <span className="text-sm text-gray-700">Robusta</span>
-                <span className="text-sm font-medium text-green-600">45,500 VNĐ/kg</span>
+              <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
+                <span className="text-gray-600">Lúa OM 5451</span>
+                <span className="font-bold text-gray-900">8.200 đ/kg <span className="text-green-500 text-xs">▲</span></span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
-                <span className="text-sm text-gray-700">Arabica</span>
-                <span className="text-sm font-medium text-blue-600">52,000 VNĐ/kg</span>
+              <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
+                <span className="text-gray-600">Cà phê Robusta</span>
+                <span className="font-bold text-gray-900">120.000 đ/kg <span className="text-red-500 text-xs">▼</span></span>
               </div>
-              <div className="text-xs text-gray-500 text-center mt-2">
-                Cập nhật: 15/11/2024
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Tiêu đen</span>
+                <span className="font-bold text-gray-900">95.000 đ/kg <span className="text-gray-400 text-xs">-</span></span>
               </div>
             </div>
+            <button 
+              onClick={() => navigate('/gia-nong-san')}
+              className="w-full mt-3 text-center text-xs text-agri-600 font-medium hover:underline"
+            >
+              Xem tất cả
+            </button>
           </div>
 
-          {/* Expert Tips */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-lg">👨‍🌾</span>
-              <h3 className="font-semibold text-[#795548]">
-                Lời khuyên chuyên gia
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-yellow-50 rounded-lg">
-                <p className="text-sm text-gray-700 mb-2">
-                  "Mùa khô sắp tới, hãy chuẩn bị hệ thống tưới tiết kiệm nước."
-                </p>
-                <span className="text-xs text-gray-500">- TS. Nguyễn Văn A</span>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-gray-700 mb-2">
-                  "Sử dụng phân hữu cơ để cải thiện độ phì nhiêu đất."
-                </p>
-                <span className="text-xs text-gray-500">- KS. Trần Thị B</span>
-              </div>
-            </div>
-          </div>
-
-          {/* News */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-lg">📰</span>
-              <h3 className="font-semibold text-[#795548]">
-                Tin tức nông nghiệp
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="border-l-4 border-green-500 pl-3">
-                <h4 className="text-sm font-medium text-gray-800 mb-1">
-                  Chính sách hỗ trợ nông dân 2024
-                </h4>
-                <p className="text-xs text-gray-500">2 giờ trước</p>
-              </div>
-              <div className="border-l-4 border-blue-500 pl-3">
-                <h4 className="text-sm font-medium text-gray-800 mb-1">
-                  Công nghệ AI trong nông nghiệp
-                </h4>
-                <p className="text-xs text-gray-500">5 giờ trước</p>
-              </div>
-              <div className="border-l-4 border-orange-500 pl-3">
-                <h4 className="text-sm font-medium text-gray-800 mb-1">
-                  Xuất khẩu gạo tăng 15%
-                </h4>
-                <p className="text-xs text-gray-500">1 ngày trước</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Featured Farms */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <Users className="w-5 h-5 text-[#4CAF50]" />
-              <h3 className="font-semibold text-[#795548]">
-                Trang trại nổi bật
-              </h3>
-            </div>
+          {/* Top Experts */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h4 className="font-bold text-gray-700 mb-3">Chuyên gia tuần này</h4>
             <div className="space-y-4">
-              {featuredFarms.map((farm) => (
-                <div
-                  key={farm.id}
-                  className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <img
-                    src={farm.image}
-                    alt={farm.name}
-                    className="w-full h-32 object-cover rounded-lg mb-3"
+              {topContributors.slice(0, 3).map((contributor, idx) => (
+                <div key={idx} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                  <img 
+                    src={contributor.avatar || `https://ui-avatars.com/api/?name=${contributor.name}&background=random&color=fff`}
+                    alt={contributor.name}
+                    className="w-10 h-10 rounded-full border border-gray-100 object-cover"
                   />
-                  <h4 className="font-medium text-[#795548] mb-1">
-                    {farm.name}
-                  </h4>
-                  <div className="flex items-center space-x-1 text-sm text-gray-500 mb-2">
-                    <MapPin className="w-3 h-3" />
-                    <span>{farm.location}</span>
+                  <div className="flex-1">
+                    <h5 className="font-bold text-sm text-gray-800">{contributor.name}</h5>
+                    <p className="text-xs text-gray-500">{contributor.posts} bài viết</p>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {farm.specialty}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
-                      {farm.followers} người theo dõi
-                    </span>
-                    <button className="px-3 py-1 bg-[#4CAF50] text-white text-xs rounded-full hover:bg-[#45a049] transition-colors">
-                      Theo dõi
-                    </button>
+                  <div className="text-xs font-semibold text-agri-600">
+                    {contributor.reputation} ⭐
                   </div>
                 </div>
               ))}
             </div>
+            <button className="w-full mt-4 py-2 border border-agri-100 rounded-lg text-sm text-agri-700 font-medium hover:bg-agri-50 transition-colors">
+              Đăng ký chuyên gia
+            </button>
+          </div>
+      </div>
+
           </div>
         </div>
-      </div>
 
       {/* Create Post Modal */}
       {open && (
@@ -681,16 +700,17 @@ const Home = () => {
       )}
 
       {/* Floating Action Button */}
-      {user && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#4CAF50] text-white rounded-full shadow-lg hover:bg-[#45a049] transition-colors flex items-center justify-center z-40 lg:hidden"
-        >
-          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      )}
+      <button
+        onClick={() => user ? setOpen(true) : navigate('/login')}
+        aria-label="Tạo bài viết mới"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#4CAF50] text-white rounded-full shadow-lg hover:bg-[#45a049] transition-colors flex items-center justify-center z-40 lg:hidden"
+      >
+        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+
       
       {/* CSS Animations */}
       <style jsx>{`
@@ -721,7 +741,8 @@ const Home = () => {
           }
         }
       `}</style>
-    </div>
+      </main>
+    </>
   );
 };
 

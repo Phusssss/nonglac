@@ -1,5 +1,5 @@
 const GITHUB_API_BASE = 'https://api.github.com';
-const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN || '';
+const GITHUB_TOKEN = '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';
 const GITHUB_OWNER = 'Phusssss';
 const GITHUB_REPO = 'task-files';
 
@@ -33,7 +33,7 @@ export const githubStorage = {
         throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      await response.json();
       // Return raw GitHub URL for better performance
       const downloadURL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${fileName}`;
       console.log('GitHub upload success, returning URL:', downloadURL);

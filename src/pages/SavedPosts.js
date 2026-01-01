@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Grid } from '@mui/material';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
@@ -23,7 +22,6 @@ const SavedPosts = () => {
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const savedData = snapshot.docs.map(doc => doc.data());
       
-      // Lấy thông tin chi tiết của từng bài viết
       const posts = await Promise.all(
         savedData.map(async (save) => {
           const postDoc = await getDoc(doc(db, 'posts', save.postId));
@@ -43,38 +41,36 @@ const SavedPosts = () => {
 
   if (!user) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography variant="h6">Vui lòng đăng nhập để xem bài viết đã lưu</Typography>
-      </Container>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700">Vui lòng đăng nhập để xem bài viết đã lưu</h2>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Bài viết đã lưu
-      </Typography>
-      
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <h1 className="text-3xl font-bold text-[#795548] mb-6">Bài viết đã lưu</h1>
+        
+        <div className="space-y-6">
           {loading ? (
             Array.from({ length: 3 }).map((_, index) => (
               <PostSkeleton key={index} />
             ))
           ) : savedPosts.length === 0 ? (
-            <Box sx={{ textAlign: 'center', mt: 4 }}>
-              <Typography variant="body1" color="text.secondary">
-                Bạn chưa lưu bài viết nào
-              </Typography>
-            </Box>
+            <div className="text-center py-12">
+              <p className="text-gray-500">Bạn chưa lưu bài viết nào</p>
+            </div>
           ) : (
             savedPosts.map(post => (
               <PostCard key={post.id} post={post} />
             ))
           )}
-        </Grid>
-      </Grid>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 };
 

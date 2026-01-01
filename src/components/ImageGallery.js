@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, ImageList, ImageListItem, Dialog, IconButton } from '@mui/material';
 import { Close, ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import OptimizedImage from './OptimizedImage';
 
 const ImageGallery = ({ images }) => {
   const [open, setOpen] = useState(false);
@@ -58,16 +59,13 @@ const ImageGallery = ({ images }) => {
               }}
               onClick={() => handleImageClick(index)}
             >
-              <img
+              <OptimizedImage
                 src={image}
                 alt={`Post image ${index + 1}`}
-                loading="lazy"
-                style={{
-                  width: '100%',
-                  height: validImages.length === 1 ? 'auto' : '100%',
-                  objectFit: validImages.length === 1 ? 'contain' : 'cover',
-                  maxHeight: validImages.length === 1 ? '500px' : undefined
-                }}
+                width={validImages.length === 1 ? 600 : 300}
+                height={validImages.length === 1 ? 400 : 200}
+                priority={index === 0}
+                className={validImages.length === 1 ? 'w-full h-auto object-contain max-h-[500px]' : 'w-full h-full object-cover'}
               />
             </ImageListItem>
           ))}

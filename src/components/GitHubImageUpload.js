@@ -3,7 +3,12 @@ import { Box, Button, Typography, LinearProgress, Alert, IconButton, Grid } from
 import { CloudUpload, Delete, PhotoLibrary } from '@mui/icons-material';
 import { githubStorage } from '../services/githubStorage';
 
-const GitHubImageUpload = ({ onUploadComplete, maxSize = 5, allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] }) => {
+const GitHubImageUpload = ({ 
+  onUploadComplete, 
+  onBatchUploadComplete, // Callback mới cho upload nhiều ảnh
+  maxSize = 5, 
+  allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] 
+}) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previews, setPreviews] = useState([]);
@@ -83,9 +88,15 @@ const GitHubImageUpload = ({ onUploadComplete, maxSize = 5, allowedTypes = ['ima
         uploadedImages.push(downloadURL);
         setProgress(((i + 1) / totalFiles) * 100);
         
+        // Gọi callback cho từng ảnh
         if (typeof onUploadComplete === 'function') {
           onUploadComplete(downloadURL);
         }
+      }
+      
+      // Gọi callback cho toàn bộ batch
+      if (typeof onBatchUploadComplete === 'function') {
+        onBatchUploadComplete(uploadedImages);
       }
       
       setUploadedUrls(prev => [...prev, ...uploadedImages]);
@@ -129,7 +140,7 @@ const GitHubImageUpload = ({ onUploadComplete, maxSize = 5, allowedTypes = ['ima
         fullWidth
         sx={{ mb: 2 }}
       >
-        Chọn ảnh ({previews.length} ảnh đã chọn)
+        {uploading ? 'Đang upload...' : `Chọn ảnh (${previews.length} ảnh đã chọn)`}
       </Button>
 
       {previews.length > 0 && (

@@ -189,28 +189,28 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-green-50">
+    <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col gap-8">
           {/* Profile Header */}
-          <div className="bg-white p-6 rounded-xl border border-green-100">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="flex gap-6 items-center">
                 <div className="relative">
-                  <div className="w-24 h-24 md:w-32 md:h-32 bg-green-200 rounded-full border-2 border-green-300" style={{
+                  <div className="w-24 h-24 md:w-32 md:h-32 bg-[#4CAF50] rounded-full" style={{
                     backgroundImage: userProfile?.avatar ? `url(${userProfile.avatar})` : 'none',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
                   }}>
                     {!userProfile?.avatar && (
-                      <div className="w-full h-full flex items-center justify-center text-green-700 font-bold text-2xl">
+                      <div className="w-full h-full flex items-center justify-center text-white font-bold text-2xl">
                         {userProfile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                       </div>
                     )}
                   </div>
                   <button 
                     onClick={() => setEditDialog(true)}
-                    className="absolute bottom-0 right-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600"
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-[#4CAF50] text-white rounded-full flex items-center justify-center hover:bg-[#45a049]"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -219,18 +219,18 @@ const Profile = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold">{userProfile?.displayName || 'Người dùng'}</h1>
-                  <p className="text-green-600">{getReputationLevel(userProfile?.reputation || 0)}</p>
+                  <p className="text-[#4CAF50]">{getReputationLevel(userProfile?.reputation || 0)}</p>
                   <p className="text-gray-500 text-sm">{user?.email}</p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <button 
                   onClick={() => setEditDialog(true)}
-                  className="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 font-medium"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
                 >
                   Chỉnh sửa
                 </button>
-                <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                <button className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#45a049] font-medium">
                   Chia sẻ
                 </button>
               </div>
@@ -241,25 +241,25 @@ const Profile = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column */}
             <aside className="lg:col-span-1 flex flex-col gap-6">
-              <div className="bg-white p-6 rounded-xl border border-green-100">
+              <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h3 className="text-lg font-bold mb-3">Giới thiệu</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   {userProfile?.bio || 'Chưa có thông tin giới thiệu. Hãy cập nhật hồ sơ để chia sẻ về bản thân bạn!'}
                 </p>
               </div>
               
-              <div className="bg-white p-6 rounded-xl border border-green-100">
+              <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h3 className="text-lg font-bold mb-4">Chuyên môn</h3>
                 <div className="flex gap-2 flex-wrap">
                   {['Trồng trọt', 'Chăn nuôi', 'Thủy sản', 'Nông nghiệp bền vững', 'Công nghệ nông nghiệp'].map((skill) => (
-                    <span key={skill} className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm border border-green-200">
+                    <span key={skill} className="px-3 py-1 bg-[#4CAF50]/10 text-[#4CAF50] rounded-full text-sm">
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-xl border border-green-100">
+              <div className="bg-white p-6 rounded-xl shadow-sm">
                 <div className="flex justify-around text-center">
                   <div>
                     <p className="text-xl font-bold">{followers}</p>
@@ -279,15 +279,15 @@ const Profile = () => {
 
             {/* Right Column */}
             <div className="lg:col-span-2 flex flex-col gap-6">
-              <div className="bg-white rounded-xl border border-green-100">
+              <div className="bg-white rounded-xl shadow-sm">
                 {/* Tab Navigation */}
-                <div className="border-b border-green-100 px-6">
+                <div className="border-b border-gray-200 px-6">
                   <nav className="-mb-px flex space-x-6">
                     <button 
                       onClick={() => setActiveTab('posts')}
                       className={`py-4 px-1 border-b-2 font-medium text-sm ${
                         activeTab === 'posts' 
-                          ? 'border-green-500 text-green-500' 
+                          ? 'border-[#4CAF50] text-[#4CAF50]' 
                           : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                     >
@@ -297,7 +297,7 @@ const Profile = () => {
                       onClick={() => setActiveTab('articles')}
                       className={`py-4 px-1 border-b-2 font-medium text-sm ${
                         activeTab === 'articles' 
-                          ? 'border-green-500 text-green-500' 
+                          ? 'border-[#4CAF50] text-[#4CAF50]' 
                           : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                     >
@@ -307,7 +307,7 @@ const Profile = () => {
                       onClick={() => setActiveTab('qa')}
                       className={`py-4 px-1 border-b-2 font-medium text-sm ${
                         activeTab === 'qa' 
-                          ? 'border-green-500 text-green-500' 
+                          ? 'border-[#4CAF50] text-[#4CAF50]' 
                           : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                     >
@@ -336,9 +336,9 @@ const Profile = () => {
                       {loadingMore && (
                         <div className="flex justify-center py-4">
                           <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                           </div>
                         </div>
                       )}
@@ -357,18 +357,18 @@ const Profile = () => {
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold mb-4">Chỉnh sửa hồ sơ</h3>
             <div className="text-center mb-4">
-              <div className="w-20 h-20 bg-green-200 rounded-full mx-auto mb-3" style={{
+              <div className="w-20 h-20 bg-[#4CAF50] rounded-full mx-auto mb-3" style={{
                 backgroundImage: avatarFile ? `url(${URL.createObjectURL(avatarFile)})` : userProfile?.avatar ? `url(${userProfile.avatar})` : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}>
                 {!avatarFile && !userProfile?.avatar && (
-                  <div className="w-full h-full flex items-center justify-center text-green-700 font-bold text-xl">
+                  <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
                     {userProfile?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                   </div>
                 )}
               </div>
-              <label className="cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100">
+              <label className="cursor-pointer bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
                 Chọn ảnh
                 <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
               </label>
@@ -393,7 +393,7 @@ const Profile = () => {
               <button 
                 onClick={handleUpdateProfile}
                 disabled={uploading}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#45a049] disabled:opacity-50"
               >
                 {uploading ? 'Đang lưu...' : 'Lưu'}
               </button>

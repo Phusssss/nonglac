@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://nonglac.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Allow all important pages
+Allow: /marketplace
+Allow: /lessons
+Allow: /gia-ca-phe
+Allow: /market-insights
+Allow: /gia-nong-san
+Allow: /gia-lua-gao
+Allow: /plant-doctor
+
+# Block admin and private pages
+Disallow: /admin
+Disallow: /admin-setup
+Disallow: /api-usage
+Disallow: /test-scraper
+Disallow: /post-generator
+
+# Block duplicate content
+Disallow: /*?*
+Disallow: /*/page/*
+Disallow: /search?*

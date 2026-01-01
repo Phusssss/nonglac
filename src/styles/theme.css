@@ -1,0 +1,56 @@
+/* NôngLạc Theme */
+:root {
+  --green-primary: #4CAF50;
+  --green-dark: #388E3C;
+  --brown-earth: #795548;
+  --golden-rice: #FFC107;
+  --shadow-soft: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+  --radius: 12px;
+  --transition: 200ms ease;
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--green-primary), var(--green-dark));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition);
+  min-height: 48px;
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--green-primary);
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+}
+
+*:focus-visible {
+  outline: 3px solid var(--green-primary);
+  outline-offset: 2px;
+}

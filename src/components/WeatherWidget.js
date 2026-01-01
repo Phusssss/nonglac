@@ -1,176 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, Box, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { WbSunny, Cloud, Grain, LocationOn } from '@mui/icons-material';
+import { Sun, Cloud, CloudRain, Wind, MapPin } from 'lucide-react';
 
-const WeatherWidget = ({ defaultLocation = 'Hồ Chí Minh' }) => {
+const WeatherWidget = () => {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState(defaultLocation);
-
-  const locations = [
-    'Hồ Chí Minh',
-    'Hà Nội', 
-    'Đồng Tháp',
-    'An Giang',
-    'Cần Thơ',
-    'Đắk Lắk',
-    'Lâm Đồng',
-    'Bình Dương',
-    'Long An',
-    'Tiền Giang'
-  ];
+  const [location, setLocation] = useState({ name: 'Hà Nội', lat: 21.0285, lon: 105.8542 });
 
   useEffect(() => {
-    fetchWeather();
-  }, [selectedLocation]);
+    getUserLocation();
+  }, []);
 
-  const fetchWeather = async () => {
-    try {
-      // Sử dụng WeatherAPI miễn phí
-      const API_KEY = '34e500c4284245bb905123709252510'; // Thực tế cần đăng ký tại weatherapi.com
-      const response = await fetch(
-        `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${selectedLocation}&lang=vi`
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const cityName = await getCityName(latitude, longitude);
+          setLocation({ name: cityName, lat: latitude, lon: longitude });
+          fetchWeather(latitude, longitude);
+        },
+        (error) => {
+          console.log('Geolocation denied, using default location');
+          fetchWeather(location.lat, location.lon);
+        }
       );
-      
-      if (response.ok) {
-        const data = await response.json();
-        const weatherData = {
-          temperature: Math.round(data.current.temp_c),
-          humidity: data.current.humidity,
-          condition: getConditionFromWeather(data.current.condition.text),
-          description: data.current.condition.text,
-          windSpeed: data.current.wind_kph / 3.6, // Convert to m/s
-          pressure: data.current.pressure_mb
-        };
-        setWeather(weatherData);
-      } else {
-        throw new Error('API không khả dụng');
-      }
-      
-      setLoading(false);
+    } else {
+      fetchWeather(location.lat, location.lon);
+    }
+  };
+
+  const getCityName = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=vi`
+      );
+      const data = await response.json();
+      return data.address?.city || data.address?.province || data.address?.state || 'Vị trí của bạn';
+    } catch (error) {
+      return 'Vị trí của bạn';
+    }
+  };
+
+  const fetchWeather = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia/Bangkok&forecast_days=5`
+      );
+      const data = await response.json();
+      setWeather(data);
     } catch (error) {
       console.error('Error fetching weather:', error);
-      // Sử dụng dữ liệu giả lập thực tế hơn
-      const mockWeather = {
-        temperature: getRealisticTemp(selectedLocation),
-        humidity: getRealisticHumidity(selectedLocation),
-        condition: getRealisticCondition(),
-        description: 'Dữ liệu mô phỏng',
-        windSpeed: Math.random() * 5 + 2
-      };
-      setWeather(mockWeather);
+    } finally {
       setLoading(false);
     }
   };
 
-  const getRealisticTemp = (loc) => {
-    const tempMap = {
-      'Hồ Chí Minh': 28,
-      'Hà Nội': 24,
-      'Đồng Tháp': 29,
-      'An Giang': 30,
-      'Cần Thơ': 28,
-      'Đắk Lắk': 26,
-      'Lâm Đồng': 22,
-      'Bình Dương': 27,
-      'Long An': 29,
-      'Tiền Giang': 28
-    };
-    const baseTemp = tempMap[loc] || 26;
-    const variation = Math.random() * 4 - 2; // -2 to +2
-    return Math.round(baseTemp + variation);
+  const getWeatherIcon = (code) => {
+    if (code === 0) return <Sun size={64} />;
+    if (code <= 3) return <Cloud size={64} />;
+    if (code <= 67) return <CloudRain size={64} />;
+    return <Wind size={64} />;
   };
 
-  const getRealisticHumidity = (loc) => {
-    return Math.floor(Math.random() * 20) + 70; // 70-90%
+  const getSmallWeatherIcon = (code) => {
+    if (code === 0) return <Sun size={24} />;
+    if (code <= 3) return <Cloud size={24} />;
+    if (code <= 67) return <CloudRain size={24} />;
+    return <Wind size={24} />;
   };
 
-  const getRealisticCondition = () => {
-    const conditions = ['sunny', 'cloudy', 'rainy'];
-    const weights = [0.5, 0.3, 0.2]; // 50% sunny, 30% cloudy, 20% rainy
-    const random = Math.random();
-    if (random < weights[0]) return conditions[0];
-    if (random < weights[0] + weights[1]) return conditions[1];
-    return conditions[2];
+  const getDayName = (index) => {
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const today = new Date();
+    const day = new Date(today);
+    day.setDate(today.getDate() + index);
+    return days[day.getDay()];
   };
 
-  const getConditionFromWeather = (weatherText) => {
-    const text = weatherText.toLowerCase();
-    if (text.includes('nắng') || text.includes('sunny') || text.includes('clear')) return 'sunny';
-    if (text.includes('mưa') || text.includes('rain') || text.includes('drizzle')) return 'rainy';
-    if (text.includes('mây') || text.includes('cloud') || text.includes('overcast')) return 'cloudy';
-    if (text.includes('sương') || text.includes('fog') || text.includes('mist')) return 'cloudy';
-    return 'sunny';
-  };
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white mb-6 animate-pulse">
+        <div className="h-32"></div>
+      </div>
+    );
+  }
 
-  const getWeatherIcon = (condition) => {
-    switch (condition) {
-      case 'sunny': return <WbSunny color="warning" />;
-      case 'cloudy': return <Cloud color="action" />;
-      case 'rainy': return <Grain color="primary" />;
-      default: return <WbSunny />;
-    }
-  };
-
-  const getAgricultureAdvice = (temp, humidity, condition) => {
-    if (condition === 'rainy') return 'Chú ý thoát nước cho cây trồng';
-    if (temp > 35) return 'Thời tiết nóng, cần tưới nước thường xuyên';
-    if (humidity < 40) return 'Không khí khô, tăng cường tưới nước';
-    if (humidity > 85) return 'Chú ý phòng chống bệnh nấm';
-    return 'Thời tiết thuận lợi cho nông nghiệp';
-  };
-
-  if (loading) return <CircularProgress />;
+  if (!weather) return null;
 
   return (
-    <Card>
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center">
-            <LocationOn color="primary" sx={{ mr: 1 }} />
-            <Typography variant="h6">
-              Thời tiết
-            </Typography>
-          </Box>
-        </Box>
-        
-        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-          <InputLabel>Chọn địa điểm</InputLabel>
-          <Select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            label="Chọn địa điểm"
-          >
-            {locations.map((loc) => (
-              <MenuItem key={loc} value={loc}>
-                {loc}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        
-        <Box display="flex" alignItems="center" mb={1}>
-          {getWeatherIcon(weather.condition)}
-          <Typography variant="h4" sx={{ ml: 1 }}>
-            {weather.temperature}°C
-          </Typography>
-        </Box>
-        
-        <Typography variant="body2" color="text.secondary">
-          Độ ẩm: {weather.humidity}%
-        </Typography>
-        
-        {weather.windSpeed && (
-          <Typography variant="body2" color="text.secondary">
-            Gió: {weather.windSpeed} m/s
-          </Typography>
-        )}
-        
-        <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
-          {getAgricultureAdvice(weather.temperature, weather.humidity, weather.condition)}
-        </Typography>
-      </CardContent>
-    </Card>
+    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white mb-6">
+      <h3 className="font-bold mb-2">Thời tiết nông vụ</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-1 text-sm mb-1">
+            <MapPin size={14} />
+            <p>{location.name}</p>
+          </div>
+          <p className="text-5xl font-bold">{Math.round(weather.current.temperature_2m)}°C</p>
+        </div>
+        {getWeatherIcon(weather.current.weathercode)}
+      </div>
+      <div className="flex justify-between text-sm">
+        {weather.daily.time.slice(0, 5).map((date, index) => (
+          <div key={index} className="text-center">
+            <p className="mb-1">{getDayName(index)}</p>
+            <div className="mx-auto my-1">
+              {getSmallWeatherIcon(weather.daily.weathercode[index])}
+            </div>
+            <p className="text-xs">{Math.round(weather.daily.temperature_2m_max[index])}°</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

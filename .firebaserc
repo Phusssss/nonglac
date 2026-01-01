@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "nonglac-2025"
-  }
+    "default": "nonglac-2026",
+    "nonglac": "nonglac-2026"
+  },
+  "targets": {},
+  "etags": {}
 }

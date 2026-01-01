@@ -1,3 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Beta banner global styles */
+.beta-banner {
+  background: linear-gradient(135deg, #ff7875, #ff4d4f);
+  color: white;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  position: relative;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.beta-banner .beta-text {
+  animation: beta-pulse 2s infinite;
+}
+
+@keyframes beta-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}

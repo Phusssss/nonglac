@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IconButton } from '@mui/material';
-import { Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { Bookmark } from 'lucide-react';
 import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
@@ -47,13 +46,16 @@ const SaveButton = ({ postId }) => {
   if (!user) return null;
 
   return (
-    <IconButton
+    <button
       onClick={handleSave}
       disabled={loading}
-      sx={{ color: isSaved ? 'primary.main' : 'text.secondary' }}
+      className="p-1.5 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+      aria-label={isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}
     >
-      {isSaved ? <Bookmark /> : <BookmarkBorder />}
-    </IconButton>
+      <Bookmark 
+        className={`w-4 h-4 transition-all ${isSaved ? 'fill-[#4CAF50] text-[#4CAF50]' : 'text-gray-500'}`}
+      />
+    </button>
   );
 };
 

@@ -3,15 +3,101 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#4CAF50" />
-    <meta name="description" content="Diễn đàn nông nghiệp" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <title>NôngLạc - Diễn đàn nông nghiệp</title>
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY"></script>
+    <meta name="description" content="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam. Kết nối nông dân, chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0." />
+    <meta name="keywords" content="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, giá cà phê, giá lúa gạo, mạng xã hội nông nghiệp, cộng đồng nông dân, kinh nghiệm nông nghiệp, kỹ thuật trồng trọt, phương pháp chăn nuôi, thị trường nông sản, nông nghiệp 4.0, công nghệ nông nghiệp, diễn đàn nông nghiệp, nonglac, nông lạc" />
+    <meta name="author" content="NôngLạc Team" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Google Site Verification -->
+    <meta name="google-site-verification" content="304416155a85c83d" />
+    
+    <!-- Bing Site Verification -->
+    <meta name="msvalidate.01" content="9B0F347FAB6A4BA7427D6C47C6E6BCED" />
+    
+    <!-- Zalo Platform Site Verification -->
+    <meta name="zalo-platform-site-verification" content="Gl-69x-EFWrbyAyxXjaO7NlNZpwNeLjZDp8q" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam" />
+    <meta property="og:description" content="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0." />
+    <meta property="og:image" content="%PUBLIC_URL%/logo-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="NôngLạc - Mạng xã hội nông nghiệp Việt Nam" />
+    <meta property="og:url" content="https://nonglac.com" />
+    <meta property="og:site_name" content="NôngLạc" />
+    <meta property="og:locale" content="vi_VN" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam" />
+    <meta name="twitter:description" content="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0." />
+    <meta name="twitter:image" content="%PUBLIC_URL%/logo-og.png" />
+    <meta name="twitter:site" content="@nonglac" />
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Critical CSS for above-the-fold content -->
+    <style>
+      *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background-color:#f9fafb;line-height:1.5}
+      .loading{display:flex;justify-content:center;align-items:center;height:100vh;background:#f9fafb}
+      .spinner{width:40px;height:40px;border:4px solid #e5e7eb;border-top:4px solid #4CAF50;border-radius:50%;animation:spin 1s linear infinite}
+      @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+      img{max-width:100%;height:auto;display:block}
+      .hero-section{min-height:60vh;background:#4CAF50;color:white;display:flex;align-items:center;justify-content:center}
+    </style>
+    
+    <!-- Preconnect to external origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://nonglac-2025.firebaseapp.com">
+    <link rel="preconnect" href="https://www.googleapis.com">
+    <link rel="preconnect" href="https://apis.google.com">
+    <link rel="preconnect" href="https://ui-avatars.com">
+    <link rel="preconnect" href="https://raw.githubusercontent.com">
+    
+    <!-- Resource hints for critical images -->
+    <link rel="prefetch" href="https://images.unsplash.com">
+    <link rel="dns-prefetch" href="//lh3.googleusercontent.com">
+    <link rel="dns-prefetch" href="//firestore.googleapis.com">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/static/css/main.css" as="style">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    </noscript>
+    
+    <title>NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam | Cộng đồng nông dân 4.0</title>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-910KJYRSXM"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-910KJYRSXM');
+    </script>
+    
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY" defer></script>
   </head>
   <body>
     <noscript>Bạn cần bật JavaScript để chạy ứng dụng này.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
+    </div>
+    
   </body>
 </html>

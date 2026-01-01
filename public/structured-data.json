@@ -1,0 +1,103 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://nonglac.com/#website",
+      "url": "https://nonglac.com/",
+      "name": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam",
+      "description": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam. Kết nối nông dân, chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0.",
+      "publisher": {
+        "@id": "https://nonglac.com/#organization"
+      },
+      "potentialAction": [
+        {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://nonglac.com/search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      ],
+      "inLanguage": "vi-VN"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://nonglac.com/#organization",
+      "name": "NôngLạc",
+      "alternateName": "Nông Lạc",
+      "url": "https://nonglac.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "inLanguage": "vi-VN",
+        "@id": "https://nonglac.com/#/schema/logo/image/",
+        "url": "https://nonglac.com/logo192.png",
+        "contentUrl": "https://nonglac.com/logo192.png",
+        "width": 192,
+        "height": 192,
+        "caption": "NôngLạc"
+      },
+      "image": {
+        "@id": "https://nonglac.com/#/schema/logo/image/"
+      },
+      "description": "Mạng xã hội nông nghiệp hàng đầu Việt Nam",
+      "foundingDate": "2025",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Vietnam"
+      },
+      "knowsAbout": [
+        "Nông nghiệp",
+        "Trồng trọt",
+        "Chăn nuôi",
+        "Giá nông sản",
+        "Công nghệ nông nghiệp",
+        "Nông nghiệp 4.0"
+      ],
+      "sameAs": [
+        "https://facebook.com/nonglac",
+        "https://twitter.com/nonglac",
+        "https://youtube.com/@nonglac",
+        "https://zalo.me/nonglac"
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://nonglac.com/#webpage",
+      "url": "https://nonglac.com/",
+      "name": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam | Cộng đồng nông dân 4.0",
+      "isPartOf": {
+        "@id": "https://nonglac.com/#website"
+      },
+      "about": {
+        "@id": "https://nonglac.com/#organization"
+      },
+      "description": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam. Kết nối nông dân, chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0.",
+      "breadcrumb": {
+        "@id": "https://nonglac.com/#breadcrumb"
+      },
+      "inLanguage": "vi-VN",
+      "potentialAction": [
+        {
+          "@type": "ReadAction",
+          "target": [
+            "https://nonglac.com/"
+          ]
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://nonglac.com/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Trang chủ",
+          "item": "https://nonglac.com/"
+        }
+      ]
+    }
+  ]
+}

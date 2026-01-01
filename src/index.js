@@ -1,7 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './styles/theme.css';
 import App from './App';
+
+// Suppress React warnings in console
+const originalError = console.error;
+console.error = (...args) => {
+  if (
+    typeof args[0] === 'string' &&
+    (args[0].includes('Warning: Received') ||
+     args[0].includes('Warning: React does not recognize'))
+  ) {
+    return;
+  }
+  originalError.call(console, ...args);
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

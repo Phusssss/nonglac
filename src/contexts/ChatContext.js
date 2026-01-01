@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { chatService } from '../services/chatService';
+import chatService from '../services/chatService';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 const ChatContext = createContext();

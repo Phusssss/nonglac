@@ -1,6 +1,7 @@
 {
   "short_name": "NôngLạc",
-  "name": "NôngLạc - Mạng xã hội nông nghiệp",
+  "name": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam",
+  "description": "NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam. Kết nối nông dân, chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản realtime. Cộng đồng nông nghiệp thông minh 4.0.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,18 +11,46 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "maskable any"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#1877F2",
-  "background_color": "#F0F2F5",
-  "categories": ["social", "agriculture", "business"],
-  "description": "Mạng xã hội dành cho cộng đồng nông nghiệp Việt Nam"
+  "orientation": "portrait-primary",
+  "theme_color": "#4CAF50",
+  "background_color": "#ffffff",
+  "categories": ["agriculture", "social", "business", "productivity"],
+  "lang": "vi",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Giá nông sản",
+      "short_name": "Giá NS",
+      "description": "Xem giá nông sản mới nhất",
+      "url": "/gia-nong-san",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Marketplace",
+      "short_name": "Chợ",
+      "description": "Mua bán nông sản",
+      "url": "/marketplace",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Diễn đàn",
+      "short_name": "Diễn đàn",
+      "description": "Tham gia diễn đàn nông nghiệp",
+      "url": "/dien-dan-nong-nghiep",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }

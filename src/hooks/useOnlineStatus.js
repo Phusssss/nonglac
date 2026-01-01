@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { chatService } from '../services/chatService';
+import chatService from '../services/chatService';
 
 export const useOnlineStatus = () => {
   const { user } = useAuth();

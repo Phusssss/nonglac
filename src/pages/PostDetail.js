@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, IconButton, Paper } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowLeft } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import PostCard from '../components/PostCard';
@@ -36,31 +35,38 @@ const PostDetail = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ mt: 2 }}>
-        <PostSkeleton />
-      </Container>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <PostSkeleton />
+        </div>
+      </div>
     );
   }
 
   if (!post) {
     return (
-      <Container maxWidth="md" sx={{ mt: 2, textAlign: 'center' }}>
-        <Typography variant="h6">Không tìm thấy bài viết</Typography>
-      </Container>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700">Không tìm thấy bài viết</h2>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <IconButton onClick={() => navigate(-1)} sx={{ mr: 1 }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h5">Chi tiết bài viết</Typography>
-      </Box>
-      
-      <PostCard post={post} isDetailView={true} />
-    </Container>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center space-x-2 text-gray-600 hover:text-[#4CAF50] mb-4 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Quay lại</span>
+        </button>
+        
+        <PostCard post={post} isDetailView={true} />
+      </div>
+    </div>
   );
 };
 

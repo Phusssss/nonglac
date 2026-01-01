@@ -24,13 +24,13 @@ const CoffeePrices = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchCoffeePrices();
+    fetchPrices();
   }, []);
 
-  const fetchCoffeePrices = async () => {
+  const fetchPrices = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, 'webgia_prices'), orderBy('updatedAt', 'desc'));
+      const q = query(collection(db, 'prices'), orderBy('updatedAt', 'desc'));
       const querySnapshot = await getDocs(q);
       
       const pricesData = [];
@@ -40,8 +40,8 @@ const CoffeePrices = () => {
       
       setPrices(pricesData);
     } catch (err) {
-      console.error('Error fetching coffee prices:', err);
-      setError('Không thể tải dữ liệu giá cà phê');
+      console.error('Error fetching prices:', err);
+      setError('Không thể tải dữ liệu giá nông sản');
     } finally {
       setLoading(false);
     }
@@ -95,19 +95,20 @@ const CoffeePrices = () => {
         <Box display="flex" alignItems="center" mb={2}>
           <Coffee sx={{ mr: 1, color: '#8B4513' }} />
           <Typography variant="h6" component="h2">
-            Giá Cà Phê Hôm Nay
+            Giá Nông Sản Hôm Nay
           </Typography>
         </Box>
         
         {prices.length === 0 ? (
           <Typography color="textSecondary">
-            Chưa có dữ liệu giá cà phê
+            Chưa có dữ liệu giá nông sản
           </Typography>
         ) : (
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell><strong>Sản phẩm</strong></TableCell>
                   <TableCell><strong>Thị trường</strong></TableCell>
                   <TableCell align="right"><strong>Giá hiện tại</strong></TableCell>
                   <TableCell align="right"><strong>Thay đổi</strong></TableCell>
@@ -120,19 +121,14 @@ const CoffeePrices = () => {
                   return (
                     <TableRow key={price.id} hover>
                       <TableCell>
-                        <Box display="flex" alignItems="center">
-                          <Typography variant="body2" fontWeight="medium">
-                            {price.market}
-                          </Typography>
-                          {price.market.includes('Trung bình') && (
-                            <Chip 
-                              label="TB" 
-                              size="small" 
-                              color="primary" 
-                              sx={{ ml: 1, fontSize: '0.7rem' }}
-                            />
-                          )}
-                        </Box>
+                        <Typography variant="body2" fontWeight="bold">
+                          {price.productName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {price.market}
+                        </Typography>
                       </TableCell>
                       
                       <TableCell align="right">

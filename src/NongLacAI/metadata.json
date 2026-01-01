@@ -1,8 +1,0 @@
-{
-  "name": "LẠC LẠC",
-  "description": "LẠC LẠC là một mô hình trí tuệ nhân tạo phụng sự các vấn đề cho người dùng của NÔNG LẠC trong cách mạng chuyển đổi số nộng nghiệp.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
-}

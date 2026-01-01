@@ -5,6 +5,7 @@ import { collection, addDoc, getDocs, query, orderBy, where } from 'firebase/fir
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import LessonEditor from '../components/LessonEditor';
+import AdminLayout from '../components/AdminLayout';
 
 const { Content, Sider } = Layout;
 const { Title } = Typography;
@@ -208,21 +209,18 @@ const Lessons = () => {
   };
 
   return (
-    <Layout style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <AdminLayout>
+    <Layout style={{ minHeight: '100vh' }}>
       <Sider width={300} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
         <div style={{ padding: '16px' }}>
           <Title level={4}>Bài học nông nghiệp</Title>
           <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-            <Button icon={<PlusOutlined />} onClick={() => handleAddNew('category')} block>
-              Thêm loại cây trồng
-            </Button>
-            <Button icon={<PlusOutlined />} onClick={() => handleAddNew('crop')} block>
-              Thêm cây trồng
-            </Button>
-            <Button icon={<PlusOutlined />} onClick={() => handleAddNew('chapter')} block>
-              Thêm chương
-            </Button>
-            <Button icon={<PlusOutlined />} onClick={() => handleAddNew('lesson')} block type="primary">
+            <Button 
+              icon={<PlusOutlined />} 
+              onClick={() => handleAddNew('lesson')} 
+              block 
+              style={{ backgroundColor: '#4CAF50', borderColor: '#4CAF50', color: 'white' }}
+            >
               Thêm bài học
             </Button>
           </Space>
@@ -261,6 +259,7 @@ const Lessons = () => {
         </Form>
       </Modal>
     </Layout>
+    </AdminLayout>
   );
 };
 

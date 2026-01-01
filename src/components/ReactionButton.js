@@ -1,6 +1,5 @@
 import React from 'react';
-import { Button } from '@mui/material';
-import { ThumbUp } from '@mui/icons-material';
+import { Heart } from 'lucide-react';
 
 const ReactionButton = ({ onReaction, currentReaction, totalLikes }) => {
   const isLiked = currentReaction === 'like';
@@ -10,19 +9,17 @@ const ReactionButton = ({ onReaction, currentReaction, totalLikes }) => {
   };
 
   return (
-    <Button
-      startIcon={<ThumbUp />}
+    <button 
       onClick={handleClick}
-      color={isLiked ? 'primary' : 'inherit'}
-      sx={{ 
-        textTransform: 'none', 
-        minWidth: 'auto', 
-        px: 2,
-        fontWeight: isLiked ? 'bold' : 'normal'
-      }}
+      className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors text-sm group"
     >
-      Thích {totalLikes > 0 && `(${totalLikes})`}
-    </Button>
+      <Heart 
+        className={`w-5 h-5 transition-all ${isLiked ? 'fill-red-500 text-red-500 scale-110' : 'group-hover:scale-110'}`}
+      />
+      <span className={isLiked ? 'text-red-500 font-medium' : ''}>
+        {totalLikes > 0 ? totalLikes : ''}
+      </span>
+    </button>
   );
 };
 

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useChat } from '../contexts/ChatContext';
 import { useAuth } from '../hooks/useAuth';
-import { chatService } from '../services/chatService';
+import chatService from '../services/chatService';
 
 
 export default function MessagesPage() {

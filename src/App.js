@@ -1,36 +1,45 @@
-import React from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Spin } from 'antd';
+import { HelmetProvider } from 'react-helmet-async';
 import 'antd/dist/reset.css';
 import { Layout } from 'antd';
 import ResponsiveNavbar from './components/ResponsiveNavbar';
-import ChatBot from './components/ChatBot';
-import Home from './pages/Home';
-import Profile from './pages/Profile';
-import UserProfile from './pages/UserProfile';
-import PriceUpdate from './pages/PriceUpdate';
-import MarketData from './pages/MarketData';
-import FoodPrices from './pages/FoodPrices';
-import SavedPosts from './pages/SavedPosts';
-import PostDetail from './pages/PostDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
-import Marketplace from './pages/Marketplace';
-import MessagesPage from './pages/MessagesPage';
-import Lessons from './pages/Lessons';
-import LessonView from './pages/LessonView';
-import PostGeneratorPage from './pages/PostGeneratorPage';
-import TailwindTest from './pages/TailwindTest';
-import TestSvgComponent from './pages/TestSvgComponent';
-import SvgToReactConverter from './pages/SvgToReactConverter';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminSetup from './pages/AdminSetup';
-import ToolsPage from './pages/ToolsPage';
-import NongLacAI from './pages/NongLacAI';
+import AdvancedSEO from './components/AdvancedSEO';
 import { AuthProvider } from './hooks/useAuth';
 import { ChatProvider } from './contexts/ChatContext';
+import { initPerformanceOptimizations } from './utils/performance';
+
+// Lazy load components
+const Home = React.lazy(() => import('./pages/Home'));
+const ChatBot = React.lazy(() => import('./components/ChatBot'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const UserProfile = React.lazy(() => import('./pages/UserProfile'));
+const SavedPosts = React.lazy(() => import('./pages/SavedPosts'));
+const PostDetail = React.lazy(() => import('./pages/PostDetail'));
+const Registration = React.lazy(() => import('./components/Registration/Registration'));
+const PhoneLogin = React.lazy(() => import('./components/Login/PhoneLogin'));
+
+const Marketplace = React.lazy(() => import('./pages/Marketplace'));
+const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
+const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
+const Lessons = React.lazy(() => import('./pages/Lessons'));
+const LessonView = React.lazy(() => import('./pages/LessonView'));
+const PostGeneratorPage = React.lazy(() => import('./pages/PostGeneratorPage'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const AdminSetup = React.lazy(() => import('./pages/AdminSetup'));
+const GiaNongSan = React.lazy(() => import('./pages/GiaNongSan'));
+const GiaCaPhe = React.lazy(() => import('./pages/GiaCaPhe'));
+const GiaLuaGao = React.lazy(() => import('./pages/GiaLuaGao'));
+const PlantDoctor = React.lazy(() => import('./pages/PlantDoctor'));
+const MarketInsights = React.lazy(() => import('./pages/MarketInsights'));
+const AgriMap = React.lazy(() => import('./pages/AgriMap'));
+const ApiUsage = React.lazy(() => import('./pages/ApiUsage'));
+const TestScraper = React.lazy(() => import('./pages/TestScraper'));
+const MissionScreen = React.lazy(() => import('./components/Mission/MissionScreen'));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
+const AboutUs = React.lazy(() => import('./pages/AboutUs'));
+
 
 
 const antdTheme = {
@@ -42,47 +51,111 @@ const antdTheme = {
   },
 };
 
+const LoadingSpinner = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+    <Spin size="large" />
+  </div>
+);
+
 function App() {
+  useEffect(() => {
+    initPerformanceOptimizations();
+    
+    // Cache busting - kiểm tra phiên bản mới
+    const checkForUpdates = () => {
+      const buildTime = process.env.REACT_APP_BUILD_TIME || Date.now();
+      const lastBuildTime = localStorage.getItem('app_build_time');
+      
+      if (lastBuildTime && lastBuildTime !== buildTime.toString()) {
+        // Có phiên bản mới, reload trang
+        localStorage.setItem('app_build_time', buildTime.toString());
+        window.location.reload(true);
+      } else if (!lastBuildTime) {
+        localStorage.setItem('app_build_time', buildTime.toString());
+      }
+    };
+    
+    checkForUpdates();
+    
+    // Kiểm tra cập nhật mỗi 30 giây
+    const updateInterval = setInterval(checkForUpdates, 30000);
+    
+    return () => clearInterval(updateInterval);
+  }, []);
+
   return (
-    <ConfigProvider theme={antdTheme}>
-      <AuthProvider>
-        <ChatProvider>
-          <Router>
+    <HelmetProvider>
+      <ConfigProvider theme={antdTheme}>
+        <AuthProvider>
+          <ChatProvider>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AdvancedSEO 
+              title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
+              description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime."
+              keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
+              url={window.location.pathname}
+            />
             <Layout style={{ minHeight: '100vh' }}>
+              {/* Beta Banner */}
+              <div className="beta-banner">
+                <span className="beta-text">
+                  🚧 Bản thử nghiệm - Không chịu trách nhiệm với dữ liệu 🚧
+                </span>
+              </div>
+              
               <ResponsiveNavbar />
-              <Routes>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/user/:userId" element={<UserProfile />} />
-            <Route path="/prices" element={<PriceUpdate />} />
-            <Route path="/food-prices" element={<FoodPrices />} />
-            <Route path="/market" element={<MarketData />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/lessons" element={<Lessons />} />
             <Route path="/lesson-view" element={<LessonView />} />
             <Route path="/saved" element={<SavedPosts />} />
             <Route path="/post/:postId" element={<PostDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/login" element={<PhoneLogin />} />
+            <Route path="/phone-login" element={<PhoneLogin />} />
+            <Route path="/register" element={<Registration />} />
+            <Route path="/phone-register" element={<Registration />} />
+
             <Route path="/post-generator" element={<PostGeneratorPage />} />
-            <Route path="/tailwind-test" element={<TailwindTest />} />
-            <Route path="/test-svg" element={<TestSvgComponent />} />
-            <Route path="/svg-converter" element={<SvgToReactConverter />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
-            <Route path="/tools" element={<ToolsPage />} />
-            <Route path="/nonglac-ai" element={<NongLacAI />} />
-              </Routes>
+            <Route path="/gia-nong-san" element={<GiaNongSan />} />
+            <Route path="/gia-ca-phe" element={<GiaCaPhe />} />
+            <Route path="/gia-lua-gao" element={<GiaLuaGao />} />
+            <Route path="/plant-doctor" element={<PlantDoctor />} />
+            <Route path="/market-insights" element={<MarketInsights />} />
+            <Route path="/agri-map" element={<AgriMap />} />
+            <Route path="/api-usage" element={<ApiUsage />} />
+            <Route path="/test-scraper" element={<TestScraper />} />
+            <Route path="/missions" element={<MissionScreen />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/about-us" element={<AboutUs />} />
 
+            
+            {/* SEO-friendly routes */}
+            <Route path="/kinh-nghiem-nong-nghiep" element={<Home />} />
+            <Route path="/ky-thuat-trong-trot" element={<Lessons />} />
+            <Route path="/phuong-phap-chan-nuoi" element={<Lessons />} />
+            <Route path="/tin-tuc-nong-nghiep" element={<Home />} />
+            <Route path="/cong-nghe-nong-nghiep-4-0" element={<Home />} />
+            <Route path="/dien-dan-nong-nghiep" element={<Home />} />
+            <Route path="/cong-dong-nong-dan" element={<Home />} />
+                </Routes>
+              </Suspense>
             </Layout>
-            <ChatBot />
-          </Router>
-        </ChatProvider>
-      </AuthProvider>
-    </ConfigProvider>
+            <Suspense fallback={null}>
+              <ChatBot />
+            </Suspense>
+            </Router>
+          </ChatProvider>
+        </AuthProvider>
+      </ConfigProvider>
+    </HelmetProvider>
   );
 }
 

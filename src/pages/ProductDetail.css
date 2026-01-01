@@ -1,0 +1,62 @@
+/* Product Detail Styles */
+.product-detail-carousel .ant-carousel .ant-carousel-dots {
+  bottom: 10px;
+}
+
+.product-detail-carousel .ant-carousel .ant-carousel-dots li button {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+}
+
+.product-detail-carousel .ant-carousel .ant-carousel-dots li.ant-carousel-dots-active button {
+  background: #52c41a;
+}
+
+.product-detail-carousel .ant-carousel .ant-carousel-dots li:hover button {
+  background: rgba(82, 196, 26, 0.8);
+}
+
+/* Image hover effects */
+.product-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.product-image-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.3s ease;
+  pointer-events: none;
+}
+
+.product-image-container:hover::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Navigation arrows hover */
+.carousel-nav-btn {
+  transition: all 0.3s ease;
+}
+
+.carousel-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.1);
+}
+
+/* Gallery hint animation */
+.gallery-hint {
+  transition: all 0.3s ease;
+}
+
+.gallery-hint:hover {
+  background: #e6f7ff !important;
+  transform: translateY(-2px);
+}

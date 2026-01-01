@@ -1,0 +1,17 @@
+# Netlify redirects for React Router
+/*    /index.html   200
+
+# SEO redirects
+/gia-ca-phe/    /gia-ca-phe    301
+/gia-lua-gao/   /gia-lua-gao   301
+/gia-nong-san/  /gia-nong-san  301
+
+# Legacy redirects (if migrating from old URLs)
+/prices         /gia-nong-san  301
+/coffee-prices  /gia-ca-phe    301
+/rice-prices    /gia-lua-gao   301
+
+# Force HTTPS
+http://nonglac.com/*    https://nonglac.com/:splat    301!
+http://www.nonglac.com/*    https://nonglac.com/:splat    301!
+https://www.nonglac.com/*   https://nonglac.com/:splat    301!

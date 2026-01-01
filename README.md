@@ -91,6 +91,43 @@ npm start
 - **State Management**: React Context API
 - **UI Framework**: Material-UI
 
+## Tool cào dữ liệu NNVN
+
+### Tính năng mới: Scraper Báo Nông Nghiệp Việt Nam
+- ✅ Cào tin tức từ nongnghiepmoitruong.vn
+- ✅ Không cần AI, parse HTML thuần
+- ✅ Hỗ trợ tất cả danh mục chính
+- ✅ Tự động phân loại và làm sạch dữ liệu
+- ✅ Component React hiển thị tin tức
+
+### Cách sử dụng:
+
+```javascript
+// Import scraper
+import { scrapeNNVNNews, NNVN_CATEGORIES } from './services/crawlerService';
+
+// Scrape trang chủ nông nghiệp
+const news = await scrapeNNVNNews();
+
+// Scrape danh mục cụ thể
+const trongTrotNews = await scrapeNNVNNews('trong-trot', 10);
+
+// Scrape tất cả danh mục
+const allNews = await scrapeAllNNVNNews();
+```
+
+### Danh mục hỗ trợ:
+- 🌾 Nông nghiệp
+- 🐄 Chăn nuôi  
+- 🌱 Trồng trọt
+- 🐟 Thủy sản
+- 📚 Khuyến nông
+- 🔬 Khoa học - Công nghệ
+- 🌲 Lâm nghiệp
+- 🌍 Môi trường
+- 💰 Kinh tế
+- 📰 Thời sự
+
 ## Roadmap phát triển
 
 ### Phase 1 (Hiện tại)
@@ -98,15 +135,18 @@ npm start
 - ✅ Hệ thống uy tín
 - ✅ Cập nhật giá nông sản
 - ✅ Authentication
+- ✅ Tool cào tin NNVN
 
 ### Phase 2 (Tương lai)
 - [ ] Hệ thống comment
 - [ ] Upload hình ảnh
 - [ ] Tìm kiếm và filter
 - [ ] Notification system
+- [ ] Tích hợp nhiều nguồn tin khác
 
 ### Phase 3 (Mở rộng)
 - [ ] Marketplace (bán hàng)
 - [ ] Chat messaging
 - [ ] Mobile app
 - [ ] Admin dashboard
+- [ ] AI phân tích xu hướng nông nghiệp

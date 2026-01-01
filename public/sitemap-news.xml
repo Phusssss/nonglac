@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <!-- Tin tức nông nghiệp mới nhất -->
+  <url>
+    <loc>https://nonglac.com/tin-tuc/gia-ca-phe-hom-nay</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NôngLạc</news:name>
+        <news:language>vi</news:language>
+      </news:publication>
+      <news:publication_date>2025-12-08T10:00:00+07:00</news:publication_date>
+      <news:title>Giá cà phê hôm nay: Cập nhật mới nhất từ các vùng trồng</news:title>
+      <news:keywords>giá cà phê, cà phê robusta, cà phê arabica, thị trường cà phê</news:keywords>
+    </news:news>
+    <lastmod>2025-12-08T10:00:00+07:00</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://nonglac.com/tin-tuc/gia-lua-gao-moi-nhat</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NôngLạc</news:name>
+        <news:language>vi</news:language>
+      </news:publication>
+      <news:publication_date>2025-12-08T09:00:00+07:00</news:publication_date>
+      <news:title>Giá lúa gạo mới nhất: Thị trường biến động mạnh</news:title>
+      <news:keywords>giá lúa, giá gạo, thị trường lúa gạo, nông sản</news:keywords>
+    </news:news>
+    <lastmod>2025-12-08T09:00:00+07:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://nonglac.com/tin-tuc/cong-nghe-nong-nghiep-4-0</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NôngLạc</news:name>
+        <news:language>vi</news:language>
+      </news:publication>
+      <news:publication_date>2025-12-08T08:00:00+07:00</news:publication_date>
+      <news:title>Công nghệ nông nghiệp 4.0: Xu hướng mới trong sản xuất</news:title>
+      <news:keywords>nông nghiệp 4.0, công nghệ nông nghiệp, IoT nông nghiệp, AI nông nghiệp</news:keywords>
+    </news:news>
+    <lastmod>2025-12-08T08:00:00+07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

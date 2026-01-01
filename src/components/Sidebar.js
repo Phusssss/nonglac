@@ -1,25 +1,62 @@
-import React from 'react';
-import { Paper, Typography, List, ListItem, ListItemIcon, ListItemText, Chip, Box, Divider } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Paper, Typography, List, ListItem, ListItemIcon, ListItemText, Chip, Box } from '@mui/material';
 import { TrendingUp, LocalFlorist, Pets, Water, Engineering, Store, Help } from '@mui/icons-material';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const Sidebar = ({ selectedCategory, onCategoryChange }) => {
+  const [categoryCounts, setCategoryCounts] = useState({});
+  const [trendingTopics, setTrendingTopics] = useState([]);
+
   const categories = [
-    { name: 'Tất cả', icon: <TrendingUp />, count: 245 },
-    { name: 'Trồng trọt', icon: <LocalFlorist />, count: 89 },
-    { name: 'Chăn nuôi', icon: <Pets />, count: 67 },
-    { name: 'Thủy sản', icon: <Water />, count: 34 },
-    { name: 'Công nghệ nông nghiệp', icon: <Engineering />, count: 28 },
-    { name: 'Thị trường', icon: <Store />, count: 19 },
-    { name: 'Khác', icon: <Help />, count: 8 }
+    { name: 'Tất cả', icon: <TrendingUp /> },
+    { name: 'Trồng trọt', icon: <LocalFlorist /> },
+    { name: 'Chăn nuôi', icon: <Pets /> },
+    { name: 'Thủy sản', icon: <Water /> },
+    { name: 'Công nghệ nông nghiệp', icon: <Engineering /> },
+    { name: 'Thị trường', icon: <Store /> },
+    { name: 'Khác', icon: <Help /> }
   ];
 
-  const trendingTopics = [
-    'Kỹ thuật trồng lúa ST25',
-    'Giá cà phê tăng mạnh',
-    'Chăn nuôi heo sạch',
-    'Xuất khẩu tôm 2024',
-    'Drone phun thuốc'
-  ];
+  useEffect(() => {
+    loadCategoryCounts();
+    loadTrendingTopics();
+  }, []);
+
+  const loadCategoryCounts = async () => {
+    try {
+      const postsSnapshot = await getDocs(collection(db, 'posts'));
+      const counts = {};
+      
+      postsSnapshot.docs.forEach(doc => {
+        const category = doc.data().category || 'Khác';
+        counts[category] = (counts[category] || 0) + 1;
+      });
+      
+      counts['Tất cả'] = postsSnapshot.size;
+      setCategoryCounts(counts);
+    } catch (error) {
+      console.error('Error loading category counts:', error);
+    }
+  };
+
+  const loadTrendingTopics = async () => {
+    try {
+      const postsSnapshot = await getDocs(
+        query(collection(db, 'posts'))
+      );
+      
+      // Extract unique topics from recent posts
+      const topics = postsSnapshot.docs
+        .slice(0, 5)
+        .map(doc => doc.data().title || doc.data().content?.substring(0, 30))
+        .filter(Boolean);
+      
+      setTrendingTopics(topics);
+    } catch (error) {
+      console.error('Error loading trending topics:', error);
+    }
+  };
 
   return (
     <Box sx={{ width: 280 }}>
@@ -40,7 +77,7 @@ const Sidebar = ({ selectedCategory, onCategoryChange }) => {
                 {cat.icon}
               </ListItemIcon>
               <ListItemText primary={cat.name} />
-              <Chip label={cat.count} size="small" variant="outlined" />
+              <Chip label={categoryCounts[cat.name] || 0} size="small" variant="outlined" />
             </ListItem>
           ))}
         </List>

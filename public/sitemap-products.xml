@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Sản phẩm nông nghiệp -->
+  <url>
+    <loc>https://nonglac.com/san-pham/ca-phe-robusta</loc>
+    <lastmod>2025-12-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://nonglac.com/images/ca-phe-robusta.jpg</image:loc>
+      <image:title>Cà phê Robusta chất lượng cao</image:title>
+      <image:caption>Cà phê Robusta từ các vùng trồng nổi tiếng Việt Nam</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://nonglac.com/san-pham/gao-st25</loc>
+    <lastmod>2025-12-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://nonglac.com/images/gao-st25.jpg</image:loc>
+      <image:title>Gạo ST25 thơm ngon</image:title>
+      <image:caption>Gạo ST25 được công nhận là gạo ngon nhất thế giới</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://nonglac.com/san-pham/rau-sach</loc>
+    <lastmod>2025-12-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://nonglac.com/images/rau-sach.jpg</image:loc>
+      <image:title>Rau sạch hữu cơ</image:title>
+      <image:caption>Rau sạch được trồng theo phương pháp hữu cơ</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://nonglac.com/san-pham/thit-heo-sach</loc>
+    <lastmod>2025-12-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://nonglac.com/images/thit-heo-sach.jpg</image:loc>
+      <image:title>Thịt heo sạch</image:title>
+      <image:caption>Thịt heo được chăn nuôi theo tiêu chuẩn VietGAP</image:caption>
+    </image:image>
+  </url>
+</urlset>
