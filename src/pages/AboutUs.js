@@ -110,6 +110,7 @@ const AboutUs = () => {
                   borderRadius: 8,
                   height: 48
                 }}
+                onClick={() => window.open('https://docs.google.com/presentation/d/1IFn58PyD6PU7rx4ZOBk1C1jmPPFa4o24d-2aEZRvUvg/edit?slide=id.p12#slide=id.p12', '_blank')}
               >
                 Hồ sơ Năng lực
               </Button>

@@ -2,10 +2,14 @@ import { GoogleGenAI } from '@google/genai';
 import subscriptionService from './subscriptionService';
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 // Wrapper cho tất cả AI calls với subscription control
 export const callAI = async (config, userId, actionType = 'askAI') => {
+  if (!ai) {
+    throw new Error('Chưa cấu hình API Key cho Gemini AI. Vui lòng thêm REACT_APP_GEMINI_API_KEY vào file .env');
+  }
+  
   // Check subscription quota
   if (!(await subscriptionService.canPerformAction(userId, actionType))) {
     const quota = await subscriptionService.getRemainingQuota(userId);

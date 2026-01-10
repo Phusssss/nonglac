@@ -3,7 +3,8 @@ import { callAI, callImageAI } from './aiWrapper';
 import { auth } from '../firebase/config';
 
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.REACT_APP_GEMINI_API_KEY || '' });
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
+const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 export const formatAIResponse = (text) => {
   if (!text) return '';

@@ -1,9 +1,18 @@
-/* NôngLạc Theme */
+/* NôngLạc Theme - Brand Guidelines v3.0 */
 :root {
-  --green-primary: #4CAF50;
-  --green-dark: #388E3C;
+  /* Brand Colors - Official Palette */
+  --primary-green: #3A9947;        /* Xanh Nông Nghiệp */
+  --secondary-blue: #1CBECF;       /* Xanh Công Nghệ */
+  --accent-yellow: #EDB324;        /* Vàng Mùa Gặt */
+  --background-white: #F8F9FA;     /* Trắng Khói */
+  
+  /* Legacy colors for backward compatibility */
+  --green-primary: #3A9947;
+  --green-dark: #2d7a37;
   --brown-earth: #795548;
-  --golden-rice: #FFC107;
+  --golden-rice: #EDB324;
+  
+  /* Shadows & Effects */
   --shadow-soft: 0 2px 8px rgba(0,0,0,0.08);
   --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
   --radius: 12px;
@@ -11,21 +20,43 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Be Vietnam Pro', -apple-system, sans-serif;
   line-height: 1.6;
+  background-color: var(--background-white);
+}
+
+/* Typography - Brand Guidelines */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--green-primary), var(--green-dark));
+  background: var(--primary-green);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
   transition: all var(--transition);
   min-height: 48px;
+  border: none;
+  color: white;
 }
 
 .btn-primary:hover {
+  background: var(--green-dark);
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--secondary-blue);
+  color: white;
+  border: none;
+}
+
+.btn-accent {
+  background: var(--accent-yellow);
+  color: white;
+  border: none;
 }
 
 .card {

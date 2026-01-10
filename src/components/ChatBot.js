@@ -8,7 +8,7 @@ import { chatWithAgriBot, analyzePlantImage } from '../services/geminiService';
 
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 // User Context for personalization
 let userContext = {

@@ -63,7 +63,11 @@ function App() {
     
     // Cache busting - kiểm tra phiên bản mới
     const checkForUpdates = () => {
-      const buildTime = process.env.REACT_APP_BUILD_TIME || Date.now();
+      const buildTime = process.env.REACT_APP_BUILD_TIME;
+      
+      // Chỉ check update nếu có BUILD_TIME được set (production)
+      if (!buildTime) return;
+      
       const lastBuildTime = localStorage.getItem('app_build_time');
       
       if (lastBuildTime && lastBuildTime !== buildTime.toString()) {
@@ -77,10 +81,14 @@ function App() {
     
     checkForUpdates();
     
-    // Kiểm tra cập nhật mỗi 30 giây
-    const updateInterval = setInterval(checkForUpdates, 30000);
+    // Kiểm tra cập nhật mỗi 30 giây (chỉ ở production)
+    const updateInterval = process.env.REACT_APP_BUILD_TIME 
+      ? setInterval(checkForUpdates, 30000)
+      : null;
     
-    return () => clearInterval(updateInterval);
+    return () => {
+      if (updateInterval) clearInterval(updateInterval);
+    };
   }, []);
 
   return (

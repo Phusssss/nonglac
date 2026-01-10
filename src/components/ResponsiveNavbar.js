@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import NotificationBell from './NotificationBell';
-import { Home, Users, ShoppingBag, MessageCircle, Newspaper, Bookmark, TrendingUp, Stethoscope, MapPin, BarChart3, Trophy } from 'lucide-react';
+import { Home, Users, ShoppingBag, MessageCircle, Newspaper, Bookmark, TrendingUp, Stethoscope, MapPin, BarChart3, Trophy, FileText, Info } from 'lucide-react';
 
 import logo from '../assets/images/logo.demo.nontext.png';
 
@@ -100,7 +100,7 @@ const ResponsiveNavbar = () => {
     <>
       {/* Navigation Bar */}
       <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Mobile icons */}
             <div className="md:hidden flex items-center space-x-2">
@@ -150,8 +150,9 @@ const ResponsiveNavbar = () => {
                     window.location.pathname === item.path
                       ? 'text-[#4CAF50] font-medium'
                       : 'text-gray-600 hover:text-[#4CAF50]'
-                  } transition-colors text-sm`}
+                  } transition-colors text-sm flex items-center gap-1`}
                 >
+                  <item.icon size={16} />
                   {item.text}
                 </button>
               ))}
@@ -191,8 +192,9 @@ const ResponsiveNavbar = () => {
                   window.location.pathname === '/terms-of-service'
                     ? 'text-[#4CAF50] font-medium'
                     : 'text-gray-600 hover:text-[#4CAF50]'
-                } transition-colors text-sm`}
+                } transition-colors text-sm flex items-center gap-1`}
               >
+                <FileText size={16} />
                 Điều khoản
               </button>
               
@@ -203,8 +205,9 @@ const ResponsiveNavbar = () => {
                   window.location.pathname === '/about-us'
                     ? 'text-[#4CAF50] font-medium'
                     : 'text-gray-600 hover:text-[#4CAF50]'
-                } transition-colors text-sm`}
+                } transition-colors text-sm flex items-center gap-1`}
               >
+                <Info size={16} />
                 Về chúng tôi
               </button>
               
