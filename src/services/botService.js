@@ -1,0 +1,397 @@
+import { db } from '../firebase/config';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  addDoc
+} from 'firebase/firestore';
+
+// Bot User ID - Fixed ID cho bot
+const BOT_USER_ID = 'system_bot_nonglac';
+const BOT_NAME = '🤖 NôngLạc Bot';
+
+class BotService {
+  constructor() {
+    this.botUserId = BOT_USER_ID;
+    this.botName = BOT_NAME;
+  }
+
+  /**
+   * Khởi tạo bot user trong Firestore
+   */
+  async initializeBotUser() {
+    try {
+      const botRef = doc(db, 'users', this.botUserId);
+      const botDoc = await getDoc(botRef);
+
+      if (!botDoc.exists()) {
+        await setDoc(botRef, {
+          displayName: this.botName,
+          email: 'bot@nonglac.com',
+          avatar: '🤖',
+          reputation: 9999,
+          isBot: true,
+          isOnline: true,
+          joinDate: serverTimestamp(),
+          postsCount: 0,
+          likesReceived: 0
+        });
+        console.log('Bot user initialized successfully');
+      }
+    } catch (error) {
+      console.error('Error initializing bot user:', error);
+    }
+  }
+
+  /**
+   * Lấy giá sản phẩm từ marketplace và tính giá trung bình theo category
+   */
+  async getMarketplacePrices() {
+    try {
+      // Lấy tất cả sản phẩm từ marketplace_products
+      console.log('Querying marketplace_products collection...');
+      const productsQuery = query(
+        collection(db, 'marketplace_products'),
+        orderBy('createdAt', 'desc'),
+        limit(100) // Lấy 100 sản phẩm gần nhất
+      );
+
+      const snapshot = await getDocs(productsQuery);
+      console.log(`Found ${snapshot.docs.length} products in marketplace_products`);
+      
+      const products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Nhóm sản phẩm theo category và tính giá trung bình
+      const categoryMap = {};
+      
+      products.forEach(product => {
+        const category = product.category || 'Khác';
+        const price = parseFloat(product.price) || 0;
+        
+        if (price <= 0) return; // Skip sản phẩm không có giá
+        
+        if (!categoryMap[category]) {
+          categoryMap[category] = {
+            category: category,
+            prices: [],
+            count: 0,
+            totalPrice: 0,
+            minPrice: price,
+            maxPrice: price,
+            unit: product.unit || 'kg',
+            products: []
+          };
+        }
+        
+        categoryMap[category].prices.push(price);
+        categoryMap[category].count++;
+        categoryMap[category].totalPrice += price;
+        categoryMap[category].minPrice = Math.min(categoryMap[category].minPrice, price);
+        categoryMap[category].maxPrice = Math.max(categoryMap[category].maxPrice, price);
+        categoryMap[category].products.push({
+          name: product.name || product.title || 'Sản phẩm',
+          price: price,
+          seller: product.sellerName || product.seller || 'Người bán'
+        });
+      });
+
+      // Tính giá trung bình và format kết quả
+      const priceReport = Object.keys(categoryMap).map(category => {
+        const data = categoryMap[category];
+        const avgPrice = Math.round(data.totalPrice / data.count);
+        
+        return {
+          category: category,
+          avgPrice: avgPrice,
+          minPrice: data.minPrice,
+          maxPrice: data.maxPrice,
+          count: data.count,
+          unit: data.unit,
+          products: data.products.slice(0, 3) // Lấy 3 sản phẩm mẫu
+        };
+      });
+
+      // Sắp xếp theo số lượng sản phẩm (nhiều nhất trước)
+      priceReport.sort((a, b) => b.count - a.count);
+
+      console.log(`Processed ${priceReport.length} categories`);
+      return priceReport.slice(0, 10); // Lấy top 10 categories
+    } catch (error) {
+      console.error('Error fetching marketplace prices:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Format tin nhắn giá từ marketplace
+   */
+  formatMarketplacePriceMessage(priceReport) {
+    const today = new Date().toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    let message = `📊 Báo giá chợ NôngLạc - ${today}\n\n`;
+
+    if (priceReport.length === 0) {
+      message += `Hiện chưa có sản phẩm nào trên chợ.\n`;
+      message += `Hãy là người đầu tiên đăng bán! 🌾`;
+    } else {
+      message += `Tổng quan: ${priceReport.length} danh mục, ${priceReport.reduce((sum, item) => sum + item.count, 0)} sản phẩm\n\n`;
+
+      priceReport.forEach((item, index) => {
+        const categoryName = this.translateCategory(item.category);
+        
+        message += `${index + 1}. ${categoryName} (${item.count} SP)\n`;
+        message += `Giá TB: ${item.avgPrice.toLocaleString('vi-VN')}đ/${item.unit}\n`;
+        
+        if (item.minPrice !== item.maxPrice) {
+          message += `Khoảng giá: ${item.minPrice.toLocaleString('vi-VN')} - ${item.maxPrice.toLocaleString('vi-VN')}đ\n`;
+        }
+        
+        if (item.products.length > 0) {
+          item.products.slice(0, 2).forEach(product => {
+            message += `• ${product.name}: ${product.price.toLocaleString('vi-VN')}đ\n`;
+          });
+        }
+        message += `\n`;
+      });
+      
+      message += `Vào /marketplace để xem chi tiết và mua bán!`;
+    }
+
+    return message;
+  }
+
+  /**
+   * Dịch category sang tiếng Việt
+   */
+  translateCategory(category) {
+    const translations = {
+      'vegetables': 'Rau củ',
+      'fruits': 'Trái cây',
+      'flowers': 'Hoa',
+      'grains': 'Ngũ cốc',
+      'livestock': 'Chăn nuôi',
+      'aquaculture': 'Thủy sản',
+      'coffee': 'Cà phê',
+      'tea': 'Chè',
+      'spices': 'Gia vị',
+      'herbs': 'Dược liệu',
+      'seeds': 'Hạt giống',
+      'fertilizer': 'Phân bón',
+      'tools': 'Dụng cụ',
+      'other': 'Khác'
+    };
+    
+    return translations[category.toLowerCase()] || category;
+  }
+
+  /**
+   * Tạo hoặc lấy conversation giữa bot và user
+   */
+  async getOrCreateBotConversation(userId, userName) {
+    try {
+      const conversationId = [this.botUserId, userId].sort().join('_');
+      const conversationRef = doc(db, 'conversations', conversationId);
+      const conversationDoc = await getDoc(conversationRef);
+
+      if (!conversationDoc.exists()) {
+        await setDoc(conversationRef, {
+          participants: [this.botUserId, userId],
+          participantNames: {
+            [this.botUserId]: this.botName,
+            [userId]: userName || 'User'
+          },
+          createdAt: serverTimestamp(),
+          lastMessage: '',
+          lastMessageTime: serverTimestamp(),
+          unreadCount: {
+            [this.botUserId]: 0,
+            [userId]: 0
+          },
+          isBot: true
+        });
+      }
+
+      return conversationId;
+    } catch (error) {
+      console.error('Error creating bot conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gửi tin nhắn từ bot đến user
+   */
+  async sendBotMessage(userId, userName, message) {
+    try {
+      console.log(`Attempting to send message to ${userName} (${userId})...`);
+      
+      const conversationId = await this.getOrCreateBotConversation(userId, userName);
+      console.log(`Conversation ID: ${conversationId}`);
+
+      // Thêm message vào conversation
+      const messageRef = await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
+        message: message,
+        senderId: this.botUserId,
+        senderName: this.botName,
+        timestamp: serverTimestamp(),
+        read: false,
+        isBot: true
+      });
+      console.log(`Message added with ID: ${messageRef.id}`);
+
+      // Cập nhật conversation
+      await setDoc(doc(db, 'conversations', conversationId), {
+        lastMessage: message.substring(0, 100) + '...',
+        lastMessageTime: serverTimestamp(),
+        [`unreadCount.${userId}`]: 1
+      }, { merge: true });
+      console.log(`Conversation updated`);
+
+      console.log(`✓ Bot message sent successfully to user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error(`✗ Error sending bot message to ${userId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Gửi báo giá hàng ngày cho tất cả users
+   */
+  async sendDailyPriceReport() {
+    try {
+      console.log('Starting daily price report...');
+
+      // Khởi tạo bot user nếu chưa có
+      await this.initializeBotUser();
+
+      // Lấy giá từ marketplace và tính trung bình
+      console.log('Fetching marketplace prices...');
+      const priceReport = await this.getMarketplacePrices();
+      console.log(`Found ${priceReport.length} price categories`);
+      
+      const message = this.formatMarketplacePriceMessage(priceReport);
+      console.log(`Message length: ${message.length} characters`);
+
+      // Lấy tất cả users
+      console.log('Fetching all users...');
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      console.log(`Total users in database: ${usersSnapshot.docs.length}`);
+
+      let successCount = 0;
+      let failCount = 0;
+      let skippedCount = 0;
+
+      // Gửi tin nhắn cho từng user (trừ bot)
+      for (const userDoc of usersSnapshot.docs) {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+        
+        // Skip bot user
+        if (userId === this.botUserId || userData.isBot === true) {
+          console.log(`Skipping bot user: ${userId}`);
+          skippedCount++;
+          continue;
+        }
+
+        const userName = userData.displayName || 'User';
+
+        try {
+          const success = await this.sendBotMessage(userId, userName, message);
+          if (success) {
+            successCount++;
+            console.log(`✓ Sent to ${userName} (${userId})`);
+          } else {
+            failCount++;
+            console.log(`✗ Failed to send to ${userName} (${userId})`);
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error sending to ${userId}:`, error);
+        }
+
+        // Delay nhỏ để tránh rate limit
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      console.log(`Daily price report completed:`);
+      console.log(`- Total users: ${usersSnapshot.docs.length}`);
+      console.log(`- Skipped (bots): ${skippedCount}`);
+      console.log(`- Success: ${successCount}`);
+      console.log(`- Failed: ${failCount}`);
+      
+      return { 
+        success: successCount, 
+        failed: failCount, 
+        skipped: skippedCount,
+        total: usersSnapshot.docs.length 
+      };
+    } catch (error) {
+      console.error('Error sending daily price report:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kiểm tra xem hôm nay đã gửi báo giá chưa
+   */
+  async hasSentTodayReport(userId) {
+    try {
+      const conversationId = [this.botUserId, userId].sort().join('_');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const messagesQuery = query(
+        collection(db, 'conversations', conversationId, 'messages'),
+        where('senderId', '==', this.botUserId),
+        where('timestamp', '>=', today),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(messagesQuery);
+      return !snapshot.empty;
+    } catch (error) {
+      console.error('Error checking today report:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Gửi tin nhắn chào mừng cho user mới
+   */
+  async sendWelcomeMessage(userId, userName) {
+    const welcomeMessage = `👋 Xin chào ${userName}!\n\n` +
+      `Chào mừng bạn đến với NôngLạc - Cộng đồng nông nghiệp hàng đầu Việt Nam! 🌾\n\n` +
+      `Tôi là bot hỗ trợ của NôngLạc. Mỗi ngày tôi sẽ gửi cho bạn:\n` +
+      `📊 Báo giá nông sản mới nhất\n` +
+      `📈 Phân tích xu hướng thị trường\n` +
+      `💡 Lời khuyên hữu ích\n\n` +
+      `Các tính năng bạn có thể sử dụng:\n` +
+      `🤖 ChatBot AI - Trợ lý thông minh\n` +
+      `🌱 Bác sĩ cây trồng - Chẩn đoán bệnh cây\n` +
+      `💰 Giá nông sản - Cập nhật realtime\n` +
+      `🗺️ Bản đồ nông vụ - Thông tin địa phương\n` +
+      `🏆 Nhiệm vụ - Nhận thưởng hấp dẫn\n\n` +
+      `Hãy khám phá và kết nối với cộng đồng nông dân trên khắp cả nước!\n\n` +
+      `Chúc bạn có trải nghiệm tuyệt vời! 🎉`;
+
+    return await this.sendBotMessage(userId, userName, welcomeMessage);
+  }
+}
+
+const botService = new BotService();
+export default botService;

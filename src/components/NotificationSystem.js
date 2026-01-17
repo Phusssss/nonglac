@@ -1,6 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider, Button } from '@mui/material';
+// import { Notifications, Circle } from '@mui/icons-material';
 import React, { useState, useEffect } from 'react';
-import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider, Button } from '@mui/material';
-import { Notifications, Circle } from '@mui/icons-material';
+import { Badge, Button, Dropdown, Typography, Divider } from 'antd';
+import { BellOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';

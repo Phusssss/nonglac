@@ -40,9 +40,15 @@ class FilterService {
 
     // Áp dụng các bộ lọc cụ thể
     Object.entries(filters).forEach(([category, values]) => {
-      if (values && values.length > 0) {
+      if (values && Array.isArray(values) && values.length > 0) {
         filtered = filtered.filter(product => {
           return values.some(value => product[category] === value);
+        });
+      } else if (values && !Array.isArray(values)) {
+        // Nếu values không phải array, convert thành array
+        const valueArray = [values];
+        filtered = filtered.filter(product => {
+          return valueArray.some(value => product[category] === value);
         });
       }
     });

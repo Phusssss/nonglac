@@ -92,26 +92,16 @@ const MarketplaceWithFilters = () => {
     }
 
     try {
-      console.log('Product data received:', productData);
-      console.log('Images to save:', productData.imageUrls);
-      
       const newProduct = {
         ...productData,
-        ...productData.productAttributes,
-        ...productData.contactInfo,
         userId: user.uid,
         userEmail: user.email,
         createdAt: new Date(),
-        updatedAt: new Date(),
-        images: productData.imageUrls || [] // Đảm bảo images được lưu đúng
+        updatedAt: new Date()
       };
-      
-      console.log('Final product to save:', newProduct);
       
       const productsRef = collection(db, 'marketplace_products');
       const docRef = await addDoc(productsRef, newProduct);
-      
-      console.log('Product saved with ID:', docRef.id);
       
       await loadProducts();
       setPostFormOpen(false);
@@ -122,6 +112,19 @@ const MarketplaceWithFilters = () => {
     }
   };
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('vi-VN');
+  };
+
   const getTrustScoreIcon = (score) => {
     switch (score) {
       case 'diamond': return '💎';
@@ -129,13 +132,6 @@ const MarketplaceWithFilters = () => {
       case 'verified': return '✅';
       default: return '⭐';
     }
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
   };
 
   const handleImageClick = (product) => {
@@ -166,12 +162,6 @@ const MarketplaceWithFilters = () => {
     } catch (error) {
       console.error('Error getting seller info:', error);
     }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = date.toDate ? date.toDate() : new Date(date);
-    return d.toLocaleDateString('vi-VN');
   };
 
 
@@ -244,124 +234,90 @@ const MarketplaceWithFilters = () => {
       </div>
 
       {/* Main Content */}
-      <div className="marketplace-main-content" style={{ 
-        display: 'flex', 
-        gap: isMobile ? 16 : 24, 
+      <div style={{ 
         maxWidth: 1200, 
         margin: '0 auto', 
-        padding: isMobile ? '16px 12px' : '24px',
-        flexDirection: isMobile ? 'column' : 'row'
+        padding: isMobile ? '16px 12px' : '24px'
       }}>
-        {/* Filter Sidebar */}
-        {!isMobile && (
-          <div style={{ width: 360, flexShrink: 0 }}>
-            <div className="filter-panel-sticky" style={{ 
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-                padding: '20px 24px'
-              }}>
-                <Title level={4} style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center' }}>
-                  <FilterOutlined style={{ marginRight: 8 }} />
-                  Bộ lọc sản phẩm
-                </Title>
-              </div>
-              <div style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
-                <FilterPanel
-                  onFiltersChange={handleFiltersChange}
-                  userRole={userRole}
-                  transactionIntent={transactionIntent}
+        {/* Filter Bar - Horizontal */}
+        <Card 
+          style={{ 
+            marginBottom: 24,
+            borderRadius: 12,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+          }}
+        >
+          <FilterPanel
+            onFiltersChange={handleFiltersChange}
+            userRole={userRole}
+            transactionIntent={transactionIntent}
+            horizontal={true}
+          />
+        </Card>
+
+        {/* Products Grid */}
+        {loading ? (
+          <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]}>
+            {[...Array(8)].map((_, index) => (
+              <Col xs={24} sm={12} md={8} lg={6} xl={6} key={index}>
+                <Card loading style={{ borderRadius: 12, height: 320 }}>
+                  <Card.Meta />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]} className="marketplace-grid">
+            {filteredProducts.map(product => (
+              <Col xs={24} sm={12} md={8} lg={6} xl={6} key={product.id}>
+                <ProductCard
+                  product={product}
+                  onImageClick={handleImageClick}
+                  onContactClick={handleContactClick}
+                  getTrustScoreIcon={getTrustScoreIcon}
+                  formatPrice={formatPrice}
+                  formatDate={formatDate}
+                  user={user}
                 />
-              </div>
-            </div>
-          </div>
+              </Col>
+            ))}
+          </Row>
         )}
 
-        {/* Products Content */}
-        <div style={{ flex: 1 }}>
-          {isMobile && (
+        {!loading && filteredProducts.length === 0 && (
+          <Empty
+            image={<div style={{ fontSize: 64 }}>🌱</div>}
+            imageStyle={{ height: 100 }}
+            description={
+              <div>
+                <Title level={4}>Chưa có sản phẩm nào</Title>
+                <Text type="secondary">
+                  Hãy là người đầu tiên chia sẻ sản phẩm nông nghiệp của bạn!
+                </Text>
+              </div>
+            }
+          >
             <Button
-              block
+              type="primary"
               size="large"
-              icon={<FilterOutlined />}
-              onClick={() => setFilterDrawerOpen(true)}
-              className="marketplace-filter-button"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                if (!user) {
+                  alert('Vui lòng đăng nhập để đăng sản phẩm');
+                  return;
+                }
+                setPostFormOpen(true);
+              }}
               style={{
-                borderColor: '#52c41a',
-                color: '#52c41a'
+                background: 'linear-gradient(135deg, #52c41a, #389e0d)',
+                border: 'none',
+                borderRadius: 8
               }}
             >
-              Mở bộ lọc sản phẩm
+              Đăng sản phẩm đầu tiên
             </Button>
-          )}
-
-          {loading ? (
-            <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]}>
-              {[...Array(6)].map((_, index) => (
-                <Col xs={24} sm={12} md={8} lg={8} xl={6} key={index}>
-                  <Card loading style={{ borderRadius: 12, height: isMobile ? 280 : 320 }}>
-                    <Card.Meta />
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]} className="marketplace-grid">
-              {filteredProducts.map(product => (
-                <Col xs={24} sm={12} md={8} lg={8} xl={6} key={product.id}>
-                  <ProductCard
-                    product={product}
-                    onImageClick={handleImageClick}
-                    onContactClick={handleContactClick}
-                    getTrustScoreIcon={getTrustScoreIcon}
-                    formatPrice={formatPrice}
-                    formatDate={formatDate}
-                    user={user}
-                  />
-                </Col>
-              ))}
-            </Row>
-          )}
-
-          {!loading && filteredProducts.length === 0 && (
-            <Empty
-              image={<div style={{ fontSize: 64 }}>🌱</div>}
-              imageStyle={{ height: 100 }}
-              description={
-                <div>
-                  <Title level={4}>Chưa có sản phẩm nào</Title>
-                  <Text type="secondary">
-                    Hãy là người đầu tiên chia sẻ sản phẩm nông nghiệp của bạn!
-                  </Text>
-                </div>
-              }
-            >
-              <Button
-                type="primary"
-                size="large"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  if (!user) {
-                    alert('Vui lòng đăng nhập để đăng sản phẩm');
-                    return;
-                  }
-                  setPostFormOpen(true);
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-                  border: 'none',
-                  borderRadius: 8
-                }}
-              >
-                Đăng sản phẩm đầu tiên
-              </Button>
-            </Empty>
-          )}
-        </div>
+          </Empty>
+        )}
       </div>
 
       {/* Mobile Filter Drawer */}

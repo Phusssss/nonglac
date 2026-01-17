@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Typography, Box, Avatar, List, ListItem, ListItemAvatar, ListItemText, Chip, Divider, Button } from '@mui/material';
+import { Card, Typography, Avatar, List, Tag, Divider, Button, Space } from 'antd';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import NewspaperIcon from '@mui/icons-material/Newspaper';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PeopleIcon from '@mui/icons-material/People';
+import { 
+  FileTextOutlined, 
+  EnvironmentOutlined, 
+  TeamOutlined,
+  TrophyOutlined 
+} from '@ant-design/icons';
 
 const RightSidebar = () => {
   const [topUsers, setTopUsers] = useState([]);
@@ -68,130 +70,133 @@ const RightSidebar = () => {
 
   if (loading) {
     return (
-      <Box sx={{ width: '100%' }}>
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">Đang tải...</Typography>
-        </Paper>
-      </Box>
+      <div className="w-full">
+        <Card className="mb-4">
+          <Typography.Text type="secondary">Đang tải...</Typography.Text>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <div className="w-full">
       {/* Chuyên gia hàng đầu */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Chuyên gia hàng đầu
-        </Typography>
+      <Card className="mb-4" title="Chuyên gia hàng đầu">
         {topUsers.length > 0 ? (
-          <List dense>
-            {topUsers.map((user) => (
-              <ListItem key={user.id} sx={{ px: 0 }}>
-                <ListItemAvatar>
-                  <Avatar sx={{ width: 32, height: 32 }}>
-                    {user.displayName?.charAt(0) || 'U'}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={user.displayName || 'Người dùng'}
-                  secondary={<Chip label={`${user.reputation || 0} uy tín`} size="small" color="primary" />}
-                  secondaryTypographyProps={{ component: 'div' }}
+          <List
+            itemLayout="horizontal"
+            dataSource={topUsers}
+            renderItem={(user) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={
+                    <Avatar size={32}>
+                      {user.displayName?.charAt(0) || 'U'}
+                    </Avatar>
+                  }
+                  title={user.displayName || 'Người dùng'}
+                  description={
+                    <Tag color="blue">{user.reputation || 0} uy tín</Tag>
+                  }
                 />
-              </ListItem>
-            ))}
-          </List>
+              </List.Item>
+            )}
+          />
         ) : (
-          <Typography variant="body2" color="text.secondary">Chưa có dữ liệu</Typography>
+          <Typography.Text type="secondary">Chưa có dữ liệu</Typography.Text>
         )}
-      </Paper>
+      </Card>
 
       {/* Tin tức nông nghiệp */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <NewspaperIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">Tin tức nông nghiệp</Typography>
-        </Box>
+      <Card 
+        className="mb-4"
+        title={
+          <Space>
+            <FileTextOutlined />
+            <span>Tin tức nông nghiệp</span>
+          </Space>
+        }
+      >
         {news.length > 0 ? (
-          <Box>
+          <div>
             {news.map((item, index) => (
-              <Box key={item.id}>
-                <Box sx={{ py: 1.5 }}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      '&:hover': { color: 'primary.main' },
-                      mb: 0.5
-                    }}
+              <div key={item.id}>
+                <div className="py-3">
+                  <Typography.Text 
+                    strong
+                    className="cursor-pointer hover:text-blue-600 block mb-1"
                   >
                     {item.title || item.content?.substring(0, 60)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  </Typography.Text>
+                  <Typography.Text type="secondary" className="text-xs">
                     {getTimeAgo(item.createdAt)}
-                  </Typography>
-                </Box>
+                  </Typography.Text>
+                </div>
                 {index < news.length - 1 && <Divider />}
-              </Box>
+              </div>
             ))}
-          </Box>
+          </div>
         ) : (
-          <Typography variant="body2" color="text.secondary">Chưa có tin tức</Typography>
+          <Typography.Text type="secondary">Chưa có tin tức</Typography.Text>
         )}
-      </Paper>
+      </Card>
 
       {/* Trang trại nổi bật */}
-      <Paper sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <AgricultureIcon sx={{ mr: 1, color: 'success.main' }} />
-          <Typography variant="h6">Trang trại nổi bật</Typography>
-        </Box>
+      <Card 
+        title={
+          <Space>
+            <TrophyOutlined />
+            <span>Trang trại nổi bật</span>
+          </Space>
+        }
+      >
         {farms.length > 0 ? (
-          <Box>
+          <div>
             {farms.map((farm, index) => (
-              <Box key={farm.id}>
-                <Box sx={{ py: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+              <div key={farm.id}>
+                <div className="py-3">
+                  <div className="flex items-start mb-2">
                     <Avatar 
                       src={farm.photoURL} 
-                      sx={{ width: 48, height: 48, mr: 1.5 }}
+                      size={48}
+                      className="mr-3"
                     >
                       {farm.displayName?.charAt(0) || 'F'}
                     </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight={600}>
+                    <div className="flex-1">
+                      <Typography.Text strong className="block">
                         {farm.displayName || 'Trang trại'}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                        <LocationOnIcon sx={{ fontSize: 14, mr: 0.5, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
+                      </Typography.Text>
+                      <div className="flex items-center mt-1">
+                        <EnvironmentOutlined className="text-xs mr-1 text-gray-500" />
+                        <Typography.Text type="secondary" className="text-xs">
                           {farm.location || 'Việt Nam'}
-                        </Typography>
-                      </Box>
-                      <Typography variant="caption" color="primary.main" display="block" sx={{ mt: 0.5 }}>
+                        </Typography.Text>
+                      </div>
+                      <Tag color="green" className="mt-1" size="small">
                         {farm.farmType || 'Nông nghiệp'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <PeopleIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">
+                      </Tag>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <TeamOutlined className="text-sm mr-1 text-gray-500" />
+                      <Typography.Text type="secondary" className="text-xs">
                         {farm.followersCount || 0} người theo dõi
-                      </Typography>
-                    </Box>
-                    <Button size="small" variant="outlined">Theo dõi</Button>
-                  </Box>
-                </Box>
+                      </Typography.Text>
+                    </div>
+                    <Button size="small" type="default">Theo dõi</Button>
+                  </div>
+                </div>
                 {index < farms.length - 1 && <Divider />}
-              </Box>
+              </div>
             ))}
-          </Box>
+          </div>
         ) : (
-          <Typography variant="body2" color="text.secondary">Chưa có trang trại</Typography>
+          <Typography.Text type="secondary">Chưa có trang trại</Typography.Text>
         )}
-      </Paper>
-    </Box>
+      </Card>
+    </div>
   );
 };
 

@@ -4,11 +4,17 @@ import { ConfigProvider, Spin } from 'antd';
 import { HelmetProvider } from 'react-helmet-async';
 import 'antd/dist/reset.css';
 import { Layout } from 'antd';
+import { nongLacTheme } from './theme/nongLacTheme';
 import ResponsiveNavbar from './components/ResponsiveNavbar';
 import AdvancedSEO from './components/AdvancedSEO';
 import { AuthProvider } from './hooks/useAuth';
 import { ChatProvider } from './contexts/ChatContext';
 import { initPerformanceOptimizations } from './utils/performance';
+import { initSentry } from './utils/sentry';
+import { ErrorBoundary } from './utils/errorHandler';
+import { initPerformanceMonitoring } from './utils/performanceMonitor';
+import { initHealthMonitoring } from './utils/healthCheck';
+import DailyBotScheduler from './components/DailyBotScheduler';
 
 // Lazy load components
 const Home = React.lazy(() => import('./pages/Home'));
@@ -28,6 +34,7 @@ const LessonView = React.lazy(() => import('./pages/LessonView'));
 const PostGeneratorPage = React.lazy(() => import('./pages/PostGeneratorPage'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const AdminSetup = React.lazy(() => import('./pages/AdminSetup'));
+const BotManagement = React.lazy(() => import('./pages/BotManagement'));
 const GiaNongSan = React.lazy(() => import('./pages/GiaNongSan'));
 const GiaCaPhe = React.lazy(() => import('./pages/GiaCaPhe'));
 const GiaLuaGao = React.lazy(() => import('./pages/GiaLuaGao'));
@@ -39,17 +46,11 @@ const TestScraper = React.lazy(() => import('./pages/TestScraper'));
 const MissionScreen = React.lazy(() => import('./components/Mission/MissionScreen'));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 const AboutUs = React.lazy(() => import('./pages/AboutUs'));
+const DesignDemo = React.lazy(() => import('./pages/DesignDemo'));
 
 
 
-const antdTheme = {
-  token: {
-    colorPrimary: '#1877F2',
-    colorSuccess: '#42B883',
-    colorBgLayout: '#F0F2F5',
-    borderRadius: 8,
-  },
-};
+// Remove old theme - now using nongLacTheme
 
 const LoadingSpinner = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -59,7 +60,17 @@ const LoadingSpinner = () => (
 
 function App() {
   useEffect(() => {
+    // Initialize Sentry first
+    initSentry();
+    
+    // Initialize performance optimizations
     initPerformanceOptimizations();
+    
+    // Initialize performance monitoring
+    initPerformanceMonitoring();
+    
+    // Initialize health monitoring
+    initHealthMonitoring();
     
     // Cache busting - kiểm tra phiên bản mới
     const checkForUpdates = () => {
@@ -92,28 +103,32 @@ function App() {
   }, []);
 
   return (
-    <HelmetProvider>
-      <ConfigProvider theme={antdTheme}>
-        <AuthProvider>
-          <ChatProvider>
-            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <AdvancedSEO 
-              title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
-              description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime."
-              keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
-              url={window.location.pathname}
-            />
-            <Layout style={{ minHeight: '100vh' }}>
-              {/* Beta Banner */}
-              <div className="beta-banner">
-                <span className="beta-text">
-                  🚧 Bản thử nghiệm - Không chịu trách nhiệm với dữ liệu 🚧
-                </span>
-              </div>
-              
-              <ResponsiveNavbar />
-              <Suspense fallback={<LoadingSpinner />}>
-                <Routes>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <ConfigProvider theme={nongLacTheme}>
+          <AuthProvider>
+            <ChatProvider>
+              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <AdvancedSEO 
+                title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
+                description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime."
+                keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
+                url={window.location.pathname}
+              />
+              <Layout style={{ minHeight: '100vh' }}>
+                {/* Beta Banner */}
+                <div className="beta-banner">
+                  <span className="beta-text">
+                    🚧 Bản thử nghiệm - Không chịu trách nhiệm với dữ liệu 🚧
+                  </span>
+                </div>
+                
+                {/* Daily Bot Scheduler - Tự động gửi báo giá hàng ngày */}
+                <DailyBotScheduler />
+                
+                <ResponsiveNavbar />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/user/:userId" element={<UserProfile />} />
@@ -132,6 +147,7 @@ function App() {
             <Route path="/post-generator" element={<PostGeneratorPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
+            <Route path="/bot-management" element={<BotManagement />} />
             <Route path="/gia-nong-san" element={<GiaNongSan />} />
             <Route path="/gia-ca-phe" element={<GiaCaPhe />} />
             <Route path="/gia-lua-gao" element={<GiaLuaGao />} />
@@ -143,6 +159,7 @@ function App() {
             <Route path="/missions" element={<MissionScreen />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/design-demo" element={<DesignDemo />} />
 
             
             {/* SEO-friendly routes */}
@@ -153,17 +170,18 @@ function App() {
             <Route path="/cong-nghe-nong-nghiep-4-0" element={<Home />} />
             <Route path="/dien-dan-nong-nghiep" element={<Home />} />
             <Route path="/cong-dong-nong-dan" element={<Home />} />
-                </Routes>
+                  </Routes>
+                </Suspense>
+              </Layout>
+              <Suspense fallback={null}>
+                <ChatBot />
               </Suspense>
-            </Layout>
-            <Suspense fallback={null}>
-              <ChatBot />
-            </Suspense>
-            </Router>
-          </ChatProvider>
-        </AuthProvider>
-      </ConfigProvider>
-    </HelmetProvider>
+              </Router>
+            </ChatProvider>
+          </AuthProvider>
+        </ConfigProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

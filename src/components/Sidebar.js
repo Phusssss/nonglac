@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Typography, List, ListItem, ListItemIcon, ListItemText, Chip, Box } from '@mui/material';
-import { TrendingUp, LocalFlorist, Pets, Water, Engineering, Store, Help } from '@mui/icons-material';
+import { Card, Typography, List, Tag, Space } from 'antd';
+import { 
+  TrophyOutlined, 
+  BugOutlined, 
+  ToolOutlined, 
+  ShopOutlined, 
+  QuestionCircleOutlined,
+  RiseOutlined 
+} from '@ant-design/icons';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -59,48 +66,41 @@ const Sidebar = ({ selectedCategory, onCategoryChange }) => {
   };
 
   return (
-    <Box sx={{ width: 280 }}>
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Danh mục
-        </Typography>
-        <List dense>
-          {categories.map((cat) => (
-            <ListItem
-              key={cat.name}
-              button
-              selected={selectedCategory === cat.name}
+    <div className="w-70">
+      <Card className="mb-4" title="Danh mục">
+        <List
+          dataSource={categories}
+          renderItem={(cat) => (
+            <List.Item
+              className={`cursor-pointer rounded p-2 mb-1 ${
+                selectedCategory === cat.name ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+              }`}
               onClick={() => onCategoryChange(cat.name)}
-              sx={{ borderRadius: 1, mb: 0.5 }}
             >
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                {cat.icon}
-              </ListItemIcon>
-              <ListItemText primary={cat.name} />
-              <Chip label={categoryCounts[cat.name] || 0} size="small" variant="outlined" />
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
+              <List.Item.Meta
+                avatar={cat.icon}
+                title={cat.name}
+              />
+              <Tag color="blue">{categoryCounts[cat.name] || 0}</Tag>
+            </List.Item>
+          )}
+        />
+      </Card>
 
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Chủ đề hot
-        </Typography>
-        <Box>
+      <Card title="Chủ đề hot">
+        <Space wrap>
           {trendingTopics.map((topic, index) => (
-            <Chip
+            <Tag
               key={index}
-              label={topic}
-              variant="outlined"
-              size="small"
-              sx={{ m: 0.5, cursor: 'pointer' }}
+              className="cursor-pointer"
               onClick={() => {}}
-            />
+            >
+              {topic}
+            </Tag>
           ))}
-        </Box>
-      </Paper>
-    </Box>
+        </Space>
+      </Card>
+    </div>
   );
 };
 

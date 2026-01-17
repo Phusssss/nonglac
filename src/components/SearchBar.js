@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, InputAdornment, Autocomplete, Box, Typography, Avatar } from '@mui/material';
-import { Search, TrendingUp } from '@mui/icons-material';
+import { AutoComplete, Avatar, Typography } from 'antd';
+import { SearchOutlined, TrophyOutlined } from '@ant-design/icons';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useNavigate } from 'react-router-dom';
@@ -67,50 +67,55 @@ const SearchBar = () => {
     setLoading(false);
   };
 
-  const handleSelect = (option) => {
-    if (option) {
+  const handleSelect = (value, option) => {
+    if (option && option.path) {
       navigate(option.path);
       setSearchTerm('');
     }
   };
 
-  return (
-    <Autocomplete
-      freeSolo
-      options={suggestions}
-      loading={loading}
-      getOptionLabel={(option) => typeof option === 'string' ? option : option.title}
-      renderOption={(props, option) => (
-        <Box component="li" {...props}>
-          <Avatar sx={{ mr: 2, bgcolor: option.type === 'post' ? 'primary.main' : 'secondary.main' }}>
-            {option.type === 'post' ? <TrendingUp /> : option.title.charAt(0)}
-          </Avatar>
-          <Box>
-            <Typography variant="body2">{option.title}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {option.subtitle}
-            </Typography>
-          </Box>
-        </Box>
-      )}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          placeholder="Tìm kiếm bài viết, người dùng..."
-          InputProps={{
-            ...params.InputProps,
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
+  const options = suggestions.map(item => ({
+    value: item.title,
+    label: (
+      <div className="flex items-center">
+        <Avatar 
+          size="small" 
+          className="mr-2"
+          style={{ 
+            backgroundColor: item.type === 'post' ? '#1890ff' : '#52c41a' 
           }}
-          sx={{ minWidth: 300 }}
+        >
+          {item.type === 'post' ? <TrophyOutlined /> : item.title.charAt(0)}
+        </Avatar>
+        <div>
+          <div className="text-sm">{item.title}</div>
+          <Typography.Text type="secondary" className="text-xs">
+            {item.subtitle}
+          </Typography.Text>
+        </div>
+      </div>
+    ),
+    path: item.path
+  }));
+
+  return (
+    <AutoComplete
+      style={{ minWidth: 300 }}
+      options={options}
+      value={searchTerm}
+      onSearch={setSearchTerm}
+      onSelect={handleSelect}
+      placeholder="Tìm kiếm bài viết, người dùng..."
+      allowClear
+    >
+      <div className="relative">
+        <SearchOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <input 
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Tìm kiếm bài viết, người dùng..."
         />
-      )}
-      onInputChange={(e, value) => setSearchTerm(value)}
-      onChange={(e, value) => handleSelect(value)}
-    />
+      </div>
+    </AutoComplete>
   );
 };
 

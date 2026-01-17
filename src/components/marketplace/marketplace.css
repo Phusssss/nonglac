@@ -1,44 +1,57 @@
-/* Marketplace Styles */
-.marketplace-product-card {
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.marketplace-product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
-}
-
-.marketplace-product-card .ant-card-body {
-  padding: 16px;
-  height: calc(100% - 200px);
-  display: flex;
-  flex-direction: column;
-}
-
-.marketplace-product-card .ant-card-meta {
-  flex: 1;
-}
-
-.marketplace-product-card .ant-card-meta-description {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.marketplace-product-card .ant-card-cover {
-  position: relative;
+/* Modern Product Card Styles */
+.modern-product-card {
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  cursor: pointer;
+  border: 1px solid #f0f0f0;
 }
 
-.marketplace-product-card .image-overlay {
+.modern-product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(82, 196, 26, 0.15);
+  border-color: #52c41a;
+}
+
+.product-image-container {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f6ffed, #d9f7be);
+  cursor: pointer;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-image-container:hover .product-image {
+  transform: scale(1.1);
+}
+
+.product-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  color: #52c41a;
+  background: linear-gradient(135deg, #f6ffed, #d9f7be);
+}
+
+.image-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,16 +59,145 @@
   transition: opacity 0.3s ease;
 }
 
-.marketplace-product-card:hover .image-overlay {
+.product-image-container:hover .image-overlay {
   opacity: 1;
 }
 
-.marketplace-product-card .ant-card-cover img {
-  transition: transform 0.3s ease;
+.view-icon {
+  font-size: 32px;
+  color: white;
 }
 
-.marketplace-product-card:hover .ant-card-cover img {
-  transform: scale(1.05);
+.image-count {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.product-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: calc(100% - 220px);
+}
+
+.product-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-title {
+  margin: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #262626 !important;
+  line-height: 1.4 !important;
+}
+
+.product-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-text {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #52c41a !important;
+}
+
+.price-unit {
+  font-size: 14px !important;
+}
+
+.seller-info {
+  padding: 12px;
+  background: #f6ffed;
+  border-radius: 12px;
+  border: 1px solid #d9f7be;
+}
+
+.seller-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+}
+
+.seller-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.seller-location .anticon {
+  font-size: 12px;
+  color: #52c41a;
+}
+
+.seller-location .ant-typography {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.category-tag {
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.product-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  align-items: center;
+}
+
+.contact-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #52c41a, #389e0d) !important;
+  border: none !important;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.contact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(82, 196, 26, 0.3) !important;
+}
+
+.favorite-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8c8c8c;
+  transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+  color: #ff4d4f !important;
+  background: #fff2f0 !important;
+  transform: scale(1.1);
 }
 
 /* Seller info box */

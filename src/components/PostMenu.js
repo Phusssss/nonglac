@@ -1,6 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, ListItemIcon, Typography } from '@mui/material';
+// import { Edit, Delete, Report } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, ListItemIcon, Typography } from '@mui/material';
-import { Edit, Delete, Report } from '@mui/icons-material';
+import { Dropdown, Modal, Input, Select, Typography, Space } from 'antd';
+import { EditOutlined, DeleteOutlined, FlagOutlined } from '@ant-design/icons';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -57,78 +60,112 @@ const PostMenu = ({ anchorEl, open, onClose, post, currentUser, onPostUpdated, o
     }
   };
 
+  const menuItems = isOwner ? [
+    {
+      key: 'edit',
+      label: (
+        <Space>
+          <EditOutlined />
+          Chỉnh sửa bài viết
+        </Space>
+      ),
+      onClick: handleEdit
+    },
+    {
+      key: 'delete',
+      label: (
+        <Space>
+          <DeleteOutlined />
+          Xóa bài viết
+        </Space>
+      ),
+      onClick: handleDelete
+    }
+  ] : [
+    {
+      key: 'report',
+      label: (
+        <Space>
+          <FlagOutlined />
+          Báo cáo bài viết
+        </Space>
+      ),
+      onClick: onClose
+    }
+  ];
+
   return (
     <>
-      <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
-        {isOwner ? (
-          [
-            <MenuItem key="edit" onClick={handleEdit}>
-              <ListItemIcon><Edit fontSize="small" /></ListItemIcon>
-              Chỉnh sửa bài viết
-            </MenuItem>,
-            <MenuItem key="delete" onClick={handleDelete}>
-              <ListItemIcon><Delete fontSize="small" /></ListItemIcon>
-              Xóa bài viết
-            </MenuItem>
-          ]
-        ) : (
-          <MenuItem onClick={onClose}>
-            <ListItemIcon><Report fontSize="small" /></ListItemIcon>
-            Báo cáo bài viết
-          </MenuItem>
-        )}
-      </Menu>
+      <Dropdown
+        menu={{ items: menuItems }}
+        open={open}
+        onOpenChange={(flag) => !flag && onClose()}
+        trigger={[]}
+        placement="bottomRight"
+      >
+        <div />
+      </Dropdown>
 
-      <Dialog open={editDialog} onClose={() => setEditDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Tiêu đề"
-            value={editData.title}
-            onChange={(e) => setEditData({...editData, title: e.target.value})}
-            sx={{ mb: 2, mt: 1 }}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Danh mục</InputLabel>
+      <Modal
+        title="Chỉnh sửa bài viết"
+        open={editDialog}
+        onCancel={() => setEditDialog(false)}
+        onOk={handleUpdatePost}
+        confirmLoading={loading}
+        okText={loading ? 'Đang cập nhật...' : 'Cập nhật'}
+        cancelText="Hủy"
+        width={600}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <Typography.Text strong>Tiêu đề</Typography.Text>
+            <Input
+              value={editData.title}
+              onChange={(e) => setEditData({...editData, title: e.target.value})}
+              placeholder="Nhập tiêu đề bài viết"
+              style={{ marginTop: '8px' }}
+            />
+          </div>
+          
+          <div>
+            <Typography.Text strong>Danh mục</Typography.Text>
             <Select
+              style={{ width: '100%', marginTop: '8px' }}
               value={editData.category}
-              onChange={(e) => setEditData({...editData, category: e.target.value})}
+              onChange={(value) => setEditData({...editData, category: value})}
+              placeholder="Chọn danh mục"
             >
               {categories.map(cat => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                <Select.Option key={cat} value={cat}>{cat}</Select.Option>
               ))}
             </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Nội dung"
-            value={editData.content}
-            onChange={(e) => setEditData({...editData, content: e.target.value})}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialog(false)}>Hủy</Button>
-          <Button onClick={handleUpdatePost} disabled={loading} variant="contained">
-            {loading ? 'Đang cập nhật...' : 'Cập nhật'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </div>
+          
+          <div>
+            <Typography.Text strong>Nội dung</Typography.Text>
+            <Input.TextArea
+              rows={4}
+              value={editData.content}
+              onChange={(e) => setEditData({...editData, content: e.target.value})}
+              placeholder="Nhập nội dung bài viết"
+              style={{ marginTop: '8px' }}
+            />
+          </div>
+        </Space>
+      </Modal>
 
-      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)}>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>Bạn có chắc chắn muốn xóa bài viết này không?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialog(false)}>Hủy</Button>
-          <Button onClick={handleDeletePost} disabled={loading} color="error">
-            {loading ? 'Đang xóa...' : 'Xóa'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Modal
+        title="Xác nhận xóa"
+        open={deleteDialog}
+        onCancel={() => setDeleteDialog(false)}
+        onOk={handleDeletePost}
+        confirmLoading={loading}
+        okText={loading ? 'Đang xóa...' : 'Xóa'}
+        cancelText="Hủy"
+        okType="danger"
+      >
+        <Typography.Text>Bạn có chắc chắn muốn xóa bài viết này không?</Typography.Text>
+      </Modal>
     </>
   );
 };

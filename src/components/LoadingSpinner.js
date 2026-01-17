@@ -1,22 +1,16 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Spin, Typography } from 'antd';
 
-const LoadingSpinner = ({ message = 'Đang tải...', size = 40 }) => {
+const { Text } = Typography;
+
+const LoadingSpinner = ({ message = 'Đang tải...', size = 'default' }) => {
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center',
-        py: 4 
-      }}
-    >
-      <CircularProgress size={size} />
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+    <div className="flex flex-col items-center justify-center py-8">
+      <Spin size={size} />
+      <Text type="secondary" className="mt-4">
         {message}
-      </Typography>
-    </Box>
+      </Text>
+    </div>
   );
 };
 

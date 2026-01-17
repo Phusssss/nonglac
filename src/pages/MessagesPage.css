@@ -1,0 +1,177 @@
+/* Mobile-optimized Messages Page Styles */
+
+/* Container for full-screen messages */
+.messages-page-container {
+  margin-top: 64px;
+  overflow: hidden;
+}
+
+/* Conversations sidebar */
+.conversations-sidebar {
+  transition: transform 0.3s ease;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .messages-page-container {
+    margin-top: 64px !important;
+    height: calc(100vh - 128px) !important;
+    padding-bottom: 64px !important;
+  }
+  
+  /* Show sidebar when no active chat */
+  .conversations-sidebar.mobile-visible {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Hide sidebar when chat is active */
+  .conversations-sidebar.mobile-hidden {
+    display: none !important;
+  }
+  
+  /* Full screen layout on mobile */
+  .ant-layout {
+    height: 100% !important;
+  }
+  
+  /* Content takes full width on mobile */
+  .ant-layout-content {
+    width: 100% !important;
+  }
+}
+
+/* Desktop responsive */
+@media (min-width: 769px) {
+  .messages-page-container {
+    margin-top: 64px !important;
+    height: calc(100vh - 64px) !important;
+  }
+  
+  /* Always show sidebar on desktop */
+  .conversations-sidebar {
+    display: flex !important;
+    width: 350px !important;
+    max-width: 350px !important;
+    flex: 0 0 350px !important;
+  }
+  
+  /* Content takes remaining space */
+  .ant-layout-content {
+    flex: 1 1 auto !important;
+  }
+}
+
+/* Smooth scrolling for iOS */
+.messages-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Fix iOS input zoom */
+@media screen and (max-width: 768px) {
+  input, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Message bubble animations */
+.message-bubble {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Active conversation highlight */
+.conversation-item {
+  transition: background-color 0.2s ease;
+}
+
+.conversation-item:active {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Prevent text selection on mobile */
+@media (max-width: 768px) {
+  .conversation-item {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Optimize touch targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Message input focus state */
+.message-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Loading skeleton */
+.skeleton-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Unread badge animation */
+.unread-badge {
+  animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  /* Full width messages on mobile */
+  .message-bubble {
+    max-width: 85%;
+  }
+  
+  /* Larger touch targets */
+  .ant-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Desktop-specific */
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}

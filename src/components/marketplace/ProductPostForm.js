@@ -1,527 +1,296 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  Grid,
-  Chip,
-  Alert,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent
-} from '@mui/material';
-import GitHubImageUpload from '../GitHubImageUpload';
+import { 
+  Card, 
+  Form,
+  Input, 
+  Select, 
+  Button, 
+  Row, 
+  Col, 
+  InputNumber,
+  Upload,
+  message,
+  Space,
+  Typography
+} from 'antd';
+import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { githubStorage } from '../../services/githubStorage';
+
+const { Title } = Typography;
+const { TextArea } = Input;
+const { Option } = Select;
 
 const ProductPostForm = ({ onSubmit, onCancel }) => {
-  const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
-    // Bước 1: Ngữ cảnh & Định danh
-    userRole: '',
-    transactionIntent: '',
-    
-    // Bước 2: Thông tin cơ bản
-    name: '',
-    category: '',
-    description: '',
-    
-    // Bước 3: Thuộc tính sản phẩm (động theo danh mục)
-    productAttributes: {},
-    
-    // Bước 4: Chất lượng & Tiêu chuẩn
-    certification: [],
-    trustScore: 'verified',
-    traceability: [],
-    
-    // Bước 5: Thương mại & Logistics
-    price: '',
-    unit: '',
-    packaging: '',
-    stockStatus: '',
-    shipping: '',
-    
-    // Bước 6: Hình ảnh & Thông tin liên hệ
-    imageUrls: [],
-    contactInfo: {
-      supplier: '',
-      phone: '',
-      address: ''
-    }
-  });
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [imageUrls, setImageUrls] = useState([]);
 
-  const steps = [
-    'Ngữ cảnh & Định danh',
-    'Thông tin cơ bản', 
-    'Thuộc tính sản phẩm',
-    'Chất lượng & Tiêu chuẩn',
-    'Thương mại & Logistics',
-    'Hình ảnh & Liên hệ'
+  const categories = [
+    { value: 'flowers', label: 'Hoa cắt cành' },
+    { value: 'fruits', label: 'Trái cây' },
+    { value: 'meat_seafood', label: 'Thịt & Hải sản' },
+    { value: 'vegetables', label: 'Rau củ & Nấm' }
   ];
 
-  const userRoles = {
-    farmer: 'Nông dân/Nhà vườn',
-    trader: 'Thương lái/Chủ vựa',
-    importer: 'Nhà nhập khẩu',
-    wholesaler: 'Người mua sỉ'
-  };
+  const units = [
+    'kg', 'tấn', 'cây', 'cành', 'bó', 'thùng', 'bao', 'lít', 'chai', 'hộp'
+  ];
 
-  const transactionIntents = {
-    b2b: 'Bán buôn/Kinh doanh',
-    retail: 'Bán lẻ',
-    export: 'Xuất khẩu'
-  };
-
-  const productCategories = {
-    flowers: 'Hoa cắt cành',
-    fruits: 'Trái cây',
-    meat_seafood: 'Thịt & Hải sản',
-    vegetables: 'Rau củ & Nấm'
-  };
-
-  // Thuộc tính động theo danh mục
-  const getCategoryAttributes = (category) => {
-    switch (category) {
-      case 'flowers':
-        return {
-          flower_variety: {
-            label: 'Chủng loại',
-            options: { rose: 'Hoa Hồng', lily: 'Hoa Ly', carnation: 'Cẩm Chướng', gerbera: 'Đồng Tiền' }
-          },
-          flower_color: {
-            label: 'Màu sắc',
-            options: { red: 'Đỏ nhung', yellow: 'Vàng', cream: 'Kem', pink: 'Phấn', purple: 'Tím khói' }
-          },
-          stem_length: {
-            label: 'Độ dài cành',
-            options: { vip: '70-80cm+ (Cối VIP)', medium: '50-60cm (Trung)', short: '<40cm (Tăm/Ngắn)' }
-          },
-          bloom_stage: {
-            label: 'Độ nở',
-            options: { bud: 'Nụ', opening: 'Chớm nở', open: 'Nở vừa' }
-          }
-        };
-      case 'fruits':
-        return {
-          origin: {
-            label: 'Nguồn gốc',
-            options: { domestic: 'Nội địa', imported: 'Nhập khẩu' }
-          },
-          fruit_type: {
-            label: 'Loại trái cây',
-            options: { cherry: 'Cherry', grape: 'Nho', apple: 'Táo', orange: 'Cam' }
-          },
-          seasonality: {
-            label: 'Tính mùa vụ',
-            options: { in_season: 'Đang vào vụ', off_season: 'Trái vụ' }
-          }
-        };
-      default:
-        return {};
+  const handleImageUpload = async (file) => {
+    try {
+      const imageUrl = await githubStorage.uploadImage(file, 'marketplace-products');
+      setImageUrls(prev => [...prev, imageUrl]);
+      return false; // Prevent default upload behavior
+    } catch (error) {
+      message.error('Upload ảnh thất bại');
+      return false;
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleAttributeChange = (attribute, value) => {
-    setFormData(prev => ({
-      ...prev,
-      productAttributes: {
-        ...prev.productAttributes,
-        [attribute]: value
-      }
-    }));
-  };
-
-  const handleNext = () => {
-    setActiveStep(prev => prev + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep(prev => prev - 1);
-  };
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.category || !formData.price) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+  const handleSubmit = async (values) => {
+    if (imageUrls.length === 0) {
+      message.error('Vui lòng upload ít nhất 1 ảnh sản phẩm');
       return;
     }
-    
-    console.log('Submitting product with images:', formData.imageUrls);
-    onSubmit(formData);
+
+    setLoading(true);
+    try {
+      const productData = {
+        ...values,
+        imageUrls,
+        images: imageUrls, // For compatibility
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await onSubmit(productData);
+      form.resetFields();
+      setImageUrls([]);
+      message.success('Đăng sản phẩm thành công!');
+    } catch (error) {
+      message.error('Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const renderStepContent = (step) => {
-    switch (step) {
-      case 0: // Ngữ cảnh & Định danh
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Vai trò của bạn</InputLabel>
-                <Select
-                  value={formData.userRole}
-                  onChange={(e) => handleInputChange('userRole', e.target.value)}
-                  label="Vai trò của bạn"
-                >
-                  {Object.entries(userRoles).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>{label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Mục đích giao dịch</InputLabel>
-                <Select
-                  value={formData.transactionIntent}
-                  onChange={(e) => handleInputChange('transactionIntent', e.target.value)}
-                  label="Mục đích giao dịch"
-                >
-                  {Object.entries(transactionIntents).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>{label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        );
-
-      case 1: // Thông tin cơ bản
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tên sản phẩm"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="VD: Hoa Hồng Đỏ Nhung Cao Cấp"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Danh mục sản phẩm</InputLabel>
-                <Select
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  label="Danh mục sản phẩm"
-                >
-                  {Object.entries(productCategories).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>{label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Mô tả sản phẩm"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Mô tả chi tiết về sản phẩm, chất lượng, đặc điểm..."
-              />
-            </Grid>
-          </Grid>
-        );
-
-      case 2: // Thuộc tính sản phẩm
-        const attributes = getCategoryAttributes(formData.category);
-        return (
-          <Grid container spacing={2}>
-            {Object.entries(attributes).map(([key, config]) => (
-              <Grid item xs={12} sm={6} key={key}>
-                <FormControl fullWidth>
-                  <InputLabel>{config.label}</InputLabel>
-                  <Select
-                    value={formData.productAttributes[key] || ''}
-                    onChange={(e) => handleAttributeChange(key, e.target.value)}
-                    label={config.label}
-                  >
-                    {Object.entries(config.options).map(([value, label]) => (
-                      <MenuItem key={value} value={value}>{label}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            ))}
-          </Grid>
-        );
-
-      case 3: // Chất lượng & Tiêu chuẩn
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="body2" gutterBottom>
-                Chứng nhận (có thể chọn nhiều):
-              </Typography>
-              <Box display="flex" flexWrap="wrap" gap={1}>
-                {['VietGAP', 'GlobalGAP', 'Hữu cơ USDA', 'OCOP 3 sao', 'OCOP 4 sao', 'OCOP 5 sao'].map(cert => (
-                  <Chip
-                    key={cert}
-                    label={cert}
-                    clickable
-                    color={formData.certification.includes(cert) ? 'primary' : 'default'}
-                    onClick={() => {
-                      const newCerts = formData.certification.includes(cert)
-                        ? formData.certification.filter(c => c !== cert)
-                        : [...formData.certification, cert];
-                      handleInputChange('certification', newCerts);
-                    }}
-                  />
-                ))}
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body2" gutterBottom>
-                Minh bạch nguồn gốc:
-              </Typography>
-              <Box display="flex" flexWrap="wrap" gap={1}>
-                {['Nhật ký canh tác điện tử', 'Mã QR truy xuất'].map(trace => (
-                  <Chip
-                    key={trace}
-                    label={trace}
-                    clickable
-                    color={formData.traceability.includes(trace) ? 'primary' : 'default'}
-                    onClick={() => {
-                      const newTrace = formData.traceability.includes(trace)
-                        ? formData.traceability.filter(t => t !== trace)
-                        : [...formData.traceability, trace];
-                      handleInputChange('traceability', newTrace);
-                    }}
-                  />
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
-        );
-
-      case 4: // Thương mại & Logistics
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Giá bán"
-                type="number"
-                value={formData.price}
-                onChange={(e) => handleInputChange('price', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Đơn vị"
-                value={formData.unit}
-                onChange={(e) => handleInputChange('unit', e.target.value)}
-                placeholder="VD: cành, kg, thùng"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Quy cách đóng gói</InputLabel>
-                <Select
-                  value={formData.packaging}
-                  onChange={(e) => handleInputChange('packaging', e.target.value)}
-                  label="Quy cách đóng gói"
-                >
-                  <MenuItem value="bulk">Thùng (Bulk/Carton)</MenuItem>
-                  <MenuItem value="tray">Khay/Vỉ (Tray)</MenuItem>
-                  <MenuItem value="giftbox">Hộp quà/Giỏ quà</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Tình trạng kho</InputLabel>
-                <Select
-                  value={formData.stockStatus}
-                  onChange={(e) => handleInputChange('stockStatus', e.target.value)}
-                  label="Tình trạng kho"
-                >
-                  <MenuItem value="in_stock">Hàng có sẵn</MenuItem>
-                  <MenuItem value="pre_order">Đặt trước</MenuItem>
-                  <MenuItem value="in_transit">Đang vận chuyển</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        );
-
-      case 5: // Thông tin liên hệ & Hình ảnh
-        return (
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                📷 Hình ảnh sản phẩm
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Chọn nhiều ảnh cùng lúc để hiển thị đầy đủ sản phẩm
-              </Typography>
-              <GitHubImageUpload
-                onUploadComplete={(imageUrl) => {
-                  // Callback cho từng ảnh (giữ nguyên để tương thích)
-                  console.log('Uploaded single image:', imageUrl);
-                }}
-                onBatchUploadComplete={(imageUrls) => {
-                  // Callback cho toàn bộ batch - đây là cách tốt hơn
-                  setFormData(prev => ({
-                    ...prev,
-                    imageUrls: [...(prev.imageUrls || []), ...imageUrls]
-                  }));
-                }}
-                maxSize={5}
-              />
-              
-              {formData.imageUrls && formData.imageUrls.length > 0 && (
-                <Box mt={2}>
-                  <Typography variant="body2" gutterBottom color="success.main">
-                    ✓ Đã upload {formData.imageUrls.length} ảnh thành công
-                  </Typography>
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {formData.imageUrls.map((url, index) => (
-                      <Box key={index} position="relative">
-                        <img
-                          src={url}
-                          alt={`Uploaded ${index + 1}`}
-                          style={{
-                            width: 60,
-                            height: 60,
-                            objectFit: 'cover',
-                            borderRadius: 4,
-                            border: '2px solid #4caf50'
-                          }}
-                        />
-                        <Chip
-                          label="×"
-                          size="small"
-                          color="error"
-                          onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              imageUrls: prev.imageUrls.filter((_, i) => i !== index)
-                            }));
-                          }}
-                          sx={{
-                            position: 'absolute',
-                            top: -8,
-                            right: -8,
-                            minWidth: 20,
-                            height: 20
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                📞 Thông tin liên hệ
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tên nhà cung cấp/Vườn"
-                value={formData.contactInfo.supplier}
-                onChange={(e) => handleInputChange('contactInfo', {
-                  ...formData.contactInfo,
-                  supplier: e.target.value
-                })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Số điện thoại"
-                value={formData.contactInfo.phone}
-                onChange={(e) => handleInputChange('contactInfo', {
-                  ...formData.contactInfo,
-                  phone: e.target.value
-                })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Địa chỉ"
-                value={formData.contactInfo.address}
-                onChange={(e) => handleInputChange('contactInfo', {
-                  ...formData.contactInfo,
-                  address: e.target.value
-                })}
-              />
-            </Grid>
-          </Grid>
-        );
-
-      default:
-        return null;
-    }
+  const uploadProps = {
+    beforeUpload: handleImageUpload,
+    showUploadList: false,
+    multiple: true,
+    accept: 'image/*'
   };
 
   return (
-    <Card sx={{ maxWidth: 800, mx: 'auto', mt: 2 }}>
-      <CardContent>
-        <Typography variant="h5" gutterBottom>
-          🌾 Đăng sản phẩm mới
-        </Typography>
-        
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Hệ thống sẽ tự động tối ưu hiển thị sản phẩm dựa trên thông tin bạn cung cấp
-        </Alert>
+    <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
+      <Card>
+        <Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
+          🌾 Đăng bán sản phẩm
+        </Title>
 
-        <Stepper activeStep={activeStep} orientation="vertical">
-          {steps.map((label, index) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-              <StepContent>
-                <Box sx={{ mt: 2, mb: 2 }}>
-                  {renderStepContent(index)}
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Button
-                    variant="contained"
-                    onClick={index === steps.length - 1 ? handleSubmit : handleNext}
-                    sx={{ mt: 1, mr: 1 }}
-                  >
-                    {index === steps.length - 1 ? 'Đăng sản phẩm' : 'Tiếp tục'}
-                  </Button>
-                  <Button
-                    disabled={index === 0}
-                    onClick={handleBack}
-                    sx={{ mt: 1, mr: 1 }}
-                  >
-                    Quay lại
-                  </Button>
-                  {index === 0 && (
-                    <Button onClick={onCancel} sx={{ mt: 1 }}>
-                      Hủy
-                    </Button>
-                  )}
-                </Box>
-              </StepContent>
-            </Step>
-          ))}
-        </Stepper>
-      </CardContent>
-    </Card>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          requiredMark={false}
+        >
+          {/* Tên sản phẩm */}
+          <Form.Item
+            name="name"
+            label="Tên sản phẩm"
+            rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
+          >
+            <Input 
+              placeholder="VD: Cà chua bi sạch Đà Lạt"
+              size="large"
+            />
+          </Form.Item>
+
+          {/* Danh mục & Đơn vị */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="category"
+                label="Danh mục"
+                rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
+              >
+                <Select placeholder="Chọn danh mục" size="large">
+                  {categories.map(cat => (
+                    <Option key={cat.value} value={cat.value}>{cat.label}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="unit"
+                label="Đơn vị"
+                rules={[{ required: true, message: 'Vui lòng chọn đơn vị' }]}
+              >
+                <Select placeholder="Chọn đơn vị" size="large">
+                  {units.map(unit => (
+                    <Option key={unit} value={unit}>{unit}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Giá & Số lượng */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="price"
+                label="Giá bán"
+                rules={[{ required: true, message: 'Vui lòng nhập giá' }]}
+              >
+                <InputNumber
+                  placeholder="0"
+                  size="large"
+                  style={{ width: '100%' }}
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                  addonAfter="VNĐ"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="quantity"
+                label="Số lượng có sẵn"
+              >
+                <InputNumber
+                  placeholder="0"
+                  size="large"
+                  style={{ width: '100%' }}
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Mô tả */}
+          <Form.Item
+            name="description"
+            label="Mô tả sản phẩm"
+            rules={[{ required: true, message: 'Vui lòng nhập mô tả' }]}
+          >
+            <TextArea
+              rows={4}
+              placeholder="Mô tả chi tiết về sản phẩm: chất lượng, nguồn gốc, đặc điểm..."
+            />
+          </Form.Item>
+
+          {/* Thông tin liên hệ */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="supplier"
+                label="Tên người bán/Cơ sở"
+                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+              >
+                <Input placeholder="Tên của bạn hoặc tên cơ sở" size="large" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="phone"
+                label="Số điện thoại"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số điện thoại' },
+                  { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại không hợp lệ' }
+                ]}
+              >
+                <Input placeholder="0123456789" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Địa chỉ */}
+          <Form.Item
+            name="address"
+            label="Địa chỉ"
+            rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
+          >
+            <Input placeholder="Địa chỉ cụ thể (xã, huyện, tỉnh)" size="large" />
+          </Form.Item>
+
+          {/* Upload ảnh */}
+          <Form.Item label="Hình ảnh sản phẩm" required>
+            <Upload {...uploadProps}>
+              <Button icon={<UploadOutlined />} size="large" block>
+                Chọn ảnh ({imageUrls.length} ảnh đã chọn)
+              </Button>
+            </Upload>
+            
+            {imageUrls.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <Row gutter={[8, 8]}>
+                  {imageUrls.map((url, index) => (
+                    <Col key={index} span={6}>
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={url}
+                          alt={`Product ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: 80,
+                            objectFit: 'cover',
+                            borderRadius: 8,
+                            border: '2px solid #52c41a'
+                          }}
+                        />
+                        <Button
+                          type="primary"
+                          danger
+                          size="small"
+                          style={{
+                            position: 'absolute',
+                            top: -8,
+                            right: -8,
+                            width: 20,
+                            height: 20,
+                            padding: 0,
+                            minWidth: 20
+                          }}
+                          onClick={() => {
+                            setImageUrls(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            )}
+          </Form.Item>
+
+          {/* Buttons */}
+          <Form.Item style={{ marginTop: 32, marginBottom: 0 }}>
+            <Space style={{ width: '100%', justifyContent: 'center' }}>
+              <Button size="large" onClick={onCancel}>
+                Hủy
+              </Button>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={loading}
+                size="large"
+                style={{
+                  background: 'linear-gradient(135deg, #52c41a, #389e0d)',
+                  border: 'none',
+                  minWidth: 120
+                }}
+              >
+                Đăng sản phẩm
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

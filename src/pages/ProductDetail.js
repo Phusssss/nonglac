@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
-import { Layout, Card, Button, Tag, Typography, Row, Col, Divider, Tabs, Rate, Avatar, Tooltip, Carousel } from 'antd';
-import { ArrowLeftOutlined, HeartOutlined, ShareAltOutlined, PhoneOutlined, EnvironmentOutlined, UserOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Layout, Card, Button, Tag, Typography, Row, Col, Tabs, Avatar, Carousel } from 'antd';
+import { ArrowLeftOutlined, HeartOutlined, ShareAltOutlined, EnvironmentOutlined, UserOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import ContactModal from '../components/marketplace/ContactModal';
 import ProductImageGallery from '../components/marketplace/ProductImageGallery';
 import './ProductDetail.css';

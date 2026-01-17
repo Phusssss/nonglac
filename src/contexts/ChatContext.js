@@ -46,9 +46,14 @@ export const ChatProvider = ({ children }) => {
   const startChat = async (otherUserId, otherUserName) => {
     if (!user) return;
     
-    const conversationId = await chatService.getOrCreateConversation(user.uid, otherUserId, otherUserName);
+    const conversationId = await chatService.getOrCreateConversation(
+      user.uid, 
+      otherUserId, 
+      otherUserName
+    );
     setActiveChat(conversationId);
     setIsChatOpen(true);
+    return conversationId;
   };
 
   const sendMessage = async (message) => {

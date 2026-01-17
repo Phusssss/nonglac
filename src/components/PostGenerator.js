@@ -1,10 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Box, Button, Typography, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Chip, Alert, LinearProgress } from '@mui/material';
-import { AutoFixHigh, PhotoLibrary } from '@mui/icons-material';
+import { Card, Button, Typography, Select, Tag, Alert, Progress, Space, List } from 'antd';
+import { ToolOutlined, PictureOutlined } from '@ant-design/icons';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { githubStorage } from '../services/githubStorage';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 const PostGenerator = () => {
   const { user, userProfile } = useAuth();
@@ -213,14 +216,14 @@ const PostGenerator = () => {
   };
 
   return (
-    <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <AutoFixHigh color="primary" />
-          <Typography variant="h6">Post Generator Tool</Typography>
-        </Box>
+    <Card style={{ marginBottom: 24 }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Space align="center">
+          <ToolOutlined style={{ color: '#1890ff' }} />
+          <Title level={4} style={{ margin: 0 }}>Post Generator Tool</Title>
+        </Space>
 
-        <Box mb={2}>
+        <div>
           <input
             type="file"
             ref={fileInputRef}
@@ -230,94 +233,106 @@ const PostGenerator = () => {
             style={{ display: 'none' }}
           />
           
-          <Button
-            variant="outlined"
-            startIcon={<PhotoLibrary />}
-            onClick={() => fileInputRef.current?.click()}
-            sx={{ mr: 2, mb: 2 }}
-          >
-            Chọn ảnh ({selectedImages.length})
-          </Button>
-          
-          <FormControl size="small" sx={{ minWidth: 150, mb: 2 }}>
-            <InputLabel>Danh mục</InputLabel>
-            <Select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              label="Danh mục"
+          <Space wrap>
+            <Button
+              icon={<PictureOutlined />}
+              onClick={() => fileInputRef.current?.click()}
+              style={{ marginBottom: 8 }}
             >
-              <MenuItem value="">Ngẫu nhiên</MenuItem>
+              Chọn ảnh ({selectedImages.length})
+            </Button>
+            
+            <Select
+              style={{ width: 150, marginBottom: 8 }}
+              placeholder="Chọn danh mục"
+              value={category}
+              onChange={(value) => setCategory(value)}
+              allowClear
+            >
+              <Option value="">Ngẫu nhiên</Option>
               {categories.map(cat => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                <Option key={cat} value={cat}>{cat}</Option>
               ))}
             </Select>
-          </FormControl>
+          </Space>
           
           {selectedImages.length > 0 && (
-            <Box mt={1}>
-              <Typography variant="body2" color="text.secondary">
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary">
                 Sẽ tạo {selectedImages.length} bài viết từ {selectedImages.length} ảnh đã chọn
-              </Typography>
-            </Box>
+              </Text>
+            </div>
           )}
-        </Box>
+        </div>
 
         <Button
-          variant="contained"
-          startIcon={<AutoFixHigh />}
+          type="primary"
+          icon={<ToolOutlined />}
           onClick={generatePosts}
           disabled={generating || !user || selectedImages.length === 0}
-          sx={{ mb: 2 }}
+          loading={generating}
         >
           {generating ? 'Đang tạo...' : `Tạo ${selectedImages.length} bài viết`}
         </Button>
 
         {generating && (
-          <Box mb={2}>
-            <LinearProgress />
-            <Typography variant="caption" color="text.secondary">
+          <div>
+            <Progress percent={Math.round((results.length / selectedImages.length) * 100)} />
+            <Text type="secondary" style={{ fontSize: 12 }}>
               Đang tạo bài viết... {results.length}/{selectedImages.length}
-            </Typography>
-          </Box>
+            </Text>
+          </div>
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <Alert 
+            message={error}
+            type="error"
+          />
         )}
 
         {results.length > 0 && (
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
+          <div>
+            <Text strong>
               Đã tạo {results.length} bài viết:
-            </Typography>
-            <Box display="flex" gap={1} flexWrap="wrap">
-              {results.map((post, index) => (
-                <Chip 
-                  key={index}
-                  label={`${post.category} - ${post.title.substring(0, 30)}...`}
-                  color="success"
-                  size="small"
-                />
-              ))}
-            </Box>
-          </Box>
+            </Text>
+            <div style={{ marginTop: 8 }}>
+              <Space wrap>
+                {results.map((post, index) => (
+                  <Tag 
+                    key={index}
+                    color="success"
+                  >
+                    {post.category} - {post.title.substring(0, 30)}...
+                  </Tag>
+                ))}
+              </Space>
+            </div>
+          </div>
         )}
 
-        <Box mt={2} p={2} bgcolor="background.default" borderRadius={1}>
-          <Typography variant="h6" gutterBottom>Tính năng:</Typography>
-          <Typography variant="body2" component="div">
-            <ul>
-              <li>Chọn ảnh từ bộ nhớ để tạo bài viết</li>
-              <li>Mỗi ảnh sẽ tạo 1 bài viết riêng biệt</li>
-              <li>Nội dung ngẫu nhiên theo danh mục</li>
-              <li>Upload ảnh lên GitHub tự động</li>
-              <li>Random likes, comments và thời gian</li>
-            </ul>
-          </Typography>
-        </Box>
-      </CardContent>
+        <Card 
+          size="small" 
+          style={{ backgroundColor: '#fafafa' }}
+          title="Tính năng:"
+        >
+          <List
+            size="small"
+            dataSource={[
+              'Chọn ảnh từ bộ nhớ để tạo bài viết',
+              'Mỗi ảnh sẽ tạo 1 bài viết riêng biệt',
+              'Nội dung ngẫu nhiên theo danh mục',
+              'Upload ảnh lên GitHub tự động',
+              'Random likes, comments và thời gian'
+            ]}
+            renderItem={item => (
+              <List.Item>
+                <Text>• {item}</Text>
+              </List.Item>
+            )}
+          />
+        </Card>
+      </Space>
     </Card>
   );
 };

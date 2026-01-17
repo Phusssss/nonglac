@@ -1,5 +1,7 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Card, CardContent, Typography, Box, ToggleButton, ToggleButtonGroup, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, Box, ToggleButton, ToggleButtonGroup, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Card, Typography, Radio, Select, Space } from 'antd';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { priceService } from '../services/priceService';
 

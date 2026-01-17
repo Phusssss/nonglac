@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@mui/material';
-import { PersonAdd, PersonRemove } from '@mui/icons-material';
+import { Button } from 'antd';
+import { UserAddOutlined, UserDeleteOutlined } from '@ant-design/icons';
 import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
@@ -57,12 +57,11 @@ const FollowButton = ({ targetUserId }) => {
 
   return (
     <Button
-      variant={isFollowing ? "outlined" : "contained"}
+      type={isFollowing ? "default" : "primary"}
       size="small"
-      startIcon={isFollowing ? <PersonRemove /> : <PersonAdd />}
+      icon={isFollowing ? <UserDeleteOutlined /> : <UserAddOutlined />}
       onClick={handleFollow}
-      disabled={loading}
-      sx={{ textTransform: 'none' }}
+      loading={loading}
     >
       {isFollowing ? 'Bỏ theo dõi' : 'Theo dõi'}
     </Button>

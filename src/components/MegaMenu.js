@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
-import { Button, Paper, Box, Typography, List, ListItem, ListItemIcon, ListItemText, Grid } from '@mui/material';
-import { TrendingUp, ExpandMore, Agriculture, Restaurant, Assessment, LocalFlorist, Pets, Water, Nature, Store, TrendingDown, ShowChart, BarChart, Timeline, GrassOutlined, Coffee, LocalDining, Fastfood, Cake, Icecream } from '@mui/icons-material';
+import { Button, Typography, List, Row, Col, Dropdown } from 'antd';
+import { 
+  TrendingUpOutlined, 
+  DownOutlined, 
+  ShopOutlined, 
+  CoffeeOutlined,
+  LineChartOutlined,
+  BarChartOutlined,
+  RiseOutlined,
+  FallOutlined
+} from '@ant-design/icons';
+
+const { Text } = Typography;
 
 const MegaMenu = ({ title, icon }) => {
-  const [open, setOpen] = useState(false);
-  const [timeoutId, setTimeoutId] = useState(null);
+  const handleItemClick = (item) => {
+    console.log('Selected:', item.text);
+  };
 
   const menuData = {
     'Giá cả': {
@@ -12,166 +24,139 @@ const MegaMenu = ({ title, icon }) => {
         {
           title: 'Nông sản chính',
           items: [
-            { text: 'Gạo ST25', icon: <GrassOutlined /> },
-            { text: 'Gạo Jasmine', icon: <GrassOutlined /> },
-            { text: 'Cà phê Robusta', icon: <Coffee /> },
-            { text: 'Cà phê Arabica', icon: <Coffee /> },
-            { text: 'Cao su', icon: <Nature /> },
-            { text: 'Tiêu đen', icon: <LocalFlorist /> },
-            { text: 'Tiêu trắng', icon: <LocalFlorist /> },
+            { text: 'Gạo ST25', icon: '🌾' },
+            { text: 'Gạo Jasmine', icon: '🌾' },
+            { text: 'Cà phê Robusta', icon: '☕' },
+            { text: 'Cà phê Arabica', icon: '☕' },
+            { text: 'Cao su', icon: '🌿' },
+            { text: 'Tiêu đen', icon: '🌸' },
+            { text: 'Tiêu trắng', icon: '🌸' },
           ]
         },
         {
           title: 'Thịt & Trứng',
           items: [
-            { text: 'Heo hơi', icon: <Pets /> },
-            { text: 'Thịt bò', icon: <Pets /> },
-            { text: 'Gà thịt', icon: <Pets /> },
-            { text: 'Gà ta', icon: <Pets /> },
-            { text: 'Trứng gà', icon: <LocalDining /> },
-            { text: 'Trứng vịt', icon: <LocalDining /> },
-            { text: 'Thịt dê', icon: <Pets /> },
+            { text: 'Heo hơi', icon: '🐷' },
+            { text: 'Thịt bò', icon: '🐄' },
+            { text: 'Gà thịt', icon: '🐔' },
+            { text: 'Gà ta', icon: '🐔' },
+            { text: 'Trứng gà', icon: '🥚' },
+            { text: 'Trứng vịt', icon: '🥚' },
+            { text: 'Thịt dê', icon: '🐐' },
           ]
         },
         {
           title: 'Thủy sản',
           items: [
-            { text: 'Tôm sú', icon: <Water /> },
-            { text: 'Tôm thẻ', icon: <Water /> },
-            { text: 'Cá tra', icon: <Water /> },
-            { text: 'Cá basa', icon: <Water /> },
-            { text: 'Cá hồi', icon: <Water /> },
-            { text: 'Cua biển', icon: <Water /> },
-            { text: 'Mực ống', icon: <Water /> },
+            { text: 'Tôm sú', icon: '🦐' },
+            { text: 'Tôm thẻ', icon: '🦐' },
+            { text: 'Cá tra', icon: '🐟' },
+            { text: 'Cá basa', icon: '🐟' },
+            { text: 'Cá hồi', icon: '🐟' },
+            { text: 'Cua biển', icon: '🦀' },
+            { text: 'Mực ống', icon: '🦑' },
           ]
         },
         {
           title: 'Rau củ & Trái cây',
           items: [
-            { text: 'Rau cải', icon: <Nature /> },
-            { text: 'Cà chua', icon: <Nature /> },
-            { text: 'Khoai tây', icon: <Nature /> },
-            { text: 'Sầu riêng', icon: <LocalFlorist /> },
-            { text: 'Xoài', icon: <LocalFlorist /> },
-            { text: 'Chuối', icon: <LocalFlorist /> },
-            { text: 'Thanh long', icon: <LocalFlorist /> },
+            { text: 'Rau cải', icon: '🥬' },
+            { text: 'Cà chua', icon: '🍅' },
+            { text: 'Khoai tây', icon: '🥔' },
+            { text: 'Sầu riêng', icon: '🌸' },
+            { text: 'Xoài', icon: '🥭' },
+            { text: 'Chuối', icon: '🍌' },
+            { text: 'Thanh long', icon: '🐉' },
           ]
         },
         {
           title: 'Phân tích thị trường',
           items: [
-            { text: 'Báo cáo giá', icon: <Assessment /> },
-            { text: 'Xu hướng tăng', icon: <TrendingUp /> },
-            { text: 'Xu hướng giảm', icon: <TrendingDown /> },
-            { text: 'Biểu đồ giá', icon: <ShowChart /> },
-            { text: 'Thống kê', icon: <BarChart /> },
-            { text: 'Dự báo', icon: <Timeline /> },
-            { text: 'So sánh giá', icon: <Assessment /> },
+            { text: 'Báo cáo giá', icon: <LineChartOutlined /> },
+            { text: 'Xu hướng tăng', icon: <RiseOutlined /> },
+            { text: 'Xu hướng giảm', icon: <FallOutlined /> },
+            { text: 'Biểu đồ giá', icon: <LineChartOutlined /> },
+            { text: 'Thống kê', icon: <BarChartOutlined /> },
+            { text: 'Dự báo', icon: <TrendingUpOutlined /> },
+            { text: 'So sánh giá', icon: <LineChartOutlined /> },
           ]
         }
       ]
     }
   };
 
-  const handleMouseEnter = () => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      setTimeoutId(null);
-    }
-    setOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    const id = setTimeout(() => {
-      setOpen(false);
-    }, 200);
-    setTimeoutId(id);
-  };
-
-  const handleItemClick = (item) => {
-    console.log('Selected:', item.text);
-    setOpen(false);
-  };
-
   const currentMenu = menuData[title];
 
+  const menuItems = currentMenu ? [
+    {
+      key: 'menu',
+      label: (
+        <div style={{ minWidth: 1000, maxWidth: 1200, padding: '24px' }}>
+          <Row gutter={[16, 16]}>
+            {currentMenu.columns.map((column, index) => (
+              <Col span={4.8} key={index}>
+                <Text strong style={{ 
+                  color: '#1890ff', 
+                  marginBottom: '8px', 
+                  paddingBottom: '8px',
+                  borderBottom: '2px solid #1890ff',
+                  display: 'block'
+                }}>
+                  {column.title}
+                </Text>
+                <List
+                  size="small"
+                  dataSource={column.items}
+                  renderItem={(item) => (
+                    <List.Item
+                      style={{ 
+                        padding: '4px 0',
+                        cursor: 'pointer',
+                        borderRadius: '4px'
+                      }}
+                      onClick={() => handleItemClick(item)}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#f0f2ff';
+                        e.target.style.color = '#1890ff';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'transparent';
+                        e.target.style.color = 'inherit';
+                      }}
+                    >
+                      <List.Item.Meta
+                        avatar={typeof item.icon === 'string' ? item.icon : item.icon}
+                        title={<Text style={{ fontSize: '14px' }}>{item.text}</Text>}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Col>
+            ))}
+          </Row>
+        </div>
+      )
+    }
+  ] : [];
+
   return (
-    <Box 
-      sx={{ position: 'relative', display: 'inline-block' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+    <Dropdown
+      menu={{ items: menuItems }}
+      trigger={['hover']}
+      placement="bottomRight"
     >
       <Button
-        color="inherit"
-        startIcon={icon}
-        endIcon={<ExpandMore />}
-        sx={{ 
-          textTransform: 'none',
-          '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+        type="text"
+        icon={icon}
+        style={{ 
+          color: 'inherit',
+          border: 'none',
+          boxShadow: 'none'
         }}
       >
-        {title}
+        {title} <DownOutlined />
       </Button>
-      
-      {open && currentMenu && (
-        <Paper
-          sx={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            minWidth: 1000,
-            maxWidth: 1200,
-            zIndex: 1300,
-            mt: 0.5,
-            boxShadow: 3,
-            border: '1px solid rgba(0,0,0,0.1)'
-          }}
-        >
-          <Box sx={{ p: 3 }}>
-            <Grid container spacing={2}>
-              {currentMenu.columns.map((column, index) => (
-                <Grid item xs={12} sm={6} md={2.4} key={index}>
-                  <Typography 
-                    variant="subtitle1" 
-                    fontWeight="bold" 
-                    color="primary"
-                    sx={{ mb: 1, pb: 1, borderBottom: '2px solid', borderColor: 'primary.main' }}
-                  >
-                    {column.title}
-                  </Typography>
-                  <List dense sx={{ p: 0 }}>
-                    {column.items.map((item, itemIndex) => (
-                      <ListItem 
-                        key={itemIndex}
-                        button
-                        onClick={() => handleItemClick(item)}
-                        sx={{ 
-                          px: 0,
-                          py: 0.5,
-                          borderRadius: 1,
-                          '&:hover': { 
-                            backgroundColor: 'primary.50',
-                            color: 'primary.main'
-                          }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                          {item.icon}
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={item.text}
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </Paper>
-      )}
-    </Box>
+    </Dropdown>
   );
 };
 

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import NotificationBell from './NotificationBell';
-import { Home, Users, ShoppingBag, MessageCircle, Newspaper, Bookmark, TrendingUp, Stethoscope, MapPin, BarChart3, Trophy, FileText, Info } from 'lucide-react';
+import { Home, ShoppingBag, Bookmark, TrendingUp, Trophy, FileText, Info, MessageCircle } from 'lucide-react';
 
 import logo from '../assets/images/logo.demo.nontext.png';
 
@@ -10,7 +10,6 @@ const ResponsiveNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userProfile, logout } = useAuth();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAiMenu, setShowAiMenu] = useState(false);
 
@@ -69,7 +68,6 @@ const ResponsiveNavbar = () => {
     try {
       await logout();
       navigate('/');
-      setDrawerOpen(false);
     } catch (error) {
       console.error('Logout error:', error);
       alert('Lỗi đăng xuất: ' + error.message);
@@ -78,6 +76,7 @@ const ResponsiveNavbar = () => {
 
   const menuItems = useMemo(() => [
     { text: 'Trang chủ', path: '/', icon: Home },
+    { text: 'Tin nhắn', path: '/messages', icon: MessageCircle },
     { text: 'Nhiệm vụ', path: '/missions', icon: Trophy },
     { text: 'Giá nông sản', path: '/gia-nong-san', icon: TrendingUp },
     { text: 'Chợ', path: '/marketplace', icon: ShoppingBag },
@@ -91,11 +90,6 @@ const ResponsiveNavbar = () => {
     { text: 'Bản đồ nông vụ', path: '/agri-map', icon: 'map', color: 'bg-purple-500' },
   ], []);
 
-  const handleMenuClick = useCallback((path) => {
-    navigate(path);
-    setDrawerOpen(false);
-  }, [navigate]);
-
   return (
     <>
       {/* Navigation Bar */}
@@ -104,7 +98,21 @@ const ResponsiveNavbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Mobile icons */}
             <div className="md:hidden flex items-center space-x-2">
-              {user && <NotificationBell />}
+              {user && (
+                <>
+                  <button
+                    onClick={() => navigate('/messages')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      location.pathname === '/messages'
+                        ? 'text-[#4CAF50] bg-green-50'
+                        : 'text-gray-600 hover:text-[#4CAF50] hover:bg-gray-50'
+                    }`}
+                  >
+                    <MessageCircle size={20} />
+                  </button>
+                  <NotificationBell />
+                </>
+              )}
             </div>
 
             {/* Logo */}
@@ -142,20 +150,25 @@ const ResponsiveNavbar = () => {
 
             {/* Navigation Links - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              {menuItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`${
-                    window.location.pathname === item.path
-                      ? 'text-[#4CAF50] font-medium'
-                      : 'text-gray-600 hover:text-[#4CAF50]'
-                  } transition-colors text-sm flex items-center gap-1`}
-                >
-                  <item.icon size={16} />
-                  {item.text}
-                </button>
-              ))}
+              {menuItems.map((item) => {
+                // Chỉ hiển thị Messages nếu user đã đăng nhập
+                if (item.path === '/messages' && !user) return null;
+                
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`${
+                      window.location.pathname === item.path
+                        ? 'text-[#4CAF50] font-medium'
+                        : 'text-gray-600 hover:text-[#4CAF50]'
+                    } transition-colors text-sm flex items-center gap-1`}
+                  >
+                    <item.icon size={16} />
+                    {item.text}
+                  </button>
+                );
+              })}
               
               {/* AI Tools Dropdown */}
               <div className="relative group">

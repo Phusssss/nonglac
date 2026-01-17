@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { IconButton, Badge, Menu, MenuItem, Typography, Box, Divider } from '@mui/material';
-import { Notifications, Circle } from '@mui/icons-material';
+import { Button, Badge, Dropdown, Typography, Divider, Space } from 'antd';
+import { BellOutlined } from '@ant-design/icons';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import moment from 'moment';
 
+const { Text } = Typography;
+
 const NotificationBell = () => {
   const { user } = useAuth();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -34,12 +36,8 @@ const NotificationBell = () => {
     return unsubscribe;
   }, [user]);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleOpenChange = (flag) => {
+    setOpen(flag);
   };
 
   const markAsRead = async (notificationId) => {
@@ -61,71 +59,93 @@ const NotificationBell = () => {
     }
   };
 
+  const menuItems = notifications.length === 0 ? [
+    {
+      key: 'empty',
+      label: (
+        <div style={{ padding: '8px 0', textAlign: 'center' }}>
+          <Text type="secondary">Không có thông báo nào</Text>
+        </div>
+      ),
+      disabled: true
+    }
+  ] : [
+    {
+      key: 'header',
+      label: (
+        <div style={{ padding: '8px 0', fontWeight: 'bold' }}>
+          Thông báo
+        </div>
+      ),
+      disabled: true
+    },
+    { type: 'divider' },
+    ...notifications.slice(0, 10).map((notification) => ({
+      key: notification.id,
+      label: (
+        <div 
+          style={{ 
+            padding: '8px 0',
+            backgroundColor: notification.read ? 'transparent' : '#f0f0f0',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+          onClick={() => {
+            if (!notification.read) {
+              markAsRead(notification.id);
+            }
+            setOpen(false);
+          }}
+        >
+          <Space align="start" style={{ width: '100%' }}>
+            <span style={{ fontSize: '1.2em' }}>
+              {getNotificationIcon(notification.type)}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontWeight: notification.read ? 'normal' : 'bold',
+                marginBottom: '4px'
+              }}>
+                {notification.message}
+              </div>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                {moment(notification.createdAt?.toDate()).fromNow()}
+              </Text>
+            </div>
+            {!notification.read && (
+              <div style={{ 
+                width: '8px', 
+                height: '8px', 
+                backgroundColor: '#1890ff', 
+                borderRadius: '50%',
+                marginTop: '4px'
+              }} />
+            )}
+          </Space>
+        </div>
+      )
+    }))
+  ];
+
   return (
-    <>
-      <IconButton color="inherit" onClick={handleClick}>
-        <Badge badgeContent={unreadCount} color="error">
-          <Notifications />
-        </Badge>
-      </IconButton>
-      
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-        PaperProps={{
-          sx: { width: 320, maxHeight: 400 }
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6">Thông báo</Typography>
-        </Box>
-        <Divider />
-        
-        {notifications.length === 0 ? (
-          <MenuItem>
-            <Typography variant="body2" color="text.secondary">
-              Không có thông báo nào
-            </Typography>
-          </MenuItem>
-        ) : (
-          notifications.slice(0, 10).map((notification) => (
-            <MenuItem
-              key={notification.id}
-              onClick={() => {
-                if (!notification.read) {
-                  markAsRead(notification.id);
-                }
-                handleClose();
-              }}
-              sx={{
-                backgroundColor: notification.read ? 'transparent' : 'action.hover',
-                whiteSpace: 'normal',
-                alignItems: 'flex-start',
-                py: 1.5
-              }}
-            >
-              <Box sx={{ display: 'flex', width: '100%', gap: 1 }}>
-                <Typography sx={{ fontSize: '1.2em', mt: 0.5 }}>
-                  {getNotificationIcon(notification.type)}
-                </Typography>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}>
-                    {notification.message}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {moment(notification.createdAt?.toDate()).fromNow()}
-                  </Typography>
-                </Box>
-                {!notification.read && (
-                  <Circle sx={{ color: 'primary.main', fontSize: 8, mt: 1 }} />
-                )}
-              </Box>
-            </MenuItem>
-          ))
-        )}
-      </Menu>
-    </>
+    <Dropdown
+      menu={{ items: menuItems }}
+      trigger={['click']}
+      open={open}
+      onOpenChange={handleOpenChange}
+      placement="bottomRight"
+      overlayStyle={{ width: 320, maxHeight: 400, overflow: 'auto' }}
+    >
+      <Button 
+        type="text" 
+        icon={
+          <Badge count={unreadCount} size="small">
+            <BellOutlined style={{ fontSize: '18px' }} />
+          </Badge>
+        }
+        style={{ border: 'none', boxShadow: 'none' }}
+      />
+    </Dropdown>
   );
 };
 

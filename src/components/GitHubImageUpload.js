@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Box, Button, Typography, LinearProgress, Alert, IconButton, Grid } from '@mui/material';
-import { CloudUpload, Delete, PhotoLibrary } from '@mui/icons-material';
+import { Button, Typography, Progress, Alert, Row, Col, Space } from 'antd';
+import { CloudUploadOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons';
 import { githubStorage } from '../services/githubStorage';
+
+const { Text } = Typography;
 
 const GitHubImageUpload = ({ 
   onUploadComplete, 
@@ -122,7 +124,7 @@ const GitHubImageUpload = ({
   };
 
   return (
-    <Box>
+    <div>
       <input
         type="file"
         ref={fileInputRef}
@@ -133,31 +135,35 @@ const GitHubImageUpload = ({
       />
 
       <Button
-        variant="outlined"
-        startIcon={<PhotoLibrary />}
+        icon={<PictureOutlined />}
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        fullWidth
-        sx={{ mb: 2 }}
+        block
+        style={{ marginBottom: 16 }}
       >
         {uploading ? 'Đang upload...' : `Chọn ảnh (${previews.length} ảnh đã chọn)`}
       </Button>
 
       {previews.length > 0 && (
-        <Box mb={2}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-            <Typography variant="body2" color="text.secondary">
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: 8 
+          }}>
+            <Text type="secondary">
               {previews.length} ảnh đã chọn
-            </Typography>
-            <Button size="small" onClick={clearAll} color="error">
+            </Text>
+            <Button size="small" onClick={clearAll} danger>
               Xóa tất cả
             </Button>
-          </Box>
+          </div>
           
-          <Grid container spacing={1}>
+          <Row gutter={[8, 8]}>
             {previews.map((preview) => (
-              <Grid item xs={6} sm={4} key={preview.id}>
-                <Box position="relative">
+              <Col xs={12} sm={8} key={preview.id}>
+                <div style={{ position: 'relative' }}>
                   <img
                     src={preview.url}
                     alt="Preview"
@@ -168,45 +174,46 @@ const GitHubImageUpload = ({
                       borderRadius: '8px'
                     }}
                   />
-                  <IconButton
+                  <Button
+                    type="primary"
+                    danger
+                    size="small"
+                    icon={<DeleteOutlined />}
                     onClick={() => removeImage(preview.id)}
-                    sx={{
+                    style={{
                       position: 'absolute',
-                      top: 2,
-                      right: 2,
-                      bgcolor: 'rgba(0,0,0,0.7)',
-                      color: 'white',
+                      top: 4,
+                      right: 4,
                       width: 24,
                       height: 24,
-                      '&:hover': {
-                        bgcolor: 'rgba(0,0,0,0.8)'
-                      }
+                      padding: 0,
+                      minWidth: 24
                     }}
-                  >
-                    <Delete sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </Box>
-              </Grid>
+                  />
+                </div>
+              </Col>
             ))}
-          </Grid>
-        </Box>
+          </Row>
+        </div>
       )}
 
       {uploading && (
-        <Box mt={2}>
-          <LinearProgress variant="determinate" value={progress} />
-          <Typography variant="caption" color="text.secondary">
+        <div style={{ marginTop: 16 }}>
+          <Progress percent={Math.round(progress)} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
             Đang upload ảnh... {Math.round(progress)}%
-          </Typography>
-        </Box>
+          </Text>
+        </div>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
+        <Alert 
+          message={error}
+          type="error" 
+          style={{ marginTop: 16 }}
+        />
       )}
-    </Box>
+    </div>
   );
 };
 

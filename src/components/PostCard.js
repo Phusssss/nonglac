@@ -8,20 +8,16 @@ import ImageGallery from './ImageGallery';
 import CommentSection from './CommentSection';
 import ShareDialog from './ShareDialog';
 import PostMenu from './PostMenu';
-import FollowButton from './FollowButton';
 import SaveButton from './SaveButton';
 import ReactionButton from './ReactionButton';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
-import { useChat } from '../contexts/ChatContext';
-import { Heart, MessageCircle, Share2, MoreHorizontal, UserPlus, Bookmark } from 'lucide-react';
+import { MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 import OptimizedImage from './OptimizedImage';
 
 const PostCard = ({ post, isDetailView = false }) => {
   const { user, userProfile, updateReputation } = useAuth();
   const navigate = useNavigate();
-  const { startChat } = useChat();
-  const [likes, setLikes] = useState(post.likes || 0);
   const [userReaction, setUserReaction] = useState(null);
   
   // Load user's like status
@@ -84,13 +80,7 @@ const PostCard = ({ post, isDetailView = false }) => {
     } catch (error) {
       console.error('Error updating like:', error);
     }
-  }, [user, userReaction, post.id, post.authorId, updateReputation, userProfile]);
-
-  const getReputationColor = (reputation) => {
-    if (reputation >= 100) return 'success';
-    if (reputation >= 50) return 'warning';
-    return 'default';
-  };
+  }, [user, post.id, post.authorId, updateReputation, userProfile]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans">
@@ -210,7 +200,7 @@ const PostCard = ({ post, isDetailView = false }) => {
             <ReactionButton
               onReaction={handleReaction}
               currentReaction={userReaction}
-              totalLikes={likes}
+              totalLikes={post.likes || 0}
             />
             <button 
               onClick={() => setShowComments(!showComments)}

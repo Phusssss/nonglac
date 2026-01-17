@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Box,
-  Chip,
-  CircularProgress
-} from '@mui/material';
-import { TrendingUp, TrendingDown, Coffee } from '@mui/icons-material';
+import { Card, Typography, Table, Tag, Spin, Space } from 'antd';
+import { RiseOutlined, FallOutlined, CoffeeOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 const CoffeePrices = () => {
   const [prices, setPrices] = useState([]);
@@ -60,8 +48,8 @@ const CoffeePrices = () => {
   };
 
   const getPriceChangeIcon = (change) => {
-    if (change > 0) return <TrendingUp sx={{ color: 'success.main', fontSize: 16 }} />;
-    if (change < 0) return <TrendingDown sx={{ color: 'error.main', fontSize: 16 }} />;
+    if (change > 0) return <RiseOutlined style={{ color: '#52c41a', fontSize: 16 }} />;
+    if (change < 0) return <FallOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />;
     return null;
   };
 
@@ -73,105 +61,106 @@ const CoffeePrices = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <Spin size="large" />
+      </div>
     );
   }
 
   if (error) {
     return (
       <Card>
-        <CardContent>
-          <Typography color="error">{error}</Typography>
-        </CardContent>
+        <Text type="danger">{error}</Text>
       </Card>
     );
   }
 
+  const columns = [
+    {
+      title: 'Sản phẩm',
+      dataIndex: 'productName',
+      key: 'productName',
+      render: (text) => <Text strong>{text}</Text>
+    },
+    {
+      title: 'Thị trường',
+      dataIndex: 'market',
+      key: 'market'
+    },
+    {
+      title: 'Giá hiện tại',
+      dataIndex: 'currentPrice',
+      key: 'currentPrice',
+      align: 'right',
+      render: (price) => (
+        <Text strong style={{ color: '#1890ff' }}>
+          {formatPrice(price)} đ/kg
+        </Text>
+      )
+    },
+    {
+      title: 'Thay đổi',
+      key: 'change',
+      align: 'right',
+      render: (_, record) => {
+        const change = getPriceChange(record.currentPrice, record.previousPrice);
+        return (
+          <Space>
+            {getPriceChangeIcon(change.value)}
+            <Tag color={getPriceChangeColor(change.value)}>
+              {change.value > 0 ? '+' : ''}{formatPrice(change.value)} đ
+            </Tag>
+          </Space>
+        );
+      }
+    },
+    {
+      title: 'Ngày cập nhật',
+      dataIndex: 'date',
+      key: 'date',
+      align: 'center',
+      render: (date) => <Text type="secondary" style={{ fontSize: 12 }}>{date}</Text>
+    }
+  ];
+
   return (
     <Card>
-      <CardContent>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Coffee sx={{ mr: 1, color: '#8B4513' }} />
-          <Typography variant="h6" component="h2">
-            Giá Nông Sản Hôm Nay
-          </Typography>
-        </Box>
-        
-        {prices.length === 0 ? (
-          <Typography color="textSecondary">
-            Chưa có dữ liệu giá nông sản
-          </Typography>
-        ) : (
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell><strong>Sản phẩm</strong></TableCell>
-                  <TableCell><strong>Thị trường</strong></TableCell>
-                  <TableCell align="right"><strong>Giá hiện tại</strong></TableCell>
-                  <TableCell align="right"><strong>Thay đổi</strong></TableCell>
-                  <TableCell align="center"><strong>Ngày cập nhật</strong></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {prices.map((price) => {
-                  const change = getPriceChange(price.currentPrice, price.previousPrice);
-                  return (
-                    <TableRow key={price.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {price.productName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {price.market}
-                        </Typography>
-                      </TableCell>
-                      
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="bold" color="primary">
-                          {formatPrice(price.currentPrice)} đ/kg
-                        </Typography>
-                      </TableCell>
-                      
-                      <TableCell align="right">
-                        <Box display="flex" alignItems="center" justifyContent="flex-end">
-                          {getPriceChangeIcon(change.value)}
-                          <Chip
-                            label={`${change.value > 0 ? '+' : ''}${formatPrice(change.value)} đ`}
-                            size="small"
-                            color={getPriceChangeColor(change.value)}
-                            variant="outlined"
-                            sx={{ ml: 0.5, fontSize: '0.7rem' }}
-                          />
-                        </Box>
-                      </TableCell>
-                      
-                      <TableCell align="center">
-                        <Typography variant="caption" color="textSecondary">
-                          {price.date}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        
-        <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="caption" color="textSecondary">
-            Nguồn: WebGia.com
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            Đơn vị: VNĐ/kg
-          </Typography>
-        </Box>
-      </CardContent>
+      <Space style={{ marginBottom: 16 }}>
+        <CoffeeOutlined style={{ color: '#8B4513' }} />
+        <Title level={4} style={{ margin: 0 }}>
+          Giá Nông Sản Hôm Nay
+        </Title>
+      </Space>
+      
+      {prices.length === 0 ? (
+        <Text type="secondary">
+          Chưa có dữ liệu giá nông sản
+        </Text>
+      ) : (
+        <>
+          <Table 
+            columns={columns}
+            dataSource={prices}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+          
+          <div style={{ 
+            marginTop: 16, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Nguồn: WebGia.com
+            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Đơn vị: VNĐ/kg
+            </Text>
+          </div>
+        </>
+      )}
     </Card>
   );
 };

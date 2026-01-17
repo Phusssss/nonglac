@@ -3,12 +3,34 @@ import cors from 'cors';
 import cron from 'node-cron';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import dotenv from 'dotenv';
+import aiRoutes from './routes/ai.js';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' })); // Increased limit for image uploads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Routes
+app.use('/api/ai', aiRoutes);
 
 let cachedPrices = [];
 let lastUpdate = null;
@@ -147,6 +169,18 @@ app.post('/api/batch/run', async (req, res) => {
   }
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'NongLac API Server',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    pricesCount: cachedPrices.length,
+    lastPriceUpdate: lastUpdate
+  });
+});
+
 // Update prices every 30 minutes
 cron.schedule('*/30 * * * *', updatePrices);
 
@@ -154,5 +188,7 @@ cron.schedule('*/30 * * * *', updatePrices);
 updatePrices();
 
 app.listen(PORT, () => {
-  console.log(`Price scraper server running on port ${PORT}`);
+  console.log(`NongLac API server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
 });

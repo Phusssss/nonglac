@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
-import { analyzePlantImage } from '../services/geminiService';
+import { useState } from 'react';
+import { plantDoctorService } from '../services/aiService';
+import { useErrorHandler } from '../utils/errorHandler';
 import AIQuotaIndicator from '../components/AIQuotaIndicator';
 
 const PlantDoctor = () => {
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const { handleAsyncError } = useErrorHandler();
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result);
@@ -21,25 +25,24 @@ const PlantDoctor = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedImage) return;
+    if (!selectedFile) return;
+    
     setLoading(true);
     setAnalysis('');
     
-    try {
-      const base64Image = selectedImage.split(',')[1];
+    const result = await handleAsyncError(async () => {
       const userPrompt = prompt || "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.";
-      const result = await analyzePlantImage(base64Image, userPrompt);
-      setAnalysis(result);
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      if (error.message?.includes('Đã hết lượt sử dụng')) {
-        setAnalysis('😔 Bạn đã hết lượt sử dụng bác sĩ AI hôm nay!\n\n🚀 Nâng cấp gói để có thêm lượt hoặc chờ đến ngày mai.');
-      } else {
-        setAnalysis('Đã có lỗi xảy ra khi phân tích hình ảnh. Vui lòng thử lại.');
-      }
-    } finally {
-      setLoading(false);
+      return await plantDoctorService.diagnose(selectedFile, userPrompt);
+    }, {
+      component: 'PlantDoctor',
+      action: 'analyze'
+    });
+
+    if (result) {
+      setAnalysis(result.result);
     }
+    
+    setLoading(false);
   };
 
   return (

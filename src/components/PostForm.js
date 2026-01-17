@@ -1,6 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Card, CardContent, TextField, Button, Box, Select, MenuItem, FormControl, InputLabel, Chip } from '@mui/material';
+// import { Send, Image } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { Card, CardContent, TextField, Button, Box, Select, MenuItem, FormControl, InputLabel, Chip } from '@mui/material';
-import { Send, Image } from '@mui/icons-material';
+import { Card, Input, Button, Select, Tag, Space } from 'antd';
+import { SendOutlined, PictureOutlined } from '@ant-design/icons';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';

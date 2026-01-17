@@ -1,6 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Box, Button, Typography, LinearProgress, Alert, IconButton } from '@mui/material';
+// import { CloudUpload, Delete } from '@mui/icons-material';
 import React, { useState, useRef } from 'react';
-import { Box, Button, Typography, LinearProgress, Alert, IconButton } from '@mui/material';
-import { CloudUpload, Delete } from '@mui/icons-material';
+import { Button, Typography, Progress, Alert, Space } from 'antd';
+import { CloudUploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config';
 

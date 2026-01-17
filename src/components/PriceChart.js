@@ -1,6 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Card, CardContent, Typography, Box, LinearProgress } from '@mui/material';
+// import { TrendingUp, TrendingDown } from '@mui/icons-material';
 import React from 'react';
-import { Card, CardContent, Typography, Box, LinearProgress } from '@mui/material';
-import { TrendingUp, TrendingDown } from '@mui/icons-material';
+import { Card, Typography, Progress } from 'antd';
+import { RiseOutlined, FallOutlined } from '@ant-design/icons';
 
 const PriceChart = ({ product, prices }) => {
   const latestPrice = prices[0];

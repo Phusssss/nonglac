@@ -1,8 +1,9 @@
+// Temporarily disabled MUI imports - will be migrated to Ant Design
+// import { Box, ImageList, ImageListItem, Dialog, IconButton } from '@mui/material';
+// import { Close, ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { Box, ImageList, ImageListItem, Dialog, IconButton } from '@mui/material';
-import { Close, ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
-import OptimizedImage from './OptimizedImage';
+import { Modal, Button } from 'antd';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
 const ImageGallery = ({ images }) => {
   const [open, setOpen] = useState(false);
@@ -39,91 +40,97 @@ const ImageGallery = ({ images }) => {
 
   return (
     <>
-      <Box sx={{ mt: 2 }}>
-        <ImageList 
-          cols={getGridCols()} 
-          gap={4}
-          sx={{ 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            maxHeight: { xs: validImages.length === 1 ? 300 : 250, md: 'none' }
-          }}
-        >
+      <div style={{ marginTop: '16px' }}>
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: `repeat(${getGridCols()}, 1fr)`,
+          gap: '8px',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          maxHeight: validImages.length === 1 ? '300px' : '250px'
+        }}>
           {validImages.map((image, index) => (
-            <ImageListItem 
+            <div 
               key={index}
-              sx={{ 
+              style={{ 
                 cursor: 'pointer',
-                '&:hover': { opacity: 0.9 },
                 transition: 'opacity 0.2s'
               }}
               onClick={() => handleImageClick(index)}
+              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.target.style.opacity = '1'}
             >
-              <OptimizedImage
+              <img
                 src={image}
-                alt={`Post image ${index + 1}`}
-                width={validImages.length === 1 ? 600 : 300}
-                height={validImages.length === 1 ? 400 : 200}
-                priority={index === 0}
-                className={validImages.length === 1 ? 'w-full h-auto object-contain max-h-[500px]' : 'w-full h-full object-cover'}
+                alt={`Post ${index + 1}`}
+                style={{
+                  width: '100%',
+                  height: validImages.length === 1 ? 'auto' : '200px',
+                  objectFit: validImages.length === 1 ? 'contain' : 'cover',
+                  maxHeight: validImages.length === 1 ? '500px' : '200px'
+                }}
               />
-            </ImageListItem>
+            </div>
           ))}
-        </ImageList>
-      </Box>
+        </div>
+      </div>
 
-      <Dialog
+      <Modal
         open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: { bgcolor: 'black', boxShadow: 'none' }
+        onCancel={() => setOpen(false)}
+        footer={null}
+        width="90vw"
+        style={{ top: 20 }}
+        bodyStyle={{ 
+          backgroundColor: 'black', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: '80vh',
+          position: 'relative'
         }}
       >
-        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-          <IconButton
-            onClick={() => setOpen(false)}
-            sx={{ position: 'absolute', top: 16, right: 16, color: 'white', zIndex: 1 }}
-          >
-            <Close />
-          </IconButton>
-
-          {validImages.length > 1 && (
-            <>
-              <IconButton
-                onClick={handlePrev}
-                sx={{ position: 'absolute', left: 16, color: 'white', zIndex: 1 }}
-              >
-                <ArrowBackIos />
-              </IconButton>
-              <IconButton
-                onClick={handleNext}
-                sx={{ position: 'absolute', right: 16, color: 'white', zIndex: 1 }}
-              >
-                <ArrowForwardIos />
-              </IconButton>
-            </>
-          )}
-
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentIndex}
-              src={validImages[currentIndex]}
-              alt={`Image ${currentIndex + 1}`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              style={{
-                maxWidth: '90%',
-                maxHeight: '90%',
-                objectFit: 'contain'
+        {validImages.length > 1 && (
+          <>
+            <Button
+              type="text"
+              icon={<LeftOutlined />}
+              onClick={handlePrev}
+              style={{ 
+                position: 'absolute', 
+                left: 16, 
+                color: 'white', 
+                zIndex: 1,
+                border: 'none',
+                boxShadow: 'none'
               }}
             />
-          </AnimatePresence>
-        </Box>
-      </Dialog>
+            <Button
+              type="text"
+              icon={<RightOutlined />}
+              onClick={handleNext}
+              style={{ 
+                position: 'absolute', 
+                right: 16, 
+                color: 'white', 
+                zIndex: 1,
+                border: 'none',
+                boxShadow: 'none'
+              }}
+            />
+          </>
+        )}
+
+        <img
+          src={validImages[currentIndex]}
+          alt={`Gallery ${currentIndex + 1}`}
+          style={{
+            maxWidth: '90%',
+            maxHeight: '90%',
+            objectFit: 'contain'
+          }}
+        />
+      </Modal>
     </>
   );
 };

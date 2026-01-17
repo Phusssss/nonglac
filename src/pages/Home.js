@@ -2,17 +2,52 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, query, orderBy, where, limit, startAfter, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
+import { 
+  Layout, 
+  Row, 
+  Col, 
+  Card, 
+  Avatar, 
+  Button, 
+  Input, 
+  Select, 
+  Modal, 
+  Form, 
+  Space, 
+  Typography, 
+  Tag, 
+  Spin, 
+  Divider,
+  Statistic,
+  Badge
+} from 'antd';
+import { 
+  PlusOutlined, 
+  TrophyOutlined, 
+  RiseOutlined, 
+  FallOutlined,
+  UserOutlined,
+  EditOutlined,
+  FireOutlined,
+  TeamOutlined
+} from '@ant-design/icons';
 
 import { logUserAction, ACTIONS } from '../utils/analytics';
 import PostCard from '../components/PostCard';
+import { EnhancedPostCard } from '../components/enhanced/EnhancedPostCard';
 import GitHubImageUpload from '../components/GitHubImageUpload';
-
 import CoffeePrices from '../components/CoffeePrices';
 import RightSidebar from '../components/RightSidebar';
 import WeatherWidget from '../components/WeatherWidget';
 import SEO from '../components/SEO';
-import { Heart, MessageCircle, Share2, TrendingUp, Users, MapPin, Bookmark, MoreHorizontal, UserPlus } from 'lucide-react';
+import FloatingChatButton from '../components/FloatingChatButton';
+import { NongLacCard, PriceDisplay, CategoryTag } from '../components/common';
 import { useNavigate } from 'react-router-dom';
+
+const { Content } = Layout;
+const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
+const { Option } = Select;
 
 
 const Home = () => {
@@ -37,7 +72,14 @@ const Home = () => {
   const [newComment, setNewComment] = useState({});
   
   const POSTS_PER_PAGE = 10;
-  const categories = ['Trồng trọt', 'Chăn nuôi', 'Thủy sản', 'Công nghệ nông nghiệp', 'Thị trường', 'Khác'];
+  const categories = [
+    { key: 'vegetables', label: 'Trồng trọt', icon: '🌾' },
+    { key: 'livestock', label: 'Chăn nuôi', icon: '🐖' },
+    { key: 'aquaculture', label: 'Thủy sản', icon: '🐟' },
+    { key: 'grains', label: 'Máy nông nghiệp', icon: '🚜' },
+    { key: 'fruits', label: 'Thị trường & Giá cả', icon: '💰' },
+    { key: 'default', label: 'Chính sách', icon: '📜' }
+  ];
 
   const categoryMapping = {
     'Cây trồng': 'Trồng trọt',
@@ -368,350 +410,543 @@ const Home = () => {
         description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi, cập nhật giá nông sản mới nhất."
         keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
       />
-      <main className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      {/* Left Sidebar - User Profile & Categories */}
-      <div className="hidden lg:block lg:col-span-3 space-y-6">
-          {/* User Profile Card */}
-          {user ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
-              <img 
-                src={userProfile?.avatar || `https://ui-avatars.com/api/?name=${userProfile?.displayName || user?.email || 'User'}&background=4CAF50&color=fff`}
-                alt={userProfile?.displayName || 'User'}
-                className="w-20 h-20 rounded-full mx-auto border-4 border-agri-50 mb-3 object-cover"
-              />
-              <h3 className="font-bold text-gray-800 text-lg">{userProfile?.displayName || user?.email || 'Guest'}</h3>
-              <span className="inline-block bg-agri-100 text-agri-700 text-xs px-2 py-1 rounded-full font-medium mt-1 mb-4">
-                {userProfile?.reputation >= 100 ? 'Chuyên gia' : 'Nông dân tiên tiến'}
-              </span>
-              <div className="flex justify-center gap-6 text-sm text-gray-600 border-t border-gray-100 pt-4">
-                <div className="text-center">
-                  <span className="block font-bold text-gray-900">{userProfile?.postsCount || 0}</span>
-                  <span className="text-xs">Bài viết</span>
-                </div>
-                <div className="text-center">
-                  <span className="block font-bold text-gray-900">{userProfile?.reputation || 0}</span>
-                  <span className="text-xs">Uy tín</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
-              <div className="w-20 h-20 rounded-full mx-auto bg-gray-200 flex items-center justify-center mb-3">
-                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-gray-800 text-lg mb-4">Chào mừng đến NôngLạc</h3>
-              <button 
-                onClick={() => navigate('/login')}
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Đăng nhập
-              </button>
-              <p className="text-xs text-gray-500 mt-2">Đăng nhập để tham gia cộng đồng</p>
-            </div>
-          )}
-
-          {/* Categories Menu */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <h4 className="font-bold text-gray-700 p-4 border-b border-gray-100 bg-gray-50">Danh mục thảo luận</h4>
-            <div className="p-2">
-              {[
-                { name: 'Trồng trọt', icon: '🌾' },
-                { name: 'Chăn nuôi', icon: '🐖' },
-                { name: 'Thủy sản', icon: '🐟' },
-                { name: 'Máy nông nghiệp', icon: '🚜' },
-                { name: 'Thị trường & Giá cả', icon: '💰' },
-                { name: 'Chính sách', icon: '📜' },
-              ].map((cat) => (
-                <button 
-                  key={cat.name} 
-                  onClick={() => setSelectedCategory(cat.name)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg hover:bg-agri-50 text-gray-700 flex items-center gap-3 transition-colors text-sm font-medium ${
-                    selectedCategory === cat.name ? 'bg-agri-50 border-l-4 border-agri-600' : ''
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Post Tags Filter */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wider">Lọc theo tag</h4>
-            <div className="flex flex-wrap gap-2">
-              {trendingTopics.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedCategory(item.topic)}
-                  className={`text-xs px-2 py-1 rounded cursor-pointer transition-colors ${
-                    selectedCategory === item.topic 
-                      ? 'bg-agri-100 text-agri-700 border border-agri-300' 
-                      : 'bg-gray-100 hover:bg-agri-100 text-gray-600 hover:text-agri-700'
-                  }`}
-                >
-                  #{item.topic} ({item.posts})
-                </button>
-              ))}
-              {trendingTopics.length === 0 && (
-                <span className="text-xs text-gray-500 italic">Chưa có tag nào</span>
-              )}
-            </div>
-          </div>
-      </div>
-
-      {/* Main Content - Posts Feed */}
-      <div className="lg:col-span-6 space-y-6">
-          {/* Trending Topics - Mobile Only */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 lg:hidden">
-            <div className="flex items-center space-x-2 mb-4">
-              <TrendingUp className="w-5 h-5 text-[#4CAF50]" />
-              <h3 className="font-semibold text-[#795548]">
-                Chủ đề thịnh hành
-              </h3>
-            </div>
-            <div className="space-y-3">
-              {trendingTopics.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleTopicClick(item.topic)}
-                  className={`flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
-                    selectedCategory === item.topic ? 'bg-green-50 border-l-4 border-[#4CAF50]' : ''
-                  }`}
-                >
-                  <span className="text-sm text-gray-700 font-medium">{item.topic}</span>
-                  <span className="text-xs text-gray-500">{item.posts}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Create Post */}
-          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#4CAF50] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-xs sm:text-sm font-medium">
-                  {user ? (userProfile?.displayName?.charAt(0) || 'U') : 'G'}
-                </span>
-              </div>
-              <input
-                type="text"
-                placeholder="Chia sẻ kinh nghiệm..."
-                onClick={() => setOpen(true)}
-                className="flex-1 px-3 py-2 sm:px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent cursor-pointer text-sm sm:text-base"
-              />
-              <button 
-                onClick={() => setOpen(true)}
-                aria-label="Tạo bài viết mới"
-                className="px-3 py-2 sm:px-6 bg-[#4CAF50] text-white rounded-full hover:bg-[#45a049] transition-colors text-sm sm:text-base font-medium"
-              >
-                Đăng
-              </button>
-            </div>
-          </div>
-
-          {/* Posts */}
-          <div className="space-y-6">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-sm p-6 animate-pulse">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-300 rounded w-24"></div>
-                      <div className="h-3 bg-gray-300 rounded w-16"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                    <div className="h-4 bg-gray-300 rounded"></div>
-                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                  </div>
-                  <div className="h-64 bg-gray-300 rounded-xl"></div>
-                </div>
-              ))
-            ) : filteredPosts.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {searchTerm ? 'Không tìm thấy bài viết nào.' : 'Chưa có bài viết nào trong danh mục này.'}
-              </div>
-            ) : (
-              <>
-                {filteredPosts.map((post, index) => (
-                  <div 
-                    key={post.id}
-                    style={{
-                      opacity: 0,
-                      animation: `fadeInUp 0.6s ease-out ${index * 0.1}s forwards`
-                    }}
-                  >
-                    <PostCard post={post} />
-                  </div>
-                ))}
-                {loadingMore && (
-                  <div className="flex flex-col items-center py-6 space-y-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                      <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                      <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-                    </div>
-                    <p className="text-sm text-gray-500">Đang tải thêm bài viết...</p>
-                  </div>
-                )}
-                {!hasMore && filteredPosts.length > 0 && (
-                  <div className="text-center py-6">
-                    <div className="inline-flex items-center px-4 py-2 bg-gray-100 rounded-full">
-                      <span className="text-sm text-gray-600">🎉 Đã xem hết tất cả bài viết</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-      </div>
-
-      {/* Right Sidebar - Weather & Market Prices */}
-      <div className="hidden lg:block lg:col-span-3 space-y-6">
-          <WeatherWidget />
-
-          {/* Quick Market Prices */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-bold text-gray-700">Giá nông sản 24h</h4>
-              <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Live</span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
-                <span className="text-gray-600">Lúa OM 5451</span>
-                <span className="font-bold text-gray-900">8.200 đ/kg <span className="text-green-500 text-xs">▲</span></span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
-                <span className="text-gray-600">Cà phê Robusta</span>
-                <span className="font-bold text-gray-900">120.000 đ/kg <span className="text-red-500 text-xs">▼</span></span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Tiêu đen</span>
-                <span className="font-bold text-gray-900">95.000 đ/kg <span className="text-gray-400 text-xs">-</span></span>
-              </div>
-            </div>
-            <button 
-              onClick={() => navigate('/gia-nong-san')}
-              className="w-full mt-3 text-center text-xs text-agri-600 font-medium hover:underline"
-            >
-              Xem tất cả
-            </button>
-          </div>
-
-          {/* Top Experts */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h4 className="font-bold text-gray-700 mb-3">Chuyên gia tuần này</h4>
-            <div className="space-y-4">
-              {topContributors.slice(0, 3).map((contributor, idx) => (
-                <div key={idx} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                  <img 
-                    src={contributor.avatar || `https://ui-avatars.com/api/?name=${contributor.name}&background=random&color=fff`}
-                    alt={contributor.name}
-                    className="w-10 h-10 rounded-full border border-gray-100 object-cover"
+      <Layout style={{ minHeight: '100vh', backgroundColor: '#F6FFED' }}>
+        <Content style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+          <Row gutter={[24, 24]}>
+            
+            {/* Left Sidebar - User Profile & Categories */}
+            <Col xs={0} lg={6}>
+              <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                
+                {/* User Profile Card */}
+                {user ? (
+                  <NongLacCard
+                    content={
+                      <div style={{ textAlign: 'center' }}>
+                        <Avatar 
+                          size={80}
+                          src={userProfile?.avatar}
+                          style={{ 
+                            backgroundColor: '#52C41A',
+                            marginBottom: 16,
+                            border: '4px solid #F6FFED'
+                          }}
+                        >
+                          {userProfile?.displayName?.charAt(0) || 'U'}
+                        </Avatar>
+                        
+                        <Title level={4} style={{ margin: '0 0 8px 0' }}>
+                          {userProfile?.displayName || user?.email || 'Guest'}
+                        </Title>
+                        
+                        <Tag 
+                          color={userProfile?.reputation >= 100 ? '#52C41A' : '#73D13D'}
+                          style={{ marginBottom: 16 }}
+                        >
+                          {userProfile?.reputation >= 100 ? 'Chuyên gia' : 'Nông dân tiên tiến'}
+                        </Tag>
+                        
+                        <Divider style={{ margin: '16px 0' }} />
+                        
+                        <Row gutter={16}>
+                          <Col span={12}>
+                            <Statistic
+                              title="Bài viết"
+                              value={userProfile?.postsCount || 0}
+                              valueStyle={{ fontSize: 16, color: '#262626' }}
+                            />
+                          </Col>
+                          <Col span={12}>
+                            <Statistic
+                              title="Uy tín"
+                              value={userProfile?.reputation || 0}
+                              valueStyle={{ fontSize: 16, color: '#52C41A' }}
+                            />
+                          </Col>
+                        </Row>
+                      </div>
+                    }
                   />
-                  <div className="flex-1">
-                    <h5 className="font-bold text-sm text-gray-800">{contributor.name}</h5>
-                    <p className="text-xs text-gray-500">{contributor.posts} bài viết</p>
-                  </div>
-                  <div className="text-xs font-semibold text-agri-600">
-                    {contributor.reputation} ⭐
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-4 py-2 border border-agri-100 rounded-lg text-sm text-agri-700 font-medium hover:bg-agri-50 transition-colors">
-              Đăng ký chuyên gia
-            </button>
-          </div>
-      </div>
+                ) : (
+                  <NongLacCard
+                    content={
+                      <div style={{ textAlign: 'center' }}>
+                        <Avatar 
+                          size={80}
+                          icon={<UserOutlined />}
+                          style={{ 
+                            backgroundColor: '#D9D9D9',
+                            marginBottom: 16
+                          }}
+                        />
+                        
+                        <Title level={4} style={{ margin: '0 0 16px 0' }}>
+                          Chào mừng đến NôngLạc
+                        </Title>
+                        
+                        <Button 
+                          type="primary"
+                          size="large"
+                          block
+                          onClick={() => navigate('/login')}
+                          style={{ marginBottom: 8 }}
+                        >
+                          Đăng nhập
+                        </Button>
+                        
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Đăng nhập để tham gia cộng đồng
+                        </Text>
+                      </div>
+                    }
+                  />
+                )}
 
-          </div>
-        </div>
+                {/* Categories Menu */}
+                <NongLacCard
+                  title="Danh mục thảo luận"
+                  content={
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      {categories.map((cat) => (
+                        <Button
+                          key={cat.key}
+                          type={selectedCategory === cat.label ? 'primary' : 'text'}
+                          block
+                          style={{ 
+                            textAlign: 'left',
+                            height: 'auto',
+                            padding: '8px 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-start'
+                          }}
+                          onClick={() => setSelectedCategory(cat.label)}
+                        >
+                          <span style={{ marginRight: 8 }}>{cat.icon}</span>
+                          {cat.label}
+                        </Button>
+                      ))}
+                    </Space>
+                  }
+                />
+
+                {/* Trending Topics */}
+                <NongLacCard
+                  title={
+                    <Space>
+                      <FireOutlined style={{ color: '#52C41A' }} />
+                      <span>Chủ đề hot</span>
+                    </Space>
+                  }
+                  content={
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      {trendingTopics.map((item, index) => (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedCategory(item.topic)}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            backgroundColor: selectedCategory === item.topic ? '#F6FFED' : 'transparent',
+                            borderLeft: selectedCategory === item.topic ? '4px solid #52C41A' : 'none',
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          <Text style={{ fontSize: 14, fontWeight: 500 }}>
+                            {item.topic}
+                          </Text>
+                          <Badge 
+                            count={item.posts} 
+                            style={{ backgroundColor: '#52C41A' }}
+                          />
+                        </div>
+                      ))}
+                      {trendingTopics.length === 0 && (
+                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>
+                          Chưa có chủ đề nào
+                        </Text>
+                      )}
+                    </Space>
+                  }
+                />
+              </Space>
+            </Col>
+
+            {/* Main Content - Posts Feed */}
+            <Col xs={24} lg={12}>
+              <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                
+                {/* Trending Topics - Mobile Only */}
+                <Col xs={24} lg={0}>
+                  <NongLacCard
+                    title={
+                      <Space>
+                        <RiseOutlined style={{ color: '#52C41A' }} />
+                        <span>Chủ đề thịnh hành</span>
+                      </Space>
+                    }
+                    content={
+                      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                        {trendingTopics.map((item, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleTopicClick(item.topic)}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '8px 12px',
+                              borderRadius: 8,
+                              cursor: 'pointer',
+                              backgroundColor: selectedCategory === item.topic ? '#F6FFED' : '#FAFAFA',
+                              borderLeft: selectedCategory === item.topic ? '4px solid #52C41A' : 'none',
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            <Text style={{ fontSize: 14, fontWeight: 500 }}>
+                              {item.topic}
+                            </Text>
+                            <Badge count={item.posts} style={{ backgroundColor: '#52C41A' }} />
+                          </div>
+                        ))}
+                      </Space>
+                    }
+                  />
+                </Col>
+
+                {/* Create Post */}
+                <NongLacCard
+                  content={
+                    <Space style={{ width: '100%' }}>
+                      <Avatar 
+                        size={40}
+                        src={userProfile?.avatar}
+                        style={{ backgroundColor: '#52C41A' }}
+                      >
+                        {user ? (userProfile?.displayName?.charAt(0) || 'U') : 'G'}
+                      </Avatar>
+                      
+                      <Input
+                        placeholder="Chia sẻ kinh nghiệm nông nghiệp..."
+                        onClick={() => setOpen(true)}
+                        style={{ 
+                          flex: 1,
+                          borderRadius: 20,
+                          cursor: 'pointer'
+                        }}
+                        readOnly
+                      />
+                      
+                      <Button 
+                        type="primary"
+                        icon={<EditOutlined />}
+                        onClick={() => setOpen(true)}
+                        style={{ borderRadius: 20 }}
+                      >
+                        Đăng
+                      </Button>
+                    </Space>
+                  }
+                />
+
+                {/* Posts */}
+                <div>
+                  {loading ? (
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <NongLacCard key={index} loading />
+                      ))}
+                    </Space>
+                  ) : filteredPosts.length === 0 ? (
+                    <NongLacCard
+                      content={
+                        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                          <Text type="secondary">
+                            {searchTerm ? 'Không tìm thấy bài viết nào.' : 'Chưa có bài viết nào trong danh mục này.'}
+                          </Text>
+                        </div>
+                      }
+                    />
+                  ) : (
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      {filteredPosts.map((post, index) => (
+                        <div 
+                          key={post.id}
+                          style={{
+                            opacity: 0,
+                            animation: `fadeInUp 0.6s ease-out ${index * 0.1}s forwards`
+                          }}
+                        >
+                          <EnhancedPostCard 
+                          post={post}
+                          currentUserId={user?.uid}
+                          onUserClick={(userId) => navigate(`/user/${userId}`)}
+                        />
+                        </div>
+                      ))}
+                      
+                      {loadingMore && (
+                        <div style={{ textAlign: 'center', padding: '24px' }}>
+                          <Spin size="large" />
+                          <div style={{ marginTop: 12 }}>
+                            <Text type="secondary">Đang tải thêm bài viết...</Text>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {!hasMore && filteredPosts.length > 0 && (
+                        <div style={{ textAlign: 'center', padding: '24px' }}>
+                          <Tag color="#52C41A" style={{ fontSize: 14, padding: '8px 16px' }}>
+                            🎉 Đã xem hết tất cả bài viết
+                          </Tag>
+                        </div>
+                      )}
+                    </Space>
+                  )}
+                </div>
+              </Space>
+            </Col>
+
+            {/* Right Sidebar - Weather & Market Prices */}
+            <Col xs={0} lg={6}>
+              <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <WeatherWidget />
+
+                {/* Quick Market Prices */}
+                <NongLacCard
+                  title={
+                    <Space>
+                      <span>Giá nông sản 24h</span>
+                      <Tag color="success" size="small">Live</Tag>
+                    </Space>
+                  }
+                  content={
+                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text>Lúa OM 5451</Text>
+                        <PriceDisplay 
+                          currentPrice={8200} 
+                          previousPrice={8000}
+                          unit="đ/kg"
+                          size="small"
+                        />
+                      </div>
+                      
+                      <Divider style={{ margin: '8px 0' }} />
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text>Cà phê Robusta</Text>
+                        <PriceDisplay 
+                          currentPrice={120000} 
+                          previousPrice={125000}
+                          unit="đ/kg"
+                          size="small"
+                        />
+                      </div>
+                      
+                      <Divider style={{ margin: '8px 0' }} />
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text>Tiêu đen</Text>
+                        <PriceDisplay 
+                          currentPrice={95000} 
+                          previousPrice={95000}
+                          unit="đ/kg"
+                          size="small"
+                        />
+                      </div>
+                      
+                      <Button 
+                        type="link" 
+                        block
+                        onClick={() => navigate('/gia-nong-san')}
+                        style={{ marginTop: 8 }}
+                      >
+                        Xem tất cả
+                      </Button>
+                    </Space>
+                  }
+                />
+
+                {/* Top Experts */}
+                <NongLacCard
+                  title={
+                    <Space>
+                      <TrophyOutlined style={{ color: '#FAAD14' }} />
+                      <span>Chuyên gia tuần này</span>
+                    </Space>
+                  }
+                  content={
+                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                      {topContributors.slice(0, 3).map((contributor, idx) => (
+                        <div 
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            transition: 'background-color 0.3s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#F6FFED'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                        >
+                          <Avatar 
+                            size={40}
+                            src={contributor.avatar}
+                            style={{ backgroundColor: '#52C41A' }}
+                          >
+                            {contributor.name?.charAt(0)}
+                          </Avatar>
+                          
+                          <div style={{ flex: 1 }}>
+                            <Text strong style={{ fontSize: 14 }}>
+                              {contributor.name}
+                            </Text>
+                            <div>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {contributor.posts} bài viết
+                              </Text>
+                            </div>
+                          </div>
+                          
+                          <div style={{ textAlign: 'right' }}>
+                            <Text strong style={{ fontSize: 12, color: '#52C41A' }}>
+                              {contributor.reputation} ⭐
+                            </Text>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <Button 
+                        block
+                        style={{ marginTop: 16 }}
+                        onClick={() => navigate('/register')}
+                      >
+                        <TeamOutlined /> Đăng ký chuyên gia
+                      </Button>
+                    </Space>
+                  }
+                />
+              </Space>
+            </Col>
+
+          </Row>
+        </Content>
+      </Layout>
 
       {/* Create Post Modal */}
-      {open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-semibold text-[#795548]">Tạo bài viết mới</h2>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1"
-                >
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Tiêu đề"
-                  value={newPost.title}
-                  onChange={(e) => setNewPost({...newPost, title: e.target.value})}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4CAF50] text-sm sm:text-base"
-                />
-                
-                <select
-                  value={newPost.category}
-                  onChange={(e) => setNewPost({...newPost, category: e.target.value})}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4CAF50] text-sm sm:text-base"
-                >
-                  <option value="">Chọn danh mục</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                
-                <textarea
-                  placeholder="Nội dung"
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({...newPost, content: e.target.value})}
-                  rows={4}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4CAF50] resize-none text-sm sm:text-base"
-                />
-                
-                <GitHubImageUpload 
-                  onUploadComplete={(imageUrl) => {
-                    setNewPost(prev => ({...prev, images: [...(prev.images || []), imageUrl]}));
-                  }}
-                />
-                
-                <button 
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full bg-[#4CAF50] text-white py-2 rounded-lg hover:bg-[#45a049] transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Đang đăng...' : 'Đăng bài'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Action Button */}
-      <button
-        onClick={() => user ? setOpen(true) : navigate('/login')}
-        aria-label="Tạo bài viết mới"
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#4CAF50] text-white rounded-full shadow-lg hover:bg-[#45a049] transition-colors flex items-center justify-center z-40 lg:hidden"
+      <Modal
+        title="Tạo bài viết mới"
+        open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        width={600}
+        style={{ top: 20 }}
       >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
+        <Form layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="Tiêu đề"
+            required
+            rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
+          >
+            <Input
+              placeholder="Nhập tiêu đề bài viết..."
+              value={newPost.title}
+              onChange={(e) => setNewPost({...newPost, title: e.target.value})}
+              size="large"
+            />
+          </Form.Item>
+          
+          <Form.Item
+            label="Danh mục"
+            required
+            rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
+          >
+            <Select
+              placeholder="Chọn danh mục"
+              value={newPost.category}
+              onChange={(value) => setNewPost({...newPost, category: value})}
+              size="large"
+            >
+              {categories.map(cat => (
+                <Option key={cat.key} value={cat.label}>
+                  <Space>
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </Space>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
+            label="Nội dung"
+            required
+            rules={[{ required: true, message: 'Vui lòng nhập nội dung!' }]}
+          >
+            <TextArea
+              placeholder="Chia sẻ kinh nghiệm, kiến thức nông nghiệp của bạn..."
+              value={newPost.content}
+              onChange={(e) => setNewPost({...newPost, content: e.target.value})}
+              rows={6}
+              showCount
+              maxLength={2000}
+            />
+          </Form.Item>
+          
+          <Form.Item label="Hình ảnh">
+            <GitHubImageUpload 
+              onUploadComplete={(imageUrl) => {
+                setNewPost(prev => ({...prev, images: [...(prev.images || []), imageUrl]}));
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => setOpen(false)}>
+                Hủy
+              </Button>
+              <Button 
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                size="large"
+              >
+                {submitting ? 'Đang đăng...' : 'Đăng bài'}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
+      {/* Floating Action Button - Mobile */}
+      <Button
+        type="primary"
+        shape="circle"
+        size="large"
+        icon={<PlusOutlined />}
+        onClick={() => user ? setOpen(true) : navigate('/login')}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          width: 56,
+          height: 56,
+          zIndex: 1000,
+          display: 'none'
+        }}
+        className="mobile-fab"
+      />
 
-      
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes fadeInUp {
@@ -725,23 +960,14 @@ const Home = () => {
           }
         }
         
-        .animate-bounce {
-          animation: bounce 1s infinite;
-        }
-        
-        @keyframes bounce {
-          0%, 20%, 53%, 80%, 100% {
-            transform: translate3d(0,0,0);
-          }
-          40%, 43% {
-            transform: translate3d(0,-8px,0);
-          }
-          70% {
-            transform: translate3d(0,-4px,0);
+        @media (max-width: 992px) {
+          .mobile-fab {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
           }
         }
       `}</style>
-      </main>
     </>
   );
 };
