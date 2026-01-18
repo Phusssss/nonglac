@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthGuard } from '../hooks/useAuthGuard';
 import { collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import subscriptionService from '../services/subscriptionService';
 import { chatWithAgriBot, analyzePlantImage } from '../services/geminiService';
+import EnhancedLoginModal from './enhanced/EnhancedLoginModal';
 
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
@@ -126,6 +128,7 @@ THÔNG TIN NGƯỜI DÙNG:
 
 const ChatBot = () => {
   const { user } = useAuth();
+  const { requireAuthForAI, showLoginModal, setShowLoginModal } = useAuthGuard();
   const [isOpen, setIsOpen] = useState(false);
 
   // Listen for open event from navbar
@@ -241,128 +244,136 @@ const ChatBot = () => {
     e.preventDefault();
     if (!inputText.trim() && !currentImage) return;
     
-    // Rate limiting: minimum 2 seconds between requests
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime.current;
-    if (timeSinceLastRequest < 2000) {
-      const waitTime = Math.ceil((2000 - timeSinceLastRequest) / 1000);
-      const warningMsg = {
+    // Kiểm tra auth trước khi gửi message
+    return requireAuthForAI(async () => {
+      // Rate limiting: minimum 2 seconds between requests
+      const now = Date.now();
+      const timeSinceLastRequest = now - lastRequestTime.current;
+      if (timeSinceLastRequest < 2000) {
+        const waitTime = Math.ceil((2000 - timeSinceLastRequest) / 1000);
+        const warningMsg = {
+          id: Date.now(),
+          type: 'bot',
+          content: `⏳ Vui lòng chờ ${waitTime} giây nữa...`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, warningMsg]);
+        return;
+      }
+      lastRequestTime.current = now;
+
+      const userMessage = {
         id: Date.now(),
-        type: 'bot',
-        content: `⏳ Vui lòng chờ ${waitTime} giây nữa...`,
+        type: 'user',
+        content: inputText,
+        image: currentImage,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, warningMsg]);
-      return;
-    }
-    lastRequestTime.current = now;
 
-
-
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: inputText,
-      image: currentImage,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    addToHistory('user', inputText, currentImage);
-    updateUserContextFromText(inputText);
-    if (user) {
-      saveToFirestore(user.uid, user.displayName, 'user', inputText, currentImage);
-    }
-    
-    const sentText = inputText;
-    const sentImage = currentImage;
-    setInputText('');
-    setCurrentImage(null);
-    setIsLoading(true);
-
-    try {
-      let responseText;
-      if (sentImage) {
-        const imagePrompt = sentText || "Hãy chẩn đoán tình trạng cây này và đề xuất cách điều trị.";
-        responseText = await analyzePlantImage(sentImage.data, imagePrompt);
-      } else {
-        responseText = await chatWithAgriBot(chatHistory, sentText);
-      }
-      
-      const fullText = responseText || 'Xin lỗi, Lạc Lạc không thể trả lời lúc này.';
-      
-      // Create empty bot message first
-      const botMessageId = Date.now() + 1;
-      const botResponse = {
-        id: botMessageId,
-        type: 'bot',
-        content: '',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botResponse]);
-      
-      // Start typing animation
-      setIsLoading(false);
-      setIsTyping(true);
-      
-      // Stream text character by character
-      let currentText = '';
-      for (let i = 0; i < fullText.length; i++) {
-        currentText += fullText[i];
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === botMessageId 
-              ? { ...msg, content: currentText }
-              : msg
-          )
-        );
-        await new Promise(resolve => setTimeout(resolve, 30)); // 30ms delay per character
-      }
-      
-      // Stop typing animation
-      setIsTyping(false);
-      
-      addToHistory('assistant', fullText);
+      setMessages(prev => [...prev, userMessage]);
+      addToHistory('user', inputText, currentImage);
+      updateUserContextFromText(inputText);
       if (user) {
-        saveToFirestore(user.uid, user.displayName, 'assistant', fullText);
-        await updateQuota(); // Update quota after AI call
+        saveToFirestore(user.uid, user.displayName, 'user', inputText, currentImage);
       }
-    } catch (error) {
-      console.error('ChatBot error:', error);
-      setIsTyping(false);
       
-      let errorMessage = 'Xin lỗi, Lạc Lạc đang gặp sự cố kỹ thuật. Bạn thử lại sau nhé!';
+      const sentText = inputText;
+      const sentImage = currentImage;
+      setInputText('');
+      setCurrentImage(null);
+      setIsLoading(true);
+
+      try {
+        let responseText;
+        if (sentImage) {
+          const imagePrompt = sentText || "Hãy chẩn đoán tình trạng cây này và đề xuất cách điều trị.";
+          responseText = await analyzePlantImage(sentImage.data, imagePrompt);
+        } else {
+          responseText = await chatWithAgriBot(chatHistory, sentText);
+        }
+        
+        // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+        if (responseText === null) {
+          // Service đã xử lý auth guard, không cần làm gì thêm
+          setIsLoading(false);
+          return;
+        }
+        
+        const fullText = responseText || 'Xin lỗi, Lạc Lạc không thể trả lời lúc này.';
+        
+        // Create empty bot message first
+        const botMessageId = Date.now() + 1;
+        const botResponse = {
+          id: botMessageId,
+          type: 'bot',
+          content: '',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botResponse]);
+        
+        // Start typing animation
+        setIsLoading(false);
+        setIsTyping(true);
+        
+        // Stream text character by character
+        let currentText = '';
+        for (let i = 0; i < fullText.length; i++) {
+          currentText += fullText[i];
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === botMessageId 
+                ? { ...msg, content: currentText }
+                : msg
+            )
+          );
+          await new Promise(resolve => setTimeout(resolve, 30)); // 30ms delay per character
+        }
       
-      // Handle quota exceeded error
-      if (error.message?.includes('Đã hết lượt sử dụng')) {
-        errorMessage = `😔 Bạn đã hết lượt hỏi AI hôm nay!
+        // Stop typing animation
+        setIsTyping(false);
+        
+        addToHistory('assistant', fullText);
+        if (user) {
+          saveToFirestore(user.uid, user.displayName, 'assistant', fullText);
+          await updateQuota(); // Update quota after AI call
+        }
+      } catch (error) {
+        console.error('ChatBot error:', error);
+        setIsTyping(false);
+        
+        let errorMessage = 'Xin lỗi, Lạc Lạc đang gặp sự cố kỹ thuật. Bạn thử lại sau nhé!';
+        
+        // Handle quota exceeded error
+        if (error.message?.includes('Đã hết lượt sử dụng')) {
+          errorMessage = `😔 Bạn đã hết lượt hỏi AI hôm nay!
 
 🌱 Gói hiện tại: TẬP SỰ (20 câu hỏi/ngày)
 
-🚀 Nâng cấp gói cao hơn:
+🚀 Nâng cấp gói cao hơ:
 • NHÀ NÔNG: 100 câu hỏi/ngày - 99k/tháng
 • CHUYÊN GIA: Không giới hạn - 149k/tháng
 
 🔄 Hoặc chờ đến ngày mai để có lại 20 lượt miễn phí!`;
-      } else if (error.message?.includes('429') || error.status === 429) {
-        errorMessage = '😔 Lạc Lạc đã trả lời quá nhiều hôm nay! Vui lòng chờ 1-2 phút rồi thử lại nhé. (Giới hạn API: 15 requests/phút)';
-      } else if (error.message?.includes('API key')) {
-        errorMessage = '⚠️ API key không hợp lệ. Vui lòng kiểm tra lại cấu hình!';
+        } else if (error.message?.includes('429') || error.status === 429) {
+          errorMessage = '😔 Lạc Lạc đã trả lời quá nhiều hôm nay! Vui lòng chờ 1-2 phút rồi thử lại nhé. (Giới hạn API: 15 requests/phút)';
+        } else if (error.message?.includes('API key')) {
+          errorMessage = '⚠️ API key không hợp lệ. Vui lòng kiểm tra lại cấu hình!';
+        }
+        
+        const errorResponse = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: errorMessage,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorResponse]);
+        addToHistory('assistant', errorMessage);
+        if (user) {
+          saveToFirestore(user.uid, user.displayName, 'assistant', errorMessage);
+        }
       }
-      
-      const errorResponse = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: errorMessage,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorResponse]);
-      addToHistory('assistant', errorMessage);
-      if (user) {
-        saveToFirestore(user.uid, user.displayName, 'assistant', errorMessage);
-      }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
   };
 
 
@@ -1113,6 +1124,15 @@ const ChatBot = () => {
           }
         `}
       </style>
+
+      {/* Enhanced Login Modal */}
+      <EnhancedLoginModal
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        title="Đăng nhập để sử dụng AI"
+        message="Đăng nhập để trò chuyện với Lạc Lạc - AI nông nghiệp"
+        feature="sử dụng trợ lý AI nông nghiệp"
+      />
     </div>
   );
 };

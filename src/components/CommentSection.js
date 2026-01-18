@@ -145,6 +145,12 @@ const CommentSection = ({ postId, postAuthorId, postContent, postTitle, onCommen
       const prompt = `Với tư cách là chuyên gia nông nghiệp AgriBot, hãy viết một bình luận hữu ích, ngắn gọn để trả lời cho bài viết này: "${postTitle}: ${postContent}"`;
       const aiResponse = await chatWithAgriBot([], prompt);
       
+      // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+      if (aiResponse === null) {
+        // Service đã xử lý auth guard, không cần làm gì thêm
+        return;
+      }
+      
       await addDoc(collection(db, 'comments'), {
         postId,
         content: aiResponse,
@@ -176,6 +182,12 @@ const CommentSection = ({ postId, postAuthorId, postContent, postTitle, onCommen
       // Gọi Gemini API để reply comment
       const prompt = `Ngữ cảnh bài viết: "${postTitle}: ${postContent}". Người dùng ${comment.authorName} đã bình luận: "${comment.content}". Là AgriBot, hãy trả lời trực tiếp cho bình luận của ${comment.authorName} một cách lịch sự, hữu ích và ngắn gọn. Bắt đầu bằng "Chào @${comment.authorName},...".`;
       const aiResponse = await chatWithAgriBot([], prompt);
+      
+      // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+      if (aiResponse === null) {
+        // Service đã xử lý auth guard, không cần làm gì thêm
+        return;
+      }
       
       await addDoc(collection(db, 'comments'), {
         postId,

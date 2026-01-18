@@ -5,14 +5,17 @@ import missionService from '../../services/missionService';
 import { BADGES, ULTIMATE_REWARD } from '../../data/missions';
 import ProfileCompletionModal from './ProfileCompletionModal';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import EnhancedLoginModal from '../enhanced/EnhancedLoginModal';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 const MissionScreen = () => {
   const { user, userProfile } = useAuth();
+  const { requireAuth, showLoginModal, setShowLoginModal } = useAuthGuard();
   const [missions, setMissions] = useState([]);
   const [userScore, setUserScore] = useState(0);
   const [userLevel, setUserLevel] = useState({});
@@ -21,8 +24,18 @@ const MissionScreen = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Chỉ load data khi user đã đăng nhập
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  // Hiển thị modal nếu chưa đăng nhập
+  useEffect(() => {
+    if (!user) {
+      setShowLoginModal(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     // Đồng bộ trạng thái nhiệm vụ với Firestore
@@ -53,17 +66,30 @@ const MissionScreen = () => {
   };
 
   const handleClaimReward = (missionId) => {
-    const result = missionService.claimMissionReward(missionId);
-    if (result.success) {
-      loadData();
-      alert(result.message);
-    }
+    return requireAuth(() => {
+      const result = missionService.claimMissionReward(missionId);
+      if (result.success) {
+        loadData();
+        notification.success({
+          message: 'Thành công!',
+          description: result.message
+        });
+      }
+    }, {
+      message: 'Đăng nhập để nhận thưởng',
+      feature: 'nhận thưởng nhiệm vụ'
+    });
   };
 
   const handleMissionAction = (mission) => {
-    if (mission.id === 'complete_profile') {
-      setShowProfileModal(true);
-    }
+    return requireAuth(() => {
+      if (mission.id === 'complete_profile') {
+        setShowProfileModal(true);
+      }
+    }, {
+      message: 'Đăng nhập để thực hiện nhiệm vụ',
+      feature: 'thực hiện nhiệm vụ'
+    });
   };
 
   const handleProfileComplete = async (profileData) => {
@@ -287,6 +313,15 @@ const MissionScreen = () => {
           visible={showProfileModal}
           onClose={() => setShowProfileModal(false)}
           onComplete={handleProfileComplete}
+        />
+
+        {/* Enhanced Login Modal */}
+        <EnhancedLoginModal
+          open={showLoginModal}
+          onCancel={() => setShowLoginModal(false)}
+          title="Đăng nhập để xem nhiệm vụ"
+          message="Đăng nhập để xem và thực hiện các nhiệm vụ nâng cao uy tín"
+          feature="sử dụng hệ thống nhiệm vụ"
         />
       </div>
     </div>

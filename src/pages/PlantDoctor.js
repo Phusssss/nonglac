@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { plantDoctorService } from '../services/aiService';
+import { analyzePlantImage } from '../services/geminiService';
+import { useAuth } from '../hooks/useAuth';
+import { useAuthGuard } from '../hooks/useAuthGuard';
 import { useErrorHandler } from '../utils/errorHandler';
 import AIQuotaIndicator from '../components/AIQuotaIndicator';
+import EnhancedLoginModal from '../components/enhanced/EnhancedLoginModal';
 
 const PlantDoctor = () => {
+  const { user } = useAuth();
+  const { requireAuthForAI, showLoginModal, setShowLoginModal } = useAuthGuard();
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [analysis, setAnalysis] = useState('');
@@ -27,22 +32,47 @@ const PlantDoctor = () => {
   const handleAnalyze = async () => {
     if (!selectedFile) return;
     
-    setLoading(true);
-    setAnalysis('');
-    
-    const result = await handleAsyncError(async () => {
-      const userPrompt = prompt || "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.";
-      return await plantDoctorService.diagnose(selectedFile, userPrompt);
-    }, {
-      component: 'PlantDoctor',
-      action: 'analyze'
-    });
+    return requireAuthForAI(async () => {
+      setLoading(true);
+      setAnalysis('');
+      
+      try {
+        const userPrompt = prompt || "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.";
+        
+        // Convert file to base64
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64String = reader.result.split(',')[1];
+            resolve(base64String);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
 
-    if (result) {
-      setAnalysis(result.result);
-    }
-    
-    setLoading(false);
+        const result = await analyzePlantImage(base64, userPrompt);
+        
+        // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+        if (result === null) {
+          // Service đã xử lý auth guard, không cần làm gì thêm
+          setLoading(false);
+          return;
+        }
+
+        if (result) {
+          setAnalysis(result);
+        }
+      } catch (error) {
+        handleAsyncError(async () => {
+          throw error;
+        }, {
+          component: 'PlantDoctor',
+          action: 'analyze'
+        });
+      }
+      
+      setLoading(false);
+    });
   };
 
   return (
@@ -208,6 +238,15 @@ const PlantDoctor = () => {
 
         </div>
       </div>
+
+      {/* Enhanced Login Modal */}
+      <EnhancedLoginModal
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        title="Đăng nhập để sử dụng Bác sĩ cây trồng"
+        message="Đăng nhập để sử dụng AI chẩn đoán bệnh cây trồng"
+        feature="sử dụng công cụ chẩn đoán AI"
+      />
 
       <style jsx>{`
         @keyframes scan {

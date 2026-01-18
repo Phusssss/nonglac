@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './styles/theme.css';
 import App from './App';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 // Suppress React warnings in console
 const originalError = console.error;
@@ -23,3 +24,13 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Register service worker for PWA functionality
+serviceWorkerRegistration.register({
+  onSuccess: (registration) => {
+    console.log('PWA: Service worker registered successfully');
+  },
+  onUpdate: (registration) => {
+    console.log('PWA: New content is available');
+  }
+});

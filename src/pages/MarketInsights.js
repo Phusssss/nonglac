@@ -25,6 +25,13 @@ const MarketInsights = () => {
     setLoading(true);
     try {
       const result = await getMarketInsights(query);
+      
+      // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+      if (result === null) {
+        // Service đã xử lý auth guard, không cần làm gì thêm
+        return;
+      }
+      
       setInsights(result);
     } catch (error) {
       console.error('Error fetching insights:', error);
@@ -42,7 +49,14 @@ const MarketInsights = () => {
     setQuery(product);
     setLoading(true);
     getMarketInsights(product)
-      .then(result => setInsights(result))
+      .then(result => {
+        // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+        if (result === null) {
+          // Service đã xử lý auth guard, không cần làm gì thêm
+          return;
+        }
+        setInsights(result);
+      })
       .catch(error => {
         if (error.message?.includes('Đã hết lượt sử dụng')) {
           setInsights('😔 Bạn đã hết lượt sử dụng thị trường hôm nay!\n\n🚀 Nâng cấp gói để có thêm lượt hoặc chờ đến ngày mai.');

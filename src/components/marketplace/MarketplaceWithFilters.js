@@ -4,11 +4,14 @@ import { FilterOutlined, PlusOutlined, EnvironmentOutlined, CalendarOutlined, Ey
 import { collection, addDoc, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthGuard } from '../../hooks/useAuthGuard';
 import FilterPanel from '../filters/FilterPanel';
 import ProductPostForm from './ProductPostForm';
 import ProductCard from './ProductCard';
 import ProductImageGallery from './ProductImageGallery';
 import ContactModal from './ContactModal';
+import EnhancedLoginModal from '../enhanced/EnhancedLoginModal';
+import AuthGuardButton from '../enhanced/AuthGuardButton';
 import filterService from '../../services/filterService';
 import imageUploadService from '../../services/imageUploadService';
 import './marketplace.css';
@@ -19,6 +22,7 @@ const { Title, Text } = Typography;
 
 const MarketplaceWithFilters = () => {
   const { user } = useAuth();
+  const { requireAuthForMarketplace, showLoginModal, setShowLoginModal } = useAuthGuard();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [activeFilters, setActiveFilters] = useState({});
@@ -86,30 +90,27 @@ const MarketplaceWithFilters = () => {
   };
 
   const handleProductSubmit = async (productData) => {
-    if (!user) {
-      alert('Vui lòng đăng nhập để đăng sản phẩm');
-      return;
-    }
-
-    try {
-      const newProduct = {
-        ...productData,
-        userId: user.uid,
-        userEmail: user.email,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      const productsRef = collection(db, 'marketplace_products');
-      const docRef = await addDoc(productsRef, newProduct);
-      
-      await loadProducts();
-      setPostFormOpen(false);
-      alert('Đăng sản phẩm thành công!');
-    } catch (error) {
-      console.error('Error adding product:', error);
-      alert('Có lỗi xảy ra khi đăng sản phẩm: ' + error.message);
-    }
+    return requireAuthForMarketplace(async () => {
+      try {
+        const newProduct = {
+          ...productData,
+          userId: user.uid,
+          userEmail: user.email,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const productsRef = collection(db, 'marketplace_products');
+        const docRef = await addDoc(productsRef, newProduct);
+        
+        await loadProducts();
+        setPostFormOpen(false);
+        alert('Đăng sản phẩm thành công!');
+      } catch (error) {
+        console.error('Error adding product:', error);
+        alert('Có lỗi xảy ra khi đăng sản phẩm: ' + error.message);
+      }
+    });
   };
 
   const formatPrice = (price) => {
@@ -140,28 +141,25 @@ const MarketplaceWithFilters = () => {
   };
 
   const handleContactClick = async (product) => {
-    if (!user) {
-      alert('Vui lòng đăng nhập để xem thông tin liên hệ!');
-      return;
-    }
-    
-    try {
-      // Get seller info from users collection
-      const userDoc = await getDoc(doc(db, 'users', product.userId));
-      const sellerData = userDoc.exists() ? userDoc.data() : {};
-      
-      setSelectedProduct(product);
-      setSelectedSeller({
-        id: product.userId,
-        name: sellerData.displayName || product.userEmail,
-        email: product.userEmail,
-        phone: sellerData.phone || product.phone,
-        ...sellerData
-      });
-      setContactModalOpen(true);
-    } catch (error) {
-      console.error('Error getting seller info:', error);
-    }
+    return requireAuthForMarketplace(async () => {
+      try {
+        // Get seller info from users collection
+        const userDoc = await getDoc(doc(db, 'users', product.userId));
+        const sellerData = userDoc.exists() ? userDoc.data() : {};
+        
+        setSelectedProduct(product);
+        setSelectedSeller({
+          id: product.userId,
+          name: sellerData.displayName || product.userEmail,
+          email: product.userEmail,
+          phone: sellerData.phone || product.phone,
+          ...sellerData
+        });
+        setContactModalOpen(true);
+      } catch (error) {
+        console.error('Error getting seller info:', error);
+      }
+    });
   };
 
 
@@ -204,17 +202,12 @@ const MarketplaceWithFilters = () => {
               </div>
             </Col>
             <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-              <Button
+              <AuthGuardButton
                 type="primary"
                 size={isMobile ? 'middle' : 'large'}
                 icon={<PlusOutlined />}
-                onClick={() => {
-                  if (!user) {
-                    alert('Vui lòng đăng nhập để đăng sản phẩm');
-                    return;
-                  }
-                  setPostFormOpen(true);
-                }}
+                authType="marketplace"
+                onClick={() => setPostFormOpen(true)}
                 style={{
                   background: 'linear-gradient(135deg, #52c41a, #389e0d)',
                   border: 'none',
@@ -227,7 +220,7 @@ const MarketplaceWithFilters = () => {
                 }}
               >
                 Đăng bán sản phẩm
-              </Button>
+              </AuthGuardButton>
             </Col>
           </Row>
         </div>
@@ -297,17 +290,12 @@ const MarketplaceWithFilters = () => {
               </div>
             }
           >
-            <Button
+            <AuthGuardButton
               type="primary"
               size="large"
               icon={<PlusOutlined />}
-              onClick={() => {
-                if (!user) {
-                  alert('Vui lòng đăng nhập để đăng sản phẩm');
-                  return;
-                }
-                setPostFormOpen(true);
-              }}
+              authType="marketplace"
+              onClick={() => setPostFormOpen(true)}
               style={{
                 background: 'linear-gradient(135deg, #52c41a, #389e0d)',
                 border: 'none',
@@ -315,7 +303,7 @@ const MarketplaceWithFilters = () => {
               }}
             >
               Đăng sản phẩm đầu tiên
-            </Button>
+            </AuthGuardButton>
           </Empty>
         )}
       </div>
@@ -365,6 +353,14 @@ const MarketplaceWithFilters = () => {
         onClose={() => setContactModalOpen(false)}
         product={selectedProduct}
         seller={selectedSeller}
+      />
+      {/* Enhanced Login Modal */}
+      <EnhancedLoginModal
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        title="Đăng nhập để sử dụng chợ"
+        message="Đăng nhập để đăng sản phẩm và liên hệ với người bán"
+        feature="mua bán nông sản trực tuyến"
       />
     </Layout>
   );

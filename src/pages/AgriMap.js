@@ -69,6 +69,13 @@ const AgriMap = () => {
     
     try {
       const data = await findPlaces(q, userLocation?.lat, userLocation?.lng);
+      
+      // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+      if (data === null) {
+        // Service đã xử lý auth guard, không cần làm gì thêm
+        return;
+      }
+      
       setResults(data);
     } catch (error) {
       console.error('Error finding places:', error);

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Alert, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, Button, Card, Typography, Alert, Space, message } from 'antd';
 import { PhoneOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService';
+import { authRedirectService } from '../../services/authRedirectService';
 import logo from '../../assets/images/logo.demo.nontext.png';
 
 const { Title, Text, Link } = Typography;
@@ -10,7 +11,16 @@ const { Title, Text, Link } = Typography;
 const PhoneLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loginMessage, setLoginMessage] = useState('');
   const navigate = useNavigate();
+
+  // Hiển thị message từ redirect
+  useEffect(() => {
+    const message = localStorage.getItem('loginMessage');
+    if (message) {
+      setLoginMessage(message);
+    }
+  }, []);
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -23,7 +33,8 @@ const PhoneLogin = () => {
       );
       
       if (result.success) {
-        navigate('/');
+        // Xử lý redirect sau khi đăng nhập thành công
+        authRedirectService.handlePostLoginRedirect(navigate);
       } else {
         setError(result.message);
       }
@@ -48,7 +59,7 @@ const PhoneLogin = () => {
             Đăng nhập
           </Title>
           <Text className="text-gray-600">
-            Đăng nhập bằng số điện thoại và mật khẩu
+            {loginMessage || 'Đăng nhập bằng số điện thoại và mật khẩu'}
           </Text>
         </div>
 

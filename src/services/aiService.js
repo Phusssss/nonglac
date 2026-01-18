@@ -14,7 +14,8 @@ class AIService {
   async getAuthHeaders() {
     const user = auth.currentUser;
     if (!user) {
-      throw new Error('Bạn cần đăng nhập để sử dụng dịch vụ AI');
+      // Trả về null để component xử lý auth guard
+      return null;
     }
 
     const token = await user.getIdToken();
@@ -28,6 +29,11 @@ class AIService {
   async apiCall(endpoint, data, options = {}) {
     try {
       const headers = await this.getAuthHeaders();
+      
+      // Kiểm tra nếu getAuthHeaders trả về null (user chưa đăng nhập)
+      if (headers === null) {
+        return null;
+      }
       
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         method: 'POST',
@@ -63,7 +69,10 @@ class AIService {
   async analyzeText(prompt, type = 'general') {
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Bạn cần đăng nhập');
+      if (!user) {
+        // Trả về null để component xử lý auth guard
+        return null;
+      }
 
       const data = {
         prompt: prompt.trim(),
@@ -72,6 +81,11 @@ class AIService {
       };
 
       const response = await this.apiCall('/text', data);
+      
+      // Kiểm tra nếu apiCall trả về null
+      if (response === null) {
+        return null;
+      }
       
       return {
         success: true,
@@ -94,7 +108,10 @@ class AIService {
   async analyzePlantImage(base64Image, prompt = "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.") {
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Bạn cần đăng nhập');
+      if (!user) {
+        // Trả về null để component xử lý auth guard
+        return null;
+      }
 
       // Validate image size
       const imageSizeKB = (base64Image.length * 3) / 4 / 1024;
@@ -109,6 +126,11 @@ class AIService {
       };
 
       const response = await this.apiCall('/image', data);
+      
+      // Kiểm tra nếu apiCall trả về null
+      if (response === null) {
+        return null;
+      }
       
       return {
         success: true,
@@ -131,7 +153,10 @@ class AIService {
   async analyzeMarket(product, timeframe = '1month', additionalContext = '') {
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Bạn cần đăng nhập');
+      if (!user) {
+        // Trả về null để component xử lý auth guard
+        return null;
+      }
 
       const data = {
         product: product.trim(),
@@ -141,6 +166,11 @@ class AIService {
       };
 
       const response = await this.apiCall('/market-analysis', data);
+      
+      // Kiểm tra nếu apiCall trả về null
+      if (response === null) {
+        return null;
+      }
       
       return {
         success: true,
@@ -187,9 +217,18 @@ class AIService {
   async getUsageStats() {
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Bạn cần đăng nhập');
+      if (!user) {
+        // Trả về null để component xử lý auth guard
+        return null;
+      }
 
       const headers = await this.getAuthHeaders();
+      
+      // Kiểm tra nếu getAuthHeaders trả về null
+      if (headers === null) {
+        return null;
+      }
+      
       const response = await fetch(`${this.baseURL}/usage/${user.uid}`, {
         headers
       });
@@ -271,7 +310,14 @@ export const plantDoctorService = {
         ? `Chẩn đoán bệnh cây với các triệu chứng: ${symptoms}`
         : 'Chẩn đoán bệnh cây và đưa ra cách điều trị';
 
-      return await aiService.analyzePlantImage(base64, prompt);
+      const result = await aiService.analyzePlantImage(base64, prompt);
+      
+      // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+      if (result === null) {
+        return null;
+      }
+      
+      return result;
     } catch (error) {
       handleError(error, { 
         component: 'PlantDoctorService', 
@@ -283,7 +329,14 @@ export const plantDoctorService = {
 
   async getPreventionTips(cropType) {
     const prompt = `Đưa ra các biện pháp phòng ngừa bệnh cho cây ${cropType}`;
-    return await aiService.analyzeText(prompt, 'general');
+    const result = await aiService.analyzeText(prompt, 'general');
+    
+    // Kiểm tra nếu service trả về null (user chưa đăng nhập)
+    if (result === null) {
+      return null;
+    }
+    
+    return result;
   }
 };
 

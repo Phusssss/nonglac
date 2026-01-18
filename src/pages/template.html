@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NongLac - Mạng xã hội nông nghiệp</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#4CAF50", // A fresh, vibrant green
+                        secondary: "#8BC34A",
+                        "primary-dark": "#388E3C",
+                        "background-light": "#F7FDF7", // Very light minty background
+                        "background-dark": "#121C14", // Dark forest background
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1E2A22",
+                        "text-main-light": "#1F2937",
+                        "text-main-dark": "#E5E7EB",
+                        "text-muted-light": "#6B7280",
+                        "text-muted-dark": "#9CA3AF",
+                        "border-light": "#E5E7EB",
+                        "border-dark": "#374151",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                        'xl': "1rem",
+                        '2xl': "1.5rem",
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark transition-colors duration-300">
+<div class="bg-red-500 text-white text-xs py-1 text-center font-medium">
+        🚧 Bản thử nghiệm - Không chịu trách nhiệm với dữ liệu 🚧
+    </div>
+<header class="sticky top-0 z-50 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-border-light dark:border-border-dark shadow-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16 gap-4">
+<div class="flex-shrink-0 flex items-center cursor-pointer">
+<span class="text-2xl font-bold text-primary tracking-tight flex items-center gap-1">
+<span class="material-icons-round text-3xl">spa</span>
+                        NONGLAC
+                    </span>
+</div>
+<div class="hidden md:flex flex-1 max-w-lg mx-4">
+<div class="relative w-full group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons-round text-text-muted-light dark:text-text-muted-dark group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 border border-border-light dark:border-border-dark rounded-full leading-5 bg-gray-50 dark:bg-gray-800 text-sm placeholder-text-muted-light dark:placeholder-text-muted-dark focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out shadow-sm" placeholder="Tìm kiếm nông dân, sản phẩm, tin tức..." type="text"/>
+</div>
+</div>
+<nav class="hidden lg:flex items-center space-x-6 text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
+<a class="flex flex-col items-center gap-1 text-primary hover:text-primary-dark transition-colors" href="#">
+<span class="material-icons-round text-xl">home</span>
+<span>Trang chủ</span>
+</a>
+<a class="flex flex-col items-center gap-1 hover:text-primary transition-colors group" href="#">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">emoji_events</span>
+<span>Nhiệm vụ</span>
+</a>
+<a class="flex flex-col items-center gap-1 hover:text-primary transition-colors group" href="#">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">trending_up</span>
+<span>Giá cả</span>
+</a>
+<a class="flex flex-col items-center gap-1 hover:text-primary transition-colors group" href="#">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">storefront</span>
+<span>Chợ</span>
+</a>
+<div class="relative group cursor-pointer flex flex-col items-center gap-1 hover:text-primary transition-colors">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">smart_toy</span>
+<div class="flex items-center">AI Tools <span class="material-icons-round text-sm ml-0.5">expand_more</span></div>
+</div>
+</nav>
+<div class="flex items-center gap-3">
+<button class="hidden sm:block text-text-main-light dark:text-text-main-dark hover:text-primary font-medium text-sm transition-colors">Đăng ký</button>
+<button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg shadow-green-500/30 transition-all hover:shadow-green-500/50 transform hover:-translate-y-0.5">
+                        Đăng nhập
+                    </button>
+<button class="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-text-muted-light dark:text-text-muted-dark transition-colors">
+<span class="material-icons-round text-xl">dark_mode</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-3 space-y-6">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft p-6 text-center border border-border-light/50 dark:border-border-dark/50">
+<div class="relative mx-auto w-24 h-24 mb-4">
+<div class="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500">
+<span class="material-icons-round text-6xl">person</span>
+</div>
+<div class="absolute bottom-0 right-0 bg-green-500 w-5 h-5 rounded-full border-4 border-white dark:border-surface-dark"></div>
+</div>
+<h2 class="text-xl font-bold text-text-main-light dark:text-text-main-dark mb-1">Chào mừng đến NôngLạc</h2>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark mb-6">Kết nối cộng đồng nông nghiệp Việt</p>
+<button class="w-full py-2.5 rounded-xl border border-border-light dark:border-border-dark hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors text-text-muted-light dark:text-text-muted-dark">
+                        Đăng nhập để tham gia
+                    </button>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border-light/50 dark:border-border-dark/50 overflow-hidden">
+<div class="p-4 border-b border-border-light dark:border-border-dark bg-green-50/50 dark:bg-green-900/20">
+<h3 class="font-bold text-lg text-text-main-light dark:text-text-main-dark flex items-center gap-2">
+<span class="material-icons-round text-primary">forum</span>
+                            Danh mục thảo luận
+                        </h3>
+</div>
+<div class="p-2">
+<a class="flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors group" href="#">
+<div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+<span class="material-icons-round">agriculture</span>
+</div>
+<span class="font-medium text-text-main-light dark:text-text-main-dark group-hover:text-primary transition-colors">Trồng trọt</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors group" href="#">
+<div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400">
+<span class="material-icons-round">pest_control_rodent</span>
+</div>
+<span class="font-medium text-text-main-light dark:text-text-main-dark group-hover:text-primary transition-colors">Chăn nuôi</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors group" href="#">
+<div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+<span class="material-icons-round">water_drop</span>
+</div>
+<span class="font-medium text-text-main-light dark:text-text-main-dark group-hover:text-primary transition-colors">Thủy sản</span>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors group" href="#">
+<div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+<span class="material-icons-round">store</span>
+</div>
+<span class="font-medium text-text-main-light dark:text-text-main-dark group-hover:text-primary transition-colors">Mua bán</span>
+</a>
+</div>
+</div>
+<div class="flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted-light dark:text-text-muted-dark px-2">
+<a class="hover:underline" href="#">Điều khoản</a>
+<a class="hover:underline" href="#">Về chúng tôi</a>
+<a class="hover:underline" href="#">Quyền riêng tư</a>
+<span class="block w-full mt-2 opacity-70">© 2023 NongLac Inc.</span>
+</div>
+</div>
+<div class="lg:col-span-6 space-y-6">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft p-4 border border-border-light/50 dark:border-border-dark/50">
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold shadow-md flex-shrink-0">
+                            G
+                        </div>
+<div class="flex-1">
+<input class="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 transition-shadow mb-3 dark:text-white" placeholder="Chia sẻ kinh nghiệm nông nghiệp của bạn..." type="text"/>
+<div class="flex justify-between items-center border-t border-border-light dark:border-border-dark pt-3">
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-green-600 dark:text-green-400 transition-colors" title="Ảnh">
+<span class="material-icons-round text-xl">image</span>
+</button>
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-500 transition-colors" title="Video">
+<span class="material-icons-round text-xl">videocam</span>
+</button>
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-orange-500 transition-colors" title="Cảm xúc">
+<span class="material-icons-round text-xl">sentiment_satisfied_alt</span>
+</button>
+</div>
+<button class="bg-primary hover:bg-primary-dark text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors opacity-90 hover:opacity-100">
+                                    Đăng bài
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<article class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft overflow-hidden border border-border-light/50 dark:border-border-dark/50">
+<div class="p-4 flex justify-between items-start">
+<div class="flex gap-3">
+<img alt="Hoanhavuon avatar" class="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDT2HssGt5IPgDnNK7N6AjoeRPZFEqbW2rPdH-_7d6XdhWUa6Kb1Gw6EEMe9_1VdYd5YxrqqD9kqhFPuQOVGM_BZKDF9miSRxERCVmqhlz0xvbixhFe55CJXgaOsoD715OHzpXUdiJYR45aAYXrTocnRRCmyRR7kOtLE3J8_RrskhOaIZc8UvpmE_flQZwCA966AGqb1HhXF1lJEzJi4vzmTYV0TB0409mOua1BwwxKq8D50y5scqZ-SM-sO_81_NNjDTtKxQNvuE"/>
+<div>
+<h4 class="font-bold text-text-main-light dark:text-text-main-dark text-sm hover:text-primary cursor-pointer">Hoanhavuon.com</h4>
+<div class="flex items-center gap-2 text-xs text-text-muted-light dark:text-text-muted-dark mt-0.5">
+<span class="flex items-center gap-1"><span class="material-icons-round text-[14px]">schedule</span> 16 ngày trước</span>
+<span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-green-200 dark:border-green-800 flex items-center gap-1">
+<span class="material-icons-round text-[10px]">newspaper</span> Khác
+                                    </span>
+</div>
+</div>
+</div>
+<button class="text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-full transition-colors">
+<span class="material-icons-round">more_horiz</span>
+</button>
+</div>
+<div class="px-4 pb-3">
+<h3 class="text-lg font-bold text-text-main-light dark:text-text-main-dark mb-2 leading-snug">
+                            Ứng dụng công nghệ cao trồng ớt chuông trong nhà màng
+                        </h3>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark leading-relaxed mb-3">
+                            Tỉnh Lâm Đồng đã và đang phát triển nhiều mô hình ứng dụng công nghệ cao nhằm đáp ứng nhu cầu về sản phẩm sạch, an toàn cho người tiêu dùng và tăng thu nhập cho các hộ nông dân. Việc xây dựng các mô...
+                            <span class="text-primary font-medium cursor-pointer hover:underline">Xem thêm</span>
+</p>
+</div>
+<div class="relative h-64 sm:h-80 w-full bg-gray-100 dark:bg-gray-800">
+<img alt="Ớt chuông nhà màng" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR2HWtGQpCDxfaTDO63j-iieSc65T8eraFa8vA0LQr5uH_fcr8WaegJi4XyJbywIWUv_tULO0DG7aLNTi4m32R8f1xE3jaKUv0fq81HHvCXW2ZeLUGttceBI8nMZtOQlEi27On_yjScN9G-YM7NkgbkLx40Ww5qKpwzFRcn2-8UhHuELfUaNLRSLueaKfYVKJvF-_mlj6RpOa3F7BZwkC4gX_xJ_U6DUUFMOIu-uUYvD2nd4_zf2P4Uvx36-8qa4n3XfF5BBLbS4c"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
+</div>
+<div class="px-4 py-3 flex items-center justify-between border-t border-border-light dark:border-border-dark">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-text-muted-light dark:text-text-muted-dark hover:text-red-500 transition-colors group">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">favorite_border</span>
+<span class="text-sm font-medium">245</span>
+</button>
+<button class="flex items-center gap-1.5 text-text-muted-light dark:text-text-muted-dark hover:text-blue-500 transition-colors group">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">chat_bubble_outline</span>
+<span class="text-sm font-medium">42</span>
+</button>
+<button class="flex items-center gap-1.5 text-text-muted-light dark:text-text-muted-dark hover:text-green-500 transition-colors group">
+<span class="material-icons-round text-xl group-hover:scale-110 transition-transform">share</span>
+<span class="text-sm font-medium">Chia sẻ</span>
+</button>
+</div>
+<button class="text-text-muted-light dark:text-text-muted-dark hover:text-primary transition-colors">
+<span class="material-icons-round text-xl">bookmark_border</span>
+</button>
+</div>
+</article>
+<article class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft p-4 border border-border-light/50 dark:border-border-dark/50 opacity-60">
+<div class="flex gap-4 items-center mb-4">
+<div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+<div class="flex flex-col gap-2">
+<div class="w-32 h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+<div class="w-20 h-2 bg-gray-100 dark:bg-gray-800 rounded"></div>
+</div>
+</div>
+<div class="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-xl mb-3"></div>
+<div class="w-3/4 h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+<div class="w-1/2 h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+</article>
+</div>
+<div class="lg:col-span-3 space-y-6">
+<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white relative overflow-hidden group">
+<div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10 blur-2xl group-hover:opacity-20 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4 relative z-10">
+<div class="flex items-center gap-1 text-sm font-medium bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm">
+<span class="material-icons-round text-sm">location_on</span>
+                            Tỉnh Lâm Đồng
+                        </div>
+<span class="material-icons-round animate-pulse">wb_sunny</span>
+</div>
+<div class="flex justify-between items-end mb-6 relative z-10">
+<div>
+<span class="text-5xl font-bold tracking-tighter">21°C</span>
+<p class="text-green-100 text-sm mt-1">Nắng nhẹ, có mây</p>
+</div>
+<span class="material-icons-round text-6xl opacity-80">cloud</span>
+</div>
+<div class="grid grid-cols-5 gap-1 text-center border-t border-white/20 pt-4 relative z-10">
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase font-bold text-green-100 mb-1">T7</span>
+<span class="material-icons-round text-base mb-1">cloud</span>
+<span class="text-xs font-medium">22°</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase font-bold text-green-100 mb-1">CN</span>
+<span class="material-icons-round text-base mb-1">wb_cloudy</span>
+<span class="text-xs font-medium">22°</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase font-bold text-green-100 mb-1">T2</span>
+<span class="material-icons-round text-base mb-1">wb_sunny</span>
+<span class="text-xs font-medium">23°</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase font-bold text-green-100 mb-1">T3</span>
+<span class="material-icons-round text-base mb-1">cloud</span>
+<span class="text-xs font-medium">21°</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase font-bold text-green-100 mb-1">T4</span>
+<span class="material-icons-round text-base mb-1">water_drop</span>
+<span class="text-xs font-medium">20°</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border-light/50 dark:border-border-dark/50">
+<div class="p-4 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+<h3 class="font-bold text-lg text-text-main-light dark:text-text-main-dark">Giá nông sản 24h</h3>
+<span class="flex items-center gap-1 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+<span class="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400"></span> Live
+                        </span>
+</div>
+<div class="divide-y divide-border-light dark:divide-border-dark">
+<div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-medium text-text-main-light dark:text-text-main-dark">Lúa OM 5451</span>
+<span class="font-bold text-text-main-light dark:text-text-main-dark">8.200 đ/kg</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-text-muted-light dark:text-text-muted-dark">Hậu Giang</span>
+<span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+<span class="material-icons-round text-[10px]">trending_up</span> 2.5%
+                                </span>
+</div>
+</div>
+<div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-medium text-text-main-light dark:text-text-main-dark">Cà phê Robusta</span>
+<span class="font-bold text-text-main-light dark:text-text-main-dark">120.000 đ/kg</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-text-muted-light dark:text-text-muted-dark">Đắk Lắk</span>
+<span class="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+<span class="material-icons-round text-[10px]">trending_down</span> 4%
+                                </span>
+</div>
+</div>
+<div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<span class="font-medium text-text-main-light dark:text-text-main-dark">Tiêu đen</span>
+<span class="font-bold text-text-main-light dark:text-text-main-dark">92.500 đ/kg</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-text-muted-light dark:text-text-muted-dark">Bình Phước</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+<span class="material-icons-round text-[10px]">remove</span> 0%
+                                </span>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-border-light dark:border-border-dark text-center">
+<a class="text-sm text-primary font-medium hover:underline" href="#">Xem tất cả giá cả</a>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft p-4 border border-border-light/50 dark:border-border-dark/50">
+<h3 class="font-bold text-sm text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider mb-3">Xu hướng tìm kiếm</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-text-main-light dark:text-text-main-dark text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">#SauRiengRI6</span>
+<span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-text-main-light dark:text-text-main-dark text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">#GiaPhanBon</span>
+<span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-text-main-light dark:text-text-main-dark text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">#XuatKhauGao</span>
+<span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-text-main-light dark:text-text-main-dark text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">#NongNghiepXanh</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div class="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark flex justify-around p-3 z-50 text-text-muted-light dark:text-text-muted-dark">
+<a class="flex flex-col items-center text-primary" href="#"><span class="material-icons-round">home</span><span class="text-[10px]">Trang chủ</span></a>
+<a class="flex flex-col items-center" href="#"><span class="material-icons-round">trending_up</span><span class="text-[10px]">Giá</span></a>
+<div class="relative -top-6 bg-primary p-3 rounded-full text-white shadow-lg shadow-green-500/40">
+<span class="material-icons-round text-2xl">add</span>
+</div>
+<a class="flex flex-col items-center" href="#"><span class="material-icons-round">storefront</span><span class="text-[10px]">Chợ</span></a>
+<a class="flex flex-col items-center" href="#"><span class="material-icons-round">menu</span><span class="text-[10px]">Menu</span></a>
+</div>
+
+</body></html>

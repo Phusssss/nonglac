@@ -3,11 +3,16 @@ import { collection, query, where, orderBy, updateDoc, doc, limit, startAfter, g
 import { db } from '../firebase/config';
 import { githubStorage } from '../services/githubStorage';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthGuard } from '../hooks/useAuthGuard';
+import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
 import PostSkeleton from '../components/PostSkeleton';
+import EnhancedLoginModal from '../components/enhanced/EnhancedLoginModal';
 
 const Profile = () => {
   const { user, userProfile } = useAuth();
+  const { requireAuth, showLoginModal, setShowLoginModal } = useAuthGuard();
+  const navigate = useNavigate();
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -104,8 +109,22 @@ const Profile = () => {
   };
   
   useEffect(() => {
-    loadInitialPosts();
+    // Chỉ load data khi user đã đăng nhập
+    if (user) {
+      loadInitialPosts();
+    }
   }, [user]);
+
+  // Redirect nếu chưa đăng nhập
+  useEffect(() => {
+    if (!user) {
+      // Lưu thông tin redirect
+      localStorage.setItem('loginMessage', 'Đăng nhập để xem profile - xem thông tin cá nhân');
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      // Redirect trực tiếp
+      navigate('/phone-login');
+    }
+  }, [user, navigate]);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -151,24 +170,29 @@ const Profile = () => {
   }, [user]);
 
   const handleUpdateProfile = async () => {
-    setUploading(true);
-    try {
-      let updateData = { displayName: editData.displayName };
-      
-      if (avatarFile) {
-        const avatarUrl = await githubStorage.uploadImage(avatarFile, 'avatars');
-        updateData.avatar = avatarUrl;
+    return requireAuth(async () => {
+      setUploading(true);
+      try {
+        let updateData = { displayName: editData.displayName };
+        
+        if (avatarFile) {
+          const avatarUrl = await githubStorage.uploadImage(avatarFile, 'avatars');
+          updateData.avatar = avatarUrl;
+        }
+        
+        await updateDoc(doc(db, 'users', user.uid), updateData);
+        setEditDialog(false);
+        setAvatarFile(null);
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        alert('Lỗi cập nhật hồ sơ: ' + error.message);
+      } finally {
+        setUploading(false);
       }
-      
-      await updateDoc(doc(db, 'users', user.uid), updateData);
-      setEditDialog(false);
-      setAvatarFile(null);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Lỗi cập nhật hồ sơ: ' + error.message);
-    } finally {
-      setUploading(false);
-    }
+    }, {
+      message: 'Đăng nhập để cập nhật profile',
+      feature: 'chỉnh sửa thông tin cá nhân'
+    });
   };
   
   const handleAvatarChange = (event) => {
@@ -401,6 +425,15 @@ const Profile = () => {
           </div>
         </div>
       )}
+
+      {/* Enhanced Login Modal */}
+      <EnhancedLoginModal
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        title="Đăng nhập để xem profile"
+        message="Đăng nhập để xem và chỉnh sửa thông tin cá nhân"
+        feature="sử dụng trang cá nhân"
+      />
     </div>
   );
 };

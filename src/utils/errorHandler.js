@@ -29,49 +29,69 @@ class ErrorLogger {
   }
 
   log(error, context = {}) {
-    const errorLog = {
-      id: Date.now() + Math.random(),
-      timestamp: new Date().toISOString(),
-      message: error.message || 'Unknown error',
-      stack: error.stack,
-      type: this.determineErrorType(error),
-      severity: this.determineSeverity(error),
-      context: {
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-        userId: context.userId || 'anonymous',
-        component: context.component || 'unknown',
-        action: context.action || 'unknown',
-        ...context
-      },
-      resolved: false
-    };
-
-    // Add to local logs
-    this.logs.unshift(errorLog);
-    if (this.logs.length > this.maxLogs) {
-      this.logs = this.logs.slice(0, this.maxLogs);
+    // Prevent infinite loops
+    if (this._logging) {
+      return null;
     }
+    this._logging = true;
 
-    // Add breadcrumb for Sentry
-    addBreadcrumb(
-      `Error: ${errorLog.message}`,
-      'error',
-      errorLog.severity === ERROR_SEVERITY.CRITICAL ? 'error' : 'warning'
-    );
+    try {
+      const errorLog = {
+        id: Date.now() + Math.random(),
+        timestamp: new Date().toISOString(),
+        message: error.message || 'Unknown error',
+        stack: error.stack,
+        type: this.determineErrorType(error),
+        severity: this.determineSeverity(error),
+        context: {
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+          userId: context.userId || 'anonymous',
+          component: context.component || 'unknown',
+          action: context.action || 'unknown',
+          ...context
+        },
+        resolved: false
+      };
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error logged:', errorLog);
+      // Add to local logs
+      this.logs.unshift(errorLog);
+      if (this.logs.length > this.maxLogs) {
+        this.logs = this.logs.slice(0, this.maxLogs);
+      }
+
+      // Add breadcrumb for Sentry
+      try {
+        addBreadcrumb(
+          `Error: ${errorLog.message}`,
+          'error',
+          errorLog.severity === ERROR_SEVERITY.CRITICAL ? 'error' : 'warning'
+        );
+      } catch (breadcrumbError) {
+        // Ignore breadcrumb errors
+      }
+
+      // Log to console in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error logged:', errorLog);
+      }
+
+      // Send to Sentry
+      try {
+        reportError(error, errorLog.context);
+      } catch (sentryError) {
+        // Ignore Sentry errors
+      }
+
+      // Send to external service
+      this.sendToExternalService(errorLog).catch(() => {
+        // Ignore external service errors
+      });
+
+      return errorLog;
+    } finally {
+      this._logging = false;
     }
-
-    // Send to Sentry
-    reportError(error, errorLog.context);
-
-    // Send to external service
-    this.sendToExternalService(errorLog);
-
-    return errorLog;
   }
 
   determineErrorType(error) {
@@ -114,13 +134,19 @@ class ErrorLogger {
 
   async sendToExternalService(errorLog) {
     try {
+      // Prevent infinite loops by checking if we're already processing an error
+      if (this._sendingError) {
+        return;
+      }
+      this._sendingError = true;
+
       // In production, send to Sentry or similar service
       if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_SENTRY_DSN) {
         // Sentry integration would go here
         console.log('Would send to Sentry:', errorLog);
       }
 
-      // Send to backend for storage
+      // Send to backend for storage - only for high/critical errors
       if (errorLog.severity === ERROR_SEVERITY.HIGH || errorLog.severity === ERROR_SEVERITY.CRITICAL) {
         await fetch('/api/errors/log', {
           method: 'POST',
@@ -133,8 +159,9 @@ class ErrorLogger {
         });
       }
     } catch (err) {
-      // Fail silently to avoid infinite error loops
-      console.warn('Failed to send error to external service:', err);
+      // Fail silently to avoid infinite error loops - don't log this error
+    } finally {
+      this._sendingError = false;
     }
   }
 
@@ -351,20 +378,23 @@ export class ErrorBoundary extends React.Component {
 
 // Hook for error handling in functional components
 export const useErrorHandler = () => {
-  const handleError = React.useCallback((error, context = {}) => {
+  const handleErrorCallback = React.useCallback((error, context = {}) => {
     return handleError(error, context);
   }, []);
 
-  const handleAsyncError = React.useCallback(async (asyncFn, context = {}) => {
+  const handleAsyncErrorCallback = React.useCallback(async (asyncFn, context = {}) => {
     try {
       return await asyncFn();
     } catch (error) {
-      handleError(error, context);
+      handleErrorCallback(error, context);
       return null;
     }
-  }, [handleError]);
+  }, [handleErrorCallback]);
 
-  return { handleError, handleAsyncError };
+  return { 
+    handleError: handleErrorCallback, 
+    handleAsyncError: handleAsyncErrorCallback 
+  };
 };
 
 // Performance monitoring

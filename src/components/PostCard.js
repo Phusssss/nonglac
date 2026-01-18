@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { doc, updateDoc, increment, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthGuard } from '../hooks/useAuthGuard';
 import { createNotification, notificationTypes } from '../services/notificationService';
 import { logUserAction, ACTIONS } from '../utils/analytics';
 import ImageGallery from './ImageGallery';
@@ -10,6 +11,7 @@ import ShareDialog from './ShareDialog';
 import PostMenu from './PostMenu';
 import SaveButton from './SaveButton';
 import ReactionButton from './ReactionButton';
+import LoginModal from './common/LoginModal';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
@@ -17,6 +19,7 @@ import OptimizedImage from './OptimizedImage';
 
 const PostCard = ({ post, isDetailView = false }) => {
   const { user, userProfile, updateReputation } = useAuth();
+  const { requireAuthForLike, requireAuthForComment, showLoginModal, setShowLoginModal } = useAuthGuard();
   const navigate = useNavigate();
   const [userReaction, setUserReaction] = useState(null);
   
@@ -41,46 +44,46 @@ const PostCard = ({ post, isDetailView = false }) => {
   const shouldTruncate = post.content.length > contentLimit;
 
   const handleReaction = useCallback(async (reactionType) => {
-    if (!user) return;
-    
-    const wasLiked = userReaction === 'like';
-    const willLike = reactionType === 'like';
-    
-    try {
-      const likeDoc = doc(db, 'likes', `${user.uid}_${post.id}`);
+    return requireAuthForLike(async () => {
+      const wasLiked = userReaction === 'like';
+      const willLike = reactionType === 'like';
       
-      if (wasLiked) {
-        // Unlike
-        await deleteDoc(likeDoc);
-        await updateDoc(doc(db, 'posts', post.id), {
-          likes: increment(-1)
-        });
-      } else if (willLike) {
-        // Like
-        await setDoc(likeDoc, {
-          userId: user.uid,
-          postId: post.id,
-          createdAt: new Date()
-        });
-        await updateDoc(doc(db, 'posts', post.id), {
-          likes: increment(1)
-        });
-        await logUserAction(user.uid, userProfile?.displayName || user.email, ACTIONS.LIKE_POST, { postId: post.id, postAuthor: post.authorName });
+      try {
+        const likeDoc = doc(db, 'likes', `${user.uid}_${post.id}`);
         
-        if (post.authorId !== user.uid) {
-          await updateReputation(post.authorId, 1);
-          await createNotification(
-            post.authorId,
-            notificationTypes.LIKE,
-            `${userProfile?.displayName || user.email} đã thích bài viết: "${post.title}"`,
-            post.id
-          );
+        if (wasLiked) {
+          // Unlike
+          await deleteDoc(likeDoc);
+          await updateDoc(doc(db, 'posts', post.id), {
+            likes: increment(-1)
+          });
+        } else if (willLike) {
+          // Like
+          await setDoc(likeDoc, {
+            userId: user.uid,
+            postId: post.id,
+            createdAt: new Date()
+          });
+          await updateDoc(doc(db, 'posts', post.id), {
+            likes: increment(1)
+          });
+          await logUserAction(user.uid, userProfile?.displayName || user.email, ACTIONS.LIKE_POST, { postId: post.id, postAuthor: post.authorName });
+          
+          if (post.authorId !== user.uid) {
+            await updateReputation(post.authorId, 1);
+            await createNotification(
+              post.authorId,
+              notificationTypes.LIKE,
+              `${userProfile?.displayName || user.email} đã thích bài viết: "${post.title}"`,
+              post.id
+            );
+          }
         }
+      } catch (error) {
+        console.error('Error updating like:', error);
       }
-    } catch (error) {
-      console.error('Error updating like:', error);
-    }
-  }, [user, post.id, post.authorId, updateReputation, userProfile]);
+    });
+  }, [user, post.id, post.authorId, updateReputation, userProfile, userReaction, requireAuthForLike]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans">
@@ -203,7 +206,7 @@ const PostCard = ({ post, isDetailView = false }) => {
               totalLikes={post.likes || 0}
             />
             <button 
-              onClick={() => setShowComments(!showComments)}
+              onClick={() => requireAuthForComment(() => setShowComments(!showComments))}
               aria-label={showComments ? "Ẩn bình luận" : "Hiển thị bình luận"}
               className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors text-sm font-medium"
             >
@@ -259,6 +262,14 @@ const PostCard = ({ post, isDetailView = false }) => {
         currentUser={user}
         onPostUpdated={() => window.location.reload()}
         onPostDeleted={() => window.location.reload()}
+      />
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message="Đăng nhập để tương tác với bài viết"
+        feature="thích và bình luận bài viết"
       />
     </div>
   );

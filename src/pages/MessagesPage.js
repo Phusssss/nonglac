@@ -15,7 +15,9 @@ import {
 } from '@ant-design/icons';
 import { useChat } from '../contexts/ChatContext';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthGuard } from '../hooks/useAuthGuard';
 import { useNavigate } from 'react-router-dom';
+import EnhancedLoginModal from '../components/enhanced/EnhancedLoginModal';
 import './MessagesPage.css';
 
 const { Sider, Content } = Layout;
@@ -24,12 +26,24 @@ const { TextArea } = Input;
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { requireAuth, showLoginModal, setShowLoginModal } = useAuthGuard();
   const { conversations, activeChat, messages, setActiveChat, sendMessage } = useChat();
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+
+  // Redirect nếu chưa đăng nhập
+  useEffect(() => {
+    if (!user) {
+      // Lưu thông tin redirect
+      localStorage.setItem('loginMessage', 'Đăng nhập để xem tin nhắn - sử dụng tính năng nhắn tin');
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      // Redirect trực tiếp
+      navigate('/phone-login');
+    }
+  }, [user, navigate]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -466,6 +480,15 @@ export default function MessagesPage() {
           )}
         </Content>
       </Layout>
+
+      {/* Enhanced Login Modal */}
+      <EnhancedLoginModal
+        open={showLoginModal}
+        onCancel={() => setShowLoginModal(false)}
+        title="Đăng nhập để nhắn tin"
+        message="Đăng nhập để sử dụng tính năng nhắn tin với cộng đồng"
+        feature="gửi và nhận tin nhắn"
+      />
     </div>
   );
 }

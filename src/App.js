@@ -7,6 +7,7 @@ import { Layout } from 'antd';
 import { nongLacTheme } from './theme/nongLacTheme';
 import ResponsiveNavbar from './components/ResponsiveNavbar';
 import AdvancedSEO from './components/AdvancedSEO';
+import PWAStatus from './components/PWAStatus';
 import { AuthProvider } from './hooks/useAuth';
 import { ChatProvider } from './contexts/ChatContext';
 import { initPerformanceOptimizations } from './utils/performance';
@@ -116,6 +117,9 @@ function App() {
                 url={window.location.pathname}
               />
               <Layout style={{ minHeight: '100vh' }}>
+                {/* PWA Status - Handle online/offline notifications */}
+                <PWAStatus />
+                
                 {/* Beta Banner */}
                 <div className="beta-banner">
                   <span className="beta-text">

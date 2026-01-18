@@ -28,7 +28,10 @@ Nếu người dùng hỏi về giá cả thị trường, hãy cố gắng đư
 export const analyzePlantImage = async (base64Image, userPrompt = "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.") => {
   try {
     const user = auth.currentUser;
-    if (!user) throw new Error('Bạn cần đăng nhập');
+    if (!user) {
+      // Trả về null để component xử lý auth guard
+      return null;
+    }
 
     const config = {
       model: 'gemini-2.5-flash',
@@ -58,7 +61,10 @@ export const analyzePlantImage = async (base64Image, userPrompt = "Hãy chẩn �
 export const chatWithAgriBot = async (history, newMessage) => {
   try {
     const user = auth.currentUser;
-    if (!user) throw new Error('Bạn cần đăng nhập');
+    if (!user) {
+      // Trả về null để ChatBot component xử lý auth guard
+      return null;
+    }
 
     const config = {
       model: 'gemini-2.5-flash',
@@ -76,7 +82,10 @@ export const chatWithAgriBot = async (history, newMessage) => {
 export const getMarketInsights = async (query) => {
   try {
     const user = auth.currentUser;
-    if (!user) throw new Error('Bạn cần đăng nhập');
+    if (!user) {
+      // Trả về null để component xử lý auth guard
+      return null;
+    }
 
     const config = {
       model: 'gemini-2.5-flash',
@@ -113,7 +122,10 @@ export const getWeatherForecast = async (location = "Việt Nam") => {
 export const findPlaces = async (query, lat, lng) => {
   try {
     const user = auth.currentUser;
-    if (!user) throw new Error('Bạn cần đăng nhập');
+    if (!user) {
+      // Trả về null để component xử lý auth guard
+      return null;
+    }
 
     const config = {
       model: 'gemini-2.5-flash',
