@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Alert, Space, message } from 'antd';
+import { Form, Input, Button, Card, Typography, Alert, Space } from 'antd';
 import { PhoneOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService';
@@ -122,16 +122,26 @@ const PhoneLogin = () => {
           </Form.Item>
         </Form>
 
-        <div className="text-center">
-          <Space>
-            <Text className="text-gray-600">Chưa có tài khoản?</Text>
+        <div className="text-center space-y-3">
+          <div>
             <Link 
-              onClick={() => navigate('/phone-register')}
+              onClick={() => navigate('/forgot-password')}
               className="text-[#4CAF50] hover:text-[#45a049]"
             >
-              Đăng ký ngay
+              Quên mật khẩu?
             </Link>
-          </Space>
+          </div>
+          <div>
+            <Space>
+              <Text className="text-gray-600">Chưa có tài khoản?</Text>
+              <Link 
+                onClick={() => navigate('/phone-register')}
+                className="text-[#4CAF50] hover:text-[#45a049]"
+              >
+                Đăng ký ngay
+              </Link>
+            </Space>
+          </div>
         </div>
       </Card>
     </div>

@@ -26,6 +26,7 @@ const SavedPosts = React.lazy(() => import('./pages/SavedPosts'));
 const PostDetail = React.lazy(() => import('./pages/PostDetail'));
 const Registration = React.lazy(() => import('./components/Registration/Registration'));
 const PhoneLogin = React.lazy(() => import('./components/Login/PhoneLogin'));
+const ForgotPassword = React.lazy(() => import('./components/ForgotPassword/ForgotPassword'));
 
 const Marketplace = React.lazy(() => import('./pages/Marketplace'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
@@ -145,6 +146,7 @@ function App() {
             <Route path="/post/:postId" element={<PostDetail />} />
             <Route path="/login" element={<PhoneLogin />} />
             <Route path="/phone-login" element={<PhoneLogin />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/register" element={<Registration />} />
             <Route path="/phone-register" element={<Registration />} />
 
