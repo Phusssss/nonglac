@@ -9,6 +9,7 @@ import { EnhancedPostCard } from '../components/enhanced/EnhancedPostCard';
 import GitHubImageUpload from '../components/GitHubImageUpload';
 import SEO from '../components/SEO';
 import LoginModal from '../components/common/LoginModal';
+import WeatherWidget from '../components/WeatherWidget';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
@@ -550,34 +551,7 @@ const Home = () => {
             <div className="lg:col-span-3 space-y-6">
               
               {/* Weather Widget */}
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white relative overflow-hidden group">
-                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10 blur-2xl group-hover:opacity-20 transition-opacity"></div>
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="flex items-center gap-1 text-sm font-medium bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm">
-                    <span className="material-icons-round text-sm">location_on</span>
-                    Tỉnh Lâm Đồng
-                  </div>
-                  <span className="material-icons-round animate-pulse">wb_sunny</span>
-                </div>
-                <div className="flex justify-between items-end mb-6 relative z-10">
-                  <div>
-                    <span className="text-5xl font-bold tracking-tighter">21°C</span>
-                    <p className="text-green-100 text-sm mt-1">Nắng nhẹ, có mây</p>
-                  </div>
-                  <span className="material-icons-round text-6xl opacity-80">cloud</span>
-                </div>
-                <div className="grid grid-cols-5 gap-1 text-center border-t border-white/20 pt-4 relative z-10">
-                  {['T7', 'CN', 'T2', 'T3', 'T4'].map((day, idx) => (
-                    <div key={day} className="flex flex-col items-center">
-                      <span className="text-[10px] uppercase font-bold text-green-100 mb-1">{day}</span>
-                      <span className="material-icons-round text-base mb-1">
-                        {idx === 0 ? 'cloud' : idx === 1 ? 'wb_cloudy' : idx === 2 ? 'wb_sunny' : idx === 3 ? 'cloud' : 'water_drop'}
-                      </span>
-                      <span className="text-xs font-medium">{22 + idx}°</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <WeatherWidget />
 
               {/* Market Prices */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100">

@@ -5,7 +5,7 @@ import { useAuthGuard } from '../hooks/useAuthGuard';
 import { collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import subscriptionService from '../services/subscriptionService';
-import { chatWithAgriBot, analyzePlantImage } from '../services/geminiService';
+import { chatWithAgriBot, analyzePlantImage, SUGGESTED_QUESTIONS } from '../services/geminiService';
 import EnhancedLoginModal from './enhanced/EnhancedLoginModal';
 
 
@@ -148,6 +148,7 @@ const ChatBot = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [quotaRemaining, setQuotaRemaining] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   
   // Voice/Video Call States
   const [isCalling, setIsCalling] = useState(false);
@@ -240,6 +241,11 @@ const ChatBot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleSuggestionClick = (suggestion) => {
+    setInputText(suggestion.replace(/^[🌱☕💰📈📉🌾🌶️🐛💧🌤️]+\s*/, '')); // Remove emoji prefix
+    setShowSuggestions(false);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim() && !currentImage) return;
@@ -281,6 +287,7 @@ const ChatBot = () => {
       const sentImage = currentImage;
       setInputText('');
       setCurrentImage(null);
+      setShowSuggestions(false); // Hide suggestions after sending message
       setIsLoading(true);
 
       try {
@@ -752,6 +759,61 @@ const ChatBot = () => {
             Lạc Lạc đang suy nghĩ...
           </div>
         )}
+
+        {/* Suggested Questions */}
+        {showSuggestions && messages.length <= 1 && (
+          <div style={{
+            alignSelf: 'flex-start',
+            maxWidth: '90%',
+            padding: '12px',
+            borderRadius: '12px',
+            backgroundColor: '#f8f9fa',
+            border: '1px solid #e9ecef'
+          }}>
+            <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: 'bold' }}>
+              💡 Câu hỏi gợi ý:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {SUGGESTED_QUESTIONS.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  style={{
+                    background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '6px 10px',
+                    borderRadius: '16px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(76, 175, 80, 0.2)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 2px 4px rgba(76, 175, 80, 0.2)';
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+            <div style={{ 
+              fontSize: '10px', 
+              color: '#999', 
+              marginTop: '8px', 
+              textAlign: 'center',
+              fontStyle: 'italic'
+            }}>
+              Nhấn vào câu hỏi để bắt đầu trò chuyện
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
 

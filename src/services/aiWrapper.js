@@ -18,6 +18,12 @@ export const callAI = async (config, userId, actionType = 'askAI') => {
   }
 
   try {
+    // Debug logging for Google Search
+    if (config.tools && config.tools.some(tool => tool.google_search)) {
+      console.log('🔍 Calling Gemini API with Google Search enabled');
+      console.log('Config:', JSON.stringify(config, null, 2));
+    }
+
     // Gọi AI với timeout
     const result = await Promise.race([
       ai.models.generateContent(config),
@@ -25,6 +31,11 @@ export const callAI = async (config, userId, actionType = 'askAI') => {
         setTimeout(() => reject(new Error('Timeout')), 30000)
       )
     ]);
+
+    // Debug logging for search results
+    if (result.candidates?.[0]?.groundingMetadata) {
+      console.log('✅ Google Search results found:', result.candidates[0].groundingMetadata);
+    }
 
     // Record usage
     await subscriptionService.recordUsage(userId, actionType);

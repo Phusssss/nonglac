@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Alert, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, Space } from 'antd';
 import { PhoneOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService';
 import { authRedirectService } from '../../services/authRedirectService';
+import { ErrorDisplay } from '../common';
 import logo from '../../assets/images/logo.demo.nontext.png';
 
 const { Title, Text, Link } = Typography;
 
 const PhoneLogin = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loginMessage, setLoginMessage] = useState('');
   const navigate = useNavigate();
 
@@ -24,7 +25,7 @@ const PhoneLogin = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       const result = await registrationService.signInWithPhone(
@@ -36,13 +37,18 @@ const PhoneLogin = () => {
         // Xử lý redirect sau khi đăng nhập thành công
         authRedirectService.handlePostLoginRedirect(navigate);
       } else {
+        // ErrorDisplay có thể xử lý cả string và Error object
         setError(result.message);
       }
     } catch (error) {
-      setError('Có lỗi xảy ra, vui lòng thử lại');
+      setError(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
   };
 
   return (
@@ -64,11 +70,12 @@ const PhoneLogin = () => {
         </div>
 
         {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            style={{ marginBottom: 16 }}
+          <ErrorDisplay
+            error={error}
+            onRetry={handleRetry}
+            showRetry={true}
+            showSupport={true}
+            className="mb-4"
           />
         )}
 

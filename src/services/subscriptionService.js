@@ -13,15 +13,15 @@ export const SUBSCRIPTION_TIERS = {
     status: 'ACTIVE',
     isDefault: true,
     limits: {
-      postsPerDay: 10,
-      aiQuestionsPerDay: 20,
-      voiceCallsPerDay: 5,
-      imageAnalysisPerDay: 10,
+      postsPerDay: 100,
+      aiQuestionsPerDay: 100,
+      voiceCallsPerDay: 50,
+      imageAnalysisPerDay: 100,
       marketplaceBoosts: 0
     },
     features: [
-      'Đăng tin bán: 10 tin/ngày',
-      'AI Trợ lý Lạc Lạc: 20 câu hỏi/ngày',
+      'Đăng tin bán: 100 tin/ngày',
+      'AI Trợ lý Lạc Lạc: 100 câu hỏi/ngày',
       'Live voice call với AI',
       'Chẩn đoán bệnh bằng camera',
       'Phí giao dịch tiêu chuẩn'
@@ -123,11 +123,11 @@ class SubscriptionService {
   // Get default quota
   getDefaultQuota() {
     return {
-      aiQuestions: 20,
-      doctorAI: 10,
-      agriMap: 10,
-      marketInsights: 10,
-      posts: 10,
+      aiQuestions: 100,
+      doctorAI: 100,
+      agriMap: 100,
+      marketInsights: 100,
+      posts: 100,
       lastReset: new Date().toISOString().split('T')[0]
     };
   }

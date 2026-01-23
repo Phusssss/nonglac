@@ -3,6 +3,7 @@ import {
   RecaptchaVerifier, 
   signInWithPhoneNumber
 } from 'firebase/auth';
+import { getErrorMessage } from '../constants/errorMessages';
 
 class PhoneAuthService {
   constructor() {
@@ -129,7 +130,7 @@ class PhoneAuthService {
 
       return {
         success: false,
-        message: this.getErrorMessage(error.code)
+        message: getErrorMessage(error)
       };
     }
   }
@@ -160,7 +161,7 @@ class PhoneAuthService {
       
       return {
         success: false,
-        message: this.getErrorMessage(error.code)
+        message: getErrorMessage(error)
       };
     }
   }
@@ -200,25 +201,6 @@ class PhoneAuthService {
     if (element) {
       element.innerHTML = '';
     }
-  }
-
-  // Chuyển đổi mã lỗi thành thông báo tiếng Việt
-  getErrorMessage(errorCode) {
-    const errorMessages = {
-      'auth/invalid-phone-number': 'Số điện thoại không hợp lệ',
-      'auth/missing-phone-number': 'Vui lòng nhập số điện thoại',
-      'auth/quota-exceeded': 'Đã vượt quá giới hạn gửi SMS',
-      'auth/user-disabled': 'Tài khoản đã bị vô hiệu hóa',
-      'auth/operation-not-allowed': 'Phương thức đăng nhập chưa được kích hoạt',
-      'auth/invalid-app-credential': 'Cấu hình Firebase không hợp lệ. Vui lòng kiểm tra domain và cài đặt',
-      'auth/invalid-verification-code': 'Mã OTP không đúng',
-      'auth/invalid-verification-id': 'Mã xác thực không hợp lệ',
-      'auth/code-expired': 'Mã OTP đã hết hạn',
-      'auth/too-many-requests': 'Quá nhiều yêu cầu, vui lòng thử lại sau',
-      'auth/network-request-failed': 'Lỗi kết nối mạng'
-    };
-
-    return errorMessages[errorCode] || 'Có lỗi xảy ra, vui lòng thử lại';
   }
 
   // Định dạng số điện thoại Việt Nam

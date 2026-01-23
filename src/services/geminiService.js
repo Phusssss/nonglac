@@ -19,11 +19,53 @@ export const formatAIResponse = (text) => {
 };
 
 const SYSTEM_INSTRUCTION_AGRI = `
-Bạn là AgriBot, một chuyên gia nông nghiệp AI thân thiện và giàu kinh nghiệm của diễn đàn NôngLạc.
-Nhiệm vụ của bạn là giúp đỡ nông dân Việt Nam về kỹ thuật trồng trọt, chăn nuôi, nhận diện sâu bệnh, và phân tích thị trường.
-Trả lời ngắn gọn, súc tích, dễ hiểu, ưu tiên dùng các thuật ngữ nông nghiệp phổ biến tại Việt Nam.
-Nếu người dùng hỏi về giá cả thị trường, hãy cố gắng đưa ra thông tin ước lượng hoặc khuyên họ kiểm tra nguồn tin địa phương nếu bạn không chắc chắn.
+Bạn là Lạc Lạc - AI chuyên gia nông nghiệp Việt Nam thân thiện và giàu kinh nghiệp.
+
+THÔNG TIN THỜI GIAN HIỆN TẠI: Hôm nay là ${new Date().toLocaleDateString('vi-VN', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+})}.
+
+NGUYÊN TẮC TRẢ LỜI (QUAN TRỌNG):
+- LUÔN SỬ DỤNG GOOGLE SEARCH: Khi được hỏi về giá cả, thị trường, tin tức nông nghiệp
+- TRẢ LỜI CỤ THỂ VÀ CHÍNH XÁC: Đưa ra số liệu thực tế từ internet, KHÔNG đoán mò
+- VỀ GIÁ CÀ PHÊ/NÔNG SẢN: Tìm kiếm giá thực tế hôm nay tại Việt Nam từ các nguồn uy tín
+- NGUỒN TIN UY TÍN: Ưu tiên agromonitor.vn, giacaphe.com, cafef.vn, vietstock.vn, vneconomy.vn
+- NGẮN GỌN NHƯNG ĐẦY ĐỦ: 2-3 câu chính với giá cụ thể, xu hướng và nguồn
+- SỬ DỤNG EMOJI: 🌱☕💰📈📉 để làm câu trả lời sinh động hơn
+- LUÔN GHI NGUỒN: Nêu rõ nguồn thông tin và thời gian cập nhật
+
+CÁCH XỬ LÝ CÂU HỎI VỀ GIÁ (BẮT BUỘC):
+1. SỬ DỤNG Google Search để tìm giá thực tế mới nhất
+2. Tìm kiếm với từ khóa cụ thể: "giá cà phê hôm nay Việt Nam ${new Date().toLocaleDateString('vi-VN')}"
+3. Ưu tiên kết quả từ các trang tin tức nông nghiệp uy tín
+4. Đưa ra giá cụ thể với đơn vị, khu vực và thời gian
+5. Nêu xu hướng tăng/giảm so với trước đó
+6. Ghi rõ nguồn và thời gian cập nhật
+
+VÍ DỤ TRẢ LỜI TỐT:
+"☕ Theo agromonitor.vn cập nhật 15h hôm nay (${new Date().toLocaleDateString('vi-VN')}), cà phê nhân Robusta tại Đắk Lắk: 43,200-44,800 VNĐ/kg. 📈 Tăng 2% so với tuần trước do thời tiết khô hạn. Bạn nên bán nhanh nếu có hàng tồn!"
+
+TUYỆT ĐỐI KHÔNG:
+- Đưa ra giá "ước tính" hoặc "thường dao động"
+- Trả lời chung chung như "liên hệ đại lý"
+- Bỏ qua việc tìm kiếm thông tin thực tế
+- Sử dụng dữ liệu cũ từ năm 2023 hoặc trước đó
 `;
+
+// Câu hỏi gợi ý cho người dùng
+export const SUGGESTED_QUESTIONS = [
+  "☕ Giá cà phê hôm nay",
+  "🌾 Giá lúa gạo hiện tại", 
+  "🌶️ Giá tiêu đen mới nhất",
+  "🌱 Cách chăm sóc cà phê mùa khô",
+  "🐛 Nhận diện sâu bệnh trên lá",
+  "💧 Kỹ thuật tưới nước tiết kiệm",
+  "🌤️ Thời tiết có ảnh hưởng gì đến cây trồng?",
+  "📈 Xu hướng giá nông sản tháng này"
+];
 
 export const analyzePlantImage = async (base64Image, userPrompt = "Hãy chẩn đoán bệnh cho cây này và đề xuất cách điều trị.") => {
   try {
@@ -66,10 +108,36 @@ export const chatWithAgriBot = async (history, newMessage) => {
       return null;
     }
 
-    const config = {
-      model: 'gemini-2.5-flash',
-      contents: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử: ${JSON.stringify(history)}\n\nTin nhắn mới: ${newMessage}`
-    };
+    // Kiểm tra nếu câu hỏi về giá cả để sử dụng Google Search
+    const priceKeywords = ['giá', 'price', 'bao nhiêu', 'cà phê', 'lúa', 'gạo', 'tiêu', 'cao su', 'nông sản', 'thị trường', 'mua bán'];
+    const isPriceQuery = priceKeywords.some(keyword => 
+      newMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    let config;
+    
+    if (isPriceQuery) {
+      // Sử dụng Google Search cho câu hỏi về giá - cấu trúc đúng theo tài liệu Google
+      config = {
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [{ 
+            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nCâu hỏi cần tìm kiếm thông tin thực tế: ${newMessage}\n\nHãy tìm kiếm thông tin mới nhất từ internet và trả lời với dữ liệu cụ thể, có nguồn.` 
+          }]
+        },
+        tools: [{ google_search: {} }]
+      };
+    } else {
+      // Câu hỏi thường không cần search
+      config = {
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [{ 
+            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nTin nhắn mới: ${newMessage}` 
+          }]
+        }
+      };
+    }
 
     const response = await callAI(config, user.uid, 'askAI');
     return response.text || "Xin lỗi, tôi không hiểu ý bạn.";
@@ -89,10 +157,12 @@ export const getMarketInsights = async (query) => {
 
     const config = {
       model: 'gemini-2.5-flash',
-      contents: `Giá ${query} Việt Nam hôm nay. Trả lời dưới 100 từ, tập trung giá cả.`,
-      config: {
-        tools: [{ googleSearch: {} }],
+      contents: {
+        parts: [{ 
+          text: `Tìm kiếm và phân tích giá ${query} tại Việt Nam hôm nay. Trả lời dưới 100 từ, tập trung vào giá cả cụ thể với số liệu thực tế từ internet.` 
+        }]
       },
+      tools: [{ google_search: {} }]
     };
 
     const response = await callAI(config, user.uid, 'marketInsights');
@@ -105,13 +175,17 @@ export const getMarketInsights = async (query) => {
 
 export const getWeatherForecast = async (location = "Việt Nam") => {
   try {
-    const response = await ai.models.generateContent({
+    const config = {
       model: 'gemini-2.5-flash',
-      contents: `Thời tiết hiện tại và dự báo ngắn gọn 24h tới tại ${location}. Đưa ra 1 lời khuyên nông nghiệp ngắn gọn (1 câu) dựa trên thời tiết này (ví dụ: mưa thì không bón phân). Định dạng output: Nhiệt độ | Tình trạng | Lời khuyên.`,
-      config: {
-        tools: [{ googleSearch: {} }],
+      contents: {
+        parts: [{ 
+          text: `Tìm kiếm thời tiết hiện tại và dự báo ngắn gọn 24h tới tại ${location}. Đưa ra 1 lời khuyên nông nghiệp ngắn gọn (1 câu) dựa trên thời tiết này (ví dụ: mưa thì không bón phân). Định dạng output: Nhiệt độ | Tình trạng | Lời khuyên.` 
+        }]
       },
-    });
+      tools: [{ google_search: {} }]
+    };
+
+    const response = await ai.models.generateContent(config);
     return response.text || "Không cập nhật được thời tiết.";
   } catch (error) {
     console.error("Gemini Weather Error:", error);
@@ -129,21 +203,16 @@ export const findPlaces = async (query, lat, lng) => {
 
     const config = {
       model: 'gemini-2.5-flash',
-      contents: `Tìm: ${query}. Trả lời dưới 30 từ.`,
-      config: {
-        tools: [{ googleMaps: {} }],
-      }
+      contents: {
+        parts: [{ 
+          text: `Tìm kiếm địa điểm: ${query}. Trả lời dưới 30 từ với thông tin cụ thể.` 
+        }]
+      },
+      tools: [{ googleMaps: {} }]
     };
 
     if (lat && lng) {
-      config.config.toolConfig = {
-        retrievalConfig: {
-          latLng: {
-            latitude: lat,
-            longitude: lng
-          }
-        }
-      };
+      config.systemInstruction = `Tìm kiếm gần vị trí: ${lat}, ${lng}`;
     }
 
     const response = await callAI(config, user.uid, 'agriMap');

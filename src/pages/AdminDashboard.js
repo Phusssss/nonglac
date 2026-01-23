@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc, updateDoc, addDoc, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import AdminLayout from '../components/AdminLayout';
 import AutoPostBot from '../components/AutoPostBot';
 import subscriptionService from '../services/subscriptionService';
-import { Users, FileText, ShoppingBag, BookOpen, RefreshCw } from 'lucide-react';
+import { Users, FileText, ShoppingBag, BookOpen, RefreshCw, Lock } from 'lucide-react';
+import { Input, Button, Card, Typography, message } from 'antd';
+
+const { Title, Text } = Typography;
 
 const CategoryManagement = ({ categories, setCategories }) => {
   const [showForm, setShowForm] = useState(false);
@@ -322,7 +324,6 @@ const PriceManagement = ({ prices, setPrices, categories }) => {
 };
 
 const AdminDashboard = () => {
-  const { user, userProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [users, setUsers] = useState([]);
@@ -335,16 +336,31 @@ const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState({ topUsers: [], postsByCategory: [], recentActivity: [], actionStats: [] });
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  
+  // Security code authentication
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [securityCode, setSecurityCode] = useState('');
+  const [authError, setAuthError] = useState('');
 
-  // Check if user is admin
-  const isAdmin = userProfile?.role === 'admin' || userProfile?.email === 'admin@nonglac.com';
+  const ADMIN_SECURITY_CODE = 'Corenonglac05122025';
+
+  const handleSecurityCodeSubmit = () => {
+    if (securityCode === ADMIN_SECURITY_CODE) {
+      setIsAuthenticated(true);
+      setAuthError('');
+      message.success('Đăng nhập thành công!');
+    } else {
+      setAuthError('Mã bảo mật không đúng!');
+      message.error('Mã bảo mật không đúng!');
+    }
+  };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAuthenticated) {
       loadData();
       loadStats();
     }
-  }, [isAdmin, activeTab]);
+  }, [isAuthenticated, activeTab]);
 
   const loadStats = async () => {
     try {
@@ -474,16 +490,40 @@ const AdminDashboard = () => {
     }
   };
 
-  if (!user) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Vui lòng đăng nhập</div>;
-  }
-
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700">Bạn không có quyền truy cập trang này</h2>
-        </div>
+        <Card className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <Lock className="w-16 h-16 text-[#795548] mx-auto mb-4" />
+            <Title level={2} className="text-[#795548]">Admin Dashboard</Title>
+            <Text type="secondary">Nhập mã bảo mật để truy cập</Text>
+          </div>
+          
+          <div className="space-y-4">
+            <Input.Password
+              placeholder="Nhập mã bảo mật"
+              value={securityCode}
+              onChange={(e) => setSecurityCode(e.target.value)}
+              onPressEnter={handleSecurityCodeSubmit}
+              size="large"
+            />
+            
+            {authError && (
+              <div className="text-red-500 text-sm text-center">{authError}</div>
+            )}
+            
+            <Button 
+              type="primary" 
+              size="large" 
+              block
+              onClick={handleSecurityCodeSubmit}
+              className="bg-[#795548] hover:bg-[#6d4c41]"
+            >
+              Xác thực
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -545,7 +585,7 @@ const AdminDashboard = () => {
                     <div>
                       <h4 className="font-semibold text-green-800">Reset Quota Gói TẬP SỰ</h4>
                       <p className="text-sm text-green-600">
-                        Reset lại quota về mặc định (20 câu hỏi AI, 10 bác sĩ AI, 10 bản đồ, 10 thị trường) cho tất cả user gói TẬP SỰ
+                        Reset lại quota về mặc định (100 câu hỏi AI, 100 bác sĩ AI, 100 bản đồ, 100 thị trường) cho tất cả user gói TẬP SỰ
                       </p>
                     </div>
                     <button

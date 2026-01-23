@@ -6,6 +6,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import phoneAuthService from './phoneAuthService';
+import { getErrorMessage } from '../constants/errorMessages';
 
 class RegistrationService {
   constructor() {
@@ -28,7 +29,7 @@ class RegistrationService {
     } catch (error) {
       return {
         success: false,
-        message: 'Lỗi gửi OTP: ' + error.message
+        message: getErrorMessage(error)
       };
     }
   }
@@ -46,7 +47,7 @@ class RegistrationService {
     } catch (error) {
       return {
         success: false,
-        message: 'Lỗi xác thực OTP: ' + error.message
+        message: getErrorMessage(error)
       };
     }
   }
@@ -161,7 +162,7 @@ class RegistrationService {
       console.error('Error creating simple account:', error);
       return {
         success: false,
-        message: this.getErrorMessage(error.code) || error.message
+        message: getErrorMessage(error)
       };
     }
   }
@@ -233,7 +234,7 @@ class RegistrationService {
       console.error('Error creating account:', error);
       return {
         success: false,
-        message: this.getErrorMessage(error.code) || error.message
+        message: getErrorMessage(error)
       };
     }
   }
@@ -268,7 +269,7 @@ class RegistrationService {
       console.error('Error signing in:', error);
       return {
         success: false,
-        message: this.getErrorMessage(error.code) || 'Số điện thoại hoặc mật khẩu không đúng'
+        message: getErrorMessage(error)
       };
     }
   }
@@ -337,18 +338,6 @@ class RegistrationService {
     return 5; // Tạo mật khẩu
   }
 
-  getErrorMessage(errorCode) {
-    const errorMessages = {
-      'auth/email-already-in-use': 'Email đã được sử dụng',
-      'auth/invalid-email': 'Email không hợp lệ',
-      'auth/weak-password': 'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
-      'auth/user-not-found': 'Tài khoản không tồn tại',
-      'auth/wrong-password': 'Mật khẩu không đúng',
-      'auth/invalid-credential': 'Thông tin đăng nhập không đúng'
-    };
-
-    return errorMessages[errorCode] || 'Có lỗi xảy ra, vui lòng thử lại';
-  }
 }
 
 const registrationService = new RegistrationService();
