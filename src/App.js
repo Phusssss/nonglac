@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, Spin } from 'antd';
+import { ConfigProvider, Spin, App as AntApp } from 'antd';
 import { HelmetProvider } from 'react-helmet-async';
 import 'antd/dist/reset.css';
 import { Layout } from 'antd';
@@ -108,8 +108,9 @@ function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <ConfigProvider theme={nongLacTheme}>
-          <AuthProvider>
-            <ChatProvider>
+          <AntApp>
+            <AuthProvider>
+              <ChatProvider>
               <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AdvancedSEO 
                 title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
@@ -183,8 +184,9 @@ function App() {
                 <ChatBot />
               </Suspense>
               </Router>
-            </ChatProvider>
-          </AuthProvider>
+              </ChatProvider>
+            </AuthProvider>
+          </AntApp>
         </ConfigProvider>
       </HelmetProvider>
     </ErrorBoundary>

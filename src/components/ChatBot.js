@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthGuard } from '../hooks/useAuthGuard';
-import { collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, limit, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import subscriptionService from '../services/subscriptionService';
 import { chatWithAgriBot, analyzePlantImage, SUGGESTED_QUESTIONS } from '../services/geminiService';
@@ -88,6 +88,28 @@ const loadUserHistory = async (userId) => {
   }
 };
 
+// Delete user's chat history from Firestore
+const deleteUserHistory = async (userId) => {
+  try {
+    const q = query(
+      collection(db, 'chatHistory'),
+      where('userId', '==', userId)
+    );
+    const snapshot = await getDocs(q);
+    
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    return true;
+  } catch (error) {
+    console.error('Error deleting history from Firestore:', error);
+    return false;
+  }
+};
+
 const updateUserContextFromText = (text) => {
   const lower = text.toLowerCase();
   let updated = false;
@@ -170,6 +192,9 @@ const ChatBot = () => {
   const streamRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const processorRef = useRef(null);
+  const sourceRef = useRef(null);
+  const isSessionActiveRef = useRef(false);
   const nextStartTimeRef = useRef(0);
 
   useEffect(() => {
@@ -469,16 +494,22 @@ const ChatBot = () => {
       }
       
       const sessionPromise = aiRef.current.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.5-flash-lite-native-audio-preview-01-2026', // Sử dụng model Lite mới nhất để giảm độ trễ
         config: {
-          systemInstruction: getSystemInstruction() + "\n\nBạn đang trong cuộc gọi trực tiếp. Hãy trả lời ngắn gọn, thân thiện như đang nói chuyện.",
+          systemInstruction: getSystemInstruction() + "\n\nQUY TẮC CUỘC GỌI: Bạn đang trong cuộc gọi trực tiếp. Trả lời cực kỳ ngắn gọn (dưới 15 từ), phản hồi nhanh, thân thiện.",
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
+          },
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 200,
+            candidateCount: 1
           }
         },
         callbacks: {
           onopen: () => {
+            isSessionActiveRef.current = true;
             setCallStatus('connected');
             processAudioInput(stream);
             addCallMessage('system', '🎙️ Đã kết nối voice call với Lạc Lạc AI');
@@ -513,17 +544,28 @@ const ChatBot = () => {
     if (!inputCtxRef.current) return;
     
     const source = inputCtxRef.current.createMediaStreamSource(stream);
-    const processor = inputCtxRef.current.createScriptProcessor(4096, 1, 1);
+    sourceRef.current = source;
     
-    processor.onaudioprocess = (e) => {
-      if (isMuted) return;
+    const processor = inputCtxRef.current.createScriptProcessor(2048, 1, 1);
+    processorRef.current = processor;
+    
+    processor.onaudioprocess = async (e) => {
+      if (isMuted || !isSessionActiveRef.current) return;
       
       const inputData = e.inputBuffer.getChannelData(0);
       const pcmBlob = createPcmBlob(inputData);
       
-      sessionRef.current?.then((session) => {
-        session.sendRealtimeInput({ media: pcmBlob });
-      });
+      try {
+        const session = await sessionRef.current;
+        if (session && isSessionActiveRef.current) {
+          await session.sendRealtimeInput({ media: pcmBlob });
+        }
+      } catch (err) {
+        // Nuốt lỗi WebSocket đóng/đang đóng vì đây là hành vi bình thường khi end call
+        if (!err.message?.includes('CLOSED') && !err.message?.includes('CLOSING')) {
+          console.error("Realtime input error:", err);
+        }
+      }
     };
     
     source.connect(processor);
@@ -594,6 +636,16 @@ const ChatBot = () => {
 
   const endCall = () => {
     setCallStatus('ended');
+    isSessionActiveRef.current = false;
+    
+    if (processorRef.current) {
+      processorRef.current.onaudioprocess = null;
+      processorRef.current.disconnect();
+    }
+    
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+    }
     
     sessionRef.current?.then((session) => session.close());
     
@@ -937,15 +989,31 @@ const ChatBot = () => {
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button
-                onClick={() => {
+                onClick={async () => {
+                  setIsLoading(true);
+                  if (user) {
+                    await deleteUserHistory(user.uid);
+                  }
+                  
                   chatHistory = [];
                   localStorage.removeItem('nonglac_chat_history');
                   localStorage.removeItem('nonglac_user_context');
                   userContext = { location: "Vietnam", crops: [], gardenInfo: "", hasConsent: false };
+                  
                   setMessages([]);
                   setShowClearConfirm(false);
-                  setIsOpen(false);
-                  setTimeout(() => setIsOpen(true), 100);
+                  setIsLoading(false);
+                  
+                  // Re-initialize with welcome message
+                  const welcomeMsg = "Đã xóa lịch sử. Lạc Lạc sẵn sàng hỗ trợ bạn từ đầu! 🌱";
+                  const welcomeMessage = {
+                    id: Date.now(),
+                    type: 'bot',
+                    content: welcomeMsg,
+                    timestamp: new Date()
+                  };
+                  setMessages([welcomeMessage]);
+                  addToHistory('assistant', welcomeMsg);
                 }}
                 style={{
                   background: '#ff4444',

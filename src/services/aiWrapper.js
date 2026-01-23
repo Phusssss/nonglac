@@ -19,9 +19,10 @@ export const callAI = async (config, userId, actionType = 'askAI') => {
 
   try {
     // Debug logging for Google Search
-    if (config.tools && config.tools.some(tool => tool.google_search)) {
+    const hasSearch = config.config?.tools?.some(tool => tool.googleSearch) || config.tools?.some(tool => tool.googleSearch);
+    if (hasSearch) {
       console.log('🔍 Calling Gemini API with Google Search enabled');
-      console.log('Config:', JSON.stringify(config, null, 2));
+      console.log('Request structure:', JSON.stringify(config, null, 2));
     }
 
     // Gọi AI với timeout

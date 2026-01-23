@@ -72,7 +72,7 @@ const AboutUs = () => {
             border: 'none',
             color: 'white'
           }}
-          bodyStyle={{ padding: '48px 32px', textAlign: 'center' }}
+          styles={{ body: { padding: '48px 32px', textAlign: 'center' } }}
         >
           <div style={{ position: 'relative' }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🌾📱</div>

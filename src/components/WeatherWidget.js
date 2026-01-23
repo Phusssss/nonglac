@@ -20,20 +20,13 @@ const WeatherWidget = () => {
     setError(null);
     
     try {
-      console.log('🌤️ Loading weather data...');
       const result = await weatherService.getWeatherForCurrentLocation();
-      console.log('🌤️ Weather data received:', result);
       
       setWeather(result.weather);
       setLocation(result.location);
       setLastUpdate(new Date());
       
-      // Log detailed weather info for debugging
-      console.log('🌡️ Current temperature:', result.weather.current.temperature_2m);
-      console.log('🌤️ Weather code:', result.weather.current.weathercode);
-      console.log('📍 Location:', result.location.name);
-      
-      message.success(`Cập nhật thời tiết ${result.location.name}: ${Math.round(result.weather.current.temperature_2m)}°C`);
+      // Removed noisy logs
     } catch (err) {
       console.error('❌ Error loading weather:', err);
       setError(err.message);

@@ -117,25 +117,36 @@ export const chatWithAgriBot = async (history, newMessage) => {
     let config;
     
     if (isPriceQuery) {
-      // Sử dụng Google Search cho câu hỏi về giá - cấu trúc đúng theo tài liệu Google
+      // Sử dụng Google Search cho câu hỏi về giá - Cấu trúc chuẩn cho @google/genai SDK
       config = {
         model: 'gemini-2.5-flash',
-        contents: {
+        contents: [{
+          role: 'user',
           parts: [{ 
-            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nCâu hỏi cần tìm kiếm thông tin thực tế: ${newMessage}\n\nHãy tìm kiếm thông tin mới nhất từ internet và trả lời với dữ liệu cụ thể, có nguồn.` 
+            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nCâu hỏi: ${newMessage}\n\nBẮT BUỘC: Sử dụng Google Search để tìm giá cà phê và nông sản tại Việt Nam NGAY HÔM NAY (${new Date().toLocaleDateString('vi-VN')}). Hãy trích xuất giá từ kết quả tìm kiếm mới nhất, không dùng dữ liệu cũ.` 
           }]
-        },
-        tools: [{ google_search: {} }]
+        }],
+        config: {
+          tools: [{ 
+            googleSearch: {
+              dynamicRetrievalConfig: {
+                mode: 'DYNAMIC',
+                dynamicThreshold: 0.3
+              }
+            } 
+          }]
+        }
       };
     } else {
       // Câu hỏi thường không cần search
       config = {
         model: 'gemini-2.5-flash',
-        contents: {
+        contents: [{
+          role: 'user',
           parts: [{ 
             text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nTin nhắn mới: ${newMessage}` 
           }]
-        }
+        }]
       };
     }
 
@@ -157,12 +168,15 @@ export const getMarketInsights = async (query) => {
 
     const config = {
       model: 'gemini-2.5-flash',
-      contents: {
+      contents: [{
+        role: 'user',
         parts: [{ 
-          text: `Tìm kiếm và phân tích giá ${query} tại Việt Nam hôm nay. Trả lời dưới 100 từ, tập trung vào giá cả cụ thể với số liệu thực tế từ internet.` 
+          text: `Tìm kiếm và phân tích giá ${query} tại Việt Nam hôm nay (${new Date().toLocaleDateString('vi-VN')}). Trả lời dưới 100 từ, tập trung vào giá cả cụ thể với số liệu thực tế từ internet.` 
         }]
-      },
-      tools: [{ google_search: {} }]
+      }],
+      config: {
+        tools: [{ googleSearch: {} }]
+      }
     };
 
     const response = await callAI(config, user.uid, 'marketInsights');
@@ -182,7 +196,7 @@ export const getWeatherForecast = async (location = "Việt Nam") => {
           text: `Tìm kiếm thời tiết hiện tại và dự báo ngắn gọn 24h tới tại ${location}. Đưa ra 1 lời khuyên nông nghiệp ngắn gọn (1 câu) dựa trên thời tiết này (ví dụ: mưa thì không bón phân). Định dạng output: Nhiệt độ | Tình trạng | Lời khuyên.` 
         }]
       },
-      tools: [{ google_search: {} }]
+      tools: [{ googleSearch: {} }]
     };
 
     const response = await ai.models.generateContent(config);

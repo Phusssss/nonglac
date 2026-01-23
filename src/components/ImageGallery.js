@@ -81,13 +81,15 @@ const ImageGallery = ({ images }) => {
         footer={null}
         width="90vw"
         style={{ top: 20 }}
-        bodyStyle={{ 
-          backgroundColor: 'black', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: '80vh',
-          position: 'relative'
+        styles={{ 
+          body: {
+            backgroundColor: 'black', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: '80vh',
+            position: 'relative'
+          }
         }}
       >
         {validImages.length > 1 && (

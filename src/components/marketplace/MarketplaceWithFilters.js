@@ -331,7 +331,7 @@ const MarketplaceWithFilters = () => {
         open={postFormOpen}
         width={isMobile ? '100%' : 600}
         style={{ maxHeight: '100vh' }}
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 55px)', overflow: 'auto' }}
+        styles={{ body: { padding: 0, height: 'calc(100vh - 55px)', overflow: 'auto' } }}
       >
         <ProductPostForm
           onSubmit={handleProductSubmit}

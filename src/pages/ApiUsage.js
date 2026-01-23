@@ -165,11 +165,11 @@ const ApiUsage = () => {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <p className="font-semibold text-gray-800">gemini-2.5-pro</p>
-                        <p className="text-xs text-gray-600">15 RPM | 300 RPD</p>
+                        <p className="text-xs text-gray-600">Stable generation</p>
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800">gemini-2.5-flash</p>
-                        <p className="text-xs text-gray-600">10 RPM | 20 RPD</p>
+                        <p className="text-xs text-gray-600">Speed & Efficiency</p>
                       </div>
                     </div>
                   </div>

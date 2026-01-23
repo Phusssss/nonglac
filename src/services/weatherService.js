@@ -13,15 +13,9 @@ class WeatherService {
     const cacheKey = `weather_${lat}_${lon}`;
     const cached = this.cache.get(cacheKey);
     
-    console.log(`🌤️ Getting weather for ${lat}, ${lon}`);
-    console.log(`📦 Cache key: ${cacheKey}`);
-    
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      console.log('✅ Using cached weather data');
       return cached.data;
     }
-
-    console.log('🌐 Fetching fresh weather data from API...');
 
     try {
       const params = new URLSearchParams({
@@ -34,7 +28,6 @@ class WeatherService {
       });
 
       const url = `${this.baseURL}/forecast?${params}`;
-      console.log('🔗 API URL:', url);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -45,14 +38,11 @@ class WeatherService {
 
       clearTimeout(timeoutId);
 
-      console.log('📡 API Response status:', response.status);
-
       if (!response.ok) {
         throw new Error(`Weather API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('📊 Raw API data:', data);
 
       if (!data.current || !data.daily) {
         throw new Error('Invalid weather data structure');
@@ -64,7 +54,6 @@ class WeatherService {
         timestamp: Date.now()
       });
 
-      console.log('✅ Weather data cached successfully');
       return data;
     } catch (error) {
       console.error('❌ Weather service error:', error);
@@ -166,19 +155,13 @@ class WeatherService {
 
   // Get weather for current location
   async getWeatherForCurrentLocation() {
-    console.log('🌍 Starting geolocation process...');
-    
     try {
-      console.log('📍 Attempting to get current location...');
       const location = await this.getCurrentLocation();
-      console.log('✅ Location obtained:', location);
       
       const [weather, cityName] = await Promise.all([
         this.getWeather(location.lat, location.lon),
         this.getCityName(location.lat, location.lon)
       ]);
-
-      console.log('🌤️ Weather and city data obtained:', { cityName, weather: weather.current });
 
       return {
         weather,
@@ -189,13 +172,9 @@ class WeatherService {
         }
       };
     } catch (error) {
-      console.warn('⚠️ Geolocation failed, using fallback:', error.message);
-      
       // Fallback to default location (Hanoi)
       const defaultLat = 21.0285;
       const defaultLon = 105.8542;
-      
-      console.log('🏠 Using fallback location: Hanoi');
       
       const weather = await this.getWeather(defaultLat, defaultLon);
       
