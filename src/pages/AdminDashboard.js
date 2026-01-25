@@ -3,322 +3,387 @@ import { useSearchParams } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc, updateDoc, addDoc, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import AdminLayout from '../components/AdminLayout';
-import AutoPostBot from '../components/AutoPostBot';
+import AdminPostCreator from '../components/AdminPostCreator';
+import VersionManager from '../components/VersionManager';
 import subscriptionService from '../services/subscriptionService';
-import { Users, FileText, ShoppingBag, BookOpen, RefreshCw, Lock } from 'lucide-react';
-import { Input, Button, Card, Typography, message } from 'antd';
+import { Users, FileText, ShoppingBag, RefreshCw, Lock } from 'lucide-react';
+import { 
+  Input, 
+  Button, 
+  Card, 
+  Typography, 
+  message, 
+  Tag, 
+  Table, 
+  Space, 
+  Select, 
+  Form, 
+  Modal,
+  Popconfirm,
+  Progress,
+  Statistic,
+  Row,
+  Col,
+  Divider
+} from 'antd';
 
 const { Title, Text } = Typography;
 
 const CategoryManagement = ({ categories, setCategories }) => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [name, setName] = useState('');
+  const [form] = Form.useForm();
 
-  const addCategory = async () => {
-    if (!name.trim()) return alert('Vui lòng nhập tên danh mục');
+  const addCategory = async (values) => {
     try {
-      const docRef = await addDoc(collection(db, 'priceCategories'), { name: name.trim(), createdAt: new Date() });
-      setCategories([...categories, { id: docRef.id, name: name.trim() }]);
-      setName('');
+      const docRef = await addDoc(collection(db, 'priceCategories'), { 
+        name: values.name.trim(), 
+        createdAt: new Date() 
+      });
+      setCategories([...categories, { id: docRef.id, name: values.name.trim() }]);
+      form.resetFields();
       setShowForm(false);
-      alert('Đã thêm danh mục');
+      message.success('Đã thêm danh mục');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      message.error('Lỗi: ' + error.message);
     }
   };
 
-  const updateCategory = async () => {
-    if (!name.trim()) return alert('Vui lòng nhập tên danh mục');
+  const updateCategory = async (values) => {
     try {
-      await updateDoc(doc(db, 'priceCategories', editing.id), { name: name.trim() });
-      setCategories(categories.map(c => c.id === editing.id ? { ...c, name: name.trim() } : c));
+      await updateDoc(doc(db, 'priceCategories', editing.id), { name: values.name.trim() });
+      setCategories(categories.map(c => c.id === editing.id ? { ...c, name: values.name.trim() } : c));
       setEditing(null);
-      setName('');
-      alert('Đã cập nhật');
+      form.resetFields();
+      message.success('Đã cập nhật');
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      message.error('Lỗi: ' + error.message);
     }
   };
 
   const deleteCategory = async (id) => {
-    if (window.confirm('Xác nhận xóa danh mục này?')) {
-      try {
-        await deleteDoc(doc(db, 'priceCategories', id));
-        setCategories(categories.filter(c => c.id !== id));
-        alert('Đã xóa');
-      } catch (error) {
-        alert('Lỗi: ' + error.message);
-      }
+    try {
+      await deleteDoc(doc(db, 'priceCategories', id));
+      setCategories(categories.filter(c => c.id !== id));
+      message.success('Đã xóa');
+    } catch (error) {
+      message.error('Lỗi: ' + error.message);
     }
   };
 
+  const startEdit = (category) => {
+    setEditing(category);
+    form.setFieldsValue({ name: category.name });
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setShowForm(false);
+    form.resetFields();
+  };
+
   return (
-    <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h3>Danh mục giá nông sản ({categories.length})</h3>
-        <button onClick={() => setShowForm(true)} style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>Thêm danh mục</button>
+    <Card title={`Danh mục giá nông sản (${categories.length})`} className="mb-6">
+      <div className="mb-4">
+        <Button 
+          type="primary" 
+          onClick={() => setShowForm(true)}
+          className="bg-[#52c41a]"
+        >
+          Thêm danh mục
+        </Button>
       </div>
 
       {(showForm || editing) && (
-        <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: 'white', borderRadius: '4px' }}>
-          <input type="text" placeholder="Tên danh mục" value={name} onChange={(e) => setName(e.target.value)} style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', width: '300px', marginRight: '10px' }} />
-          <button onClick={editing ? updateCategory : addCategory} style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', marginRight: '10px' }}>{editing ? 'Cập nhật' : 'Thêm'}</button>
-          <button onClick={() => { setShowForm(false); setEditing(null); setName(''); }} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-        </div>
+        <Card className="mb-4" size="small">
+          <Form
+            form={form}
+            layout="inline"
+            onFinish={editing ? updateCategory : addCategory}
+          >
+            <Form.Item
+              name="name"
+              rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}
+            >
+              <Input placeholder="Tên danh mục" style={{ width: 300 }} />
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" className="bg-[#52c41a]">
+                  {editing ? 'Cập nhật' : 'Thêm'}
+                </Button>
+                <Button onClick={cancelEdit}>Hủy</Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
       )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="flex flex-wrap gap-2">
         {categories.map(cat => (
-          <div key={cat.id} style={{ backgroundColor: 'white', padding: '10px 15px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>{cat.name}</span>
-            <button onClick={() => { setEditing(cat); setName(cat.name); }} style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Sửa</button>
-            <button onClick={() => deleteCategory(cat.id)} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Xóa</button>
-          </div>
+          <Card key={cat.id} size="small" className="inline-block">
+            <div className="flex items-center gap-2">
+              <span>{cat.name}</span>
+              <Space size="small">
+                <Button 
+                  size="small" 
+                  type="primary" 
+                  onClick={() => startEdit(cat)}
+                >
+                  Sửa
+                </Button>
+                <Popconfirm
+                  title="Xác nhận xóa danh mục này?"
+                  onConfirm={() => deleteCategory(cat.id)}
+                  okText="Xóa"
+                  cancelText="Hủy"
+                >
+                  <Button size="small" danger>Xóa</Button>
+                </Popconfirm>
+              </Space>
+            </div>
+          </Card>
         ))}
       </div>
-    </div>
+    </Card>
   );
 };
 
 const PriceManagement = ({ prices, setPrices, categories }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPrice, setEditingPrice] = useState(null);
-  const [formData, setFormData] = useState({
-    productName: '',
-    currentPrice: '',
-    unit: '',
-    market: '',
-    category: ''
-  });
+  const [form] = Form.useForm();
 
-  const addPrice = async () => {
+  const addPrice = async (values) => {
     try {
       const newPrice = {
-        ...formData,
-        currentPrice: parseFloat(formData.currentPrice),
-        previousPrice: parseFloat(formData.currentPrice) * 0.98,
+        ...values,
+        currentPrice: parseFloat(values.currentPrice),
+        previousPrice: parseFloat(values.currentPrice) * 0.98,
         updatedAt: new Date()
       };
       
       const docRef = await addDoc(collection(db, 'prices'), newPrice);
       setPrices([...prices, { id: docRef.id, ...newPrice }]);
-      setFormData({ productName: '', currentPrice: '', unit: '', market: '', category: '' });
+      form.resetFields();
       setShowAddForm(false);
-      alert('Đã thêm sản phẩm');
+      message.success('Đã thêm sản phẩm');
     } catch (error) {
-      alert('Lỗi thêm sản phẩm: ' + error.message);
+      message.error('Lỗi thêm sản phẩm: ' + error.message);
     }
   };
 
-  const updatePrice = async () => {
+  const updatePrice = async (values) => {
     try {
       await updateDoc(doc(db, 'prices', editingPrice.id), {
-        ...formData,
-        currentPrice: parseFloat(formData.currentPrice),
+        ...values,
+        currentPrice: parseFloat(values.currentPrice),
         updatedAt: new Date()
       });
       
       setPrices(prices.map(p => p.id === editingPrice.id ? 
-        { ...p, ...formData, currentPrice: parseFloat(formData.currentPrice) } : p
+        { ...p, ...values, currentPrice: parseFloat(values.currentPrice) } : p
       ));
       
       setEditingPrice(null);
-      setFormData({ productName: '', currentPrice: '', unit: '', market: '', category: '' });
-      alert('Đã cập nhật sản phẩm');
+      form.resetFields();
+      message.success('Đã cập nhật sản phẩm');
     } catch (error) {
-      alert('Lỗi cập nhật: ' + error.message);
+      message.error('Lỗi cập nhật: ' + error.message);
     }
   };
 
   const deletePrice = async (priceId) => {
-    if (window.confirm('Xác nhận xóa sản phẩm này?')) {
-      try {
-        await deleteDoc(doc(db, 'prices', priceId));
-        setPrices(prices.filter(p => p.id !== priceId));
-        alert('Đã xóa sản phẩm');
-      } catch (error) {
-        alert('Lỗi xóa sản phẩm: ' + error.message);
-      }
+    try {
+      await deleteDoc(doc(db, 'prices', priceId));
+      setPrices(prices.filter(p => p.id !== priceId));
+      message.success('Đã xóa sản phẩm');
+    } catch (error) {
+      message.error('Lỗi xóa sản phẩm: ' + error.message);
     }
   };
 
   const startEdit = (price) => {
     setEditingPrice(price);
-    setFormData({
+    form.setFieldsValue({
       productName: price.productName,
-      currentPrice: price.currentPrice.toString(),
+      currentPrice: price.currentPrice,
       unit: price.unit,
       market: price.market,
       category: price.category || ''
     });
   };
 
+  const cancelEdit = () => {
+    setEditingPrice(null);
+    setShowAddForm(false);
+    form.resetFields();
+  };
+
+  const columns = [
+    {
+      title: 'Sản phẩm',
+      dataIndex: 'productName',
+      key: 'productName',
+    },
+    {
+      title: 'Giá hiện tại',
+      dataIndex: 'currentPrice',
+      key: 'currentPrice',
+      render: (price) => `${new Intl.NumberFormat('vi-VN').format(price)}đ`,
+    },
+    {
+      title: 'Đơn vị',
+      dataIndex: 'unit',
+      key: 'unit',
+    },
+    {
+      title: 'Thị trường',
+      dataIndex: 'market',
+      key: 'market',
+    },
+    {
+      title: 'Danh mục',
+      dataIndex: 'category',
+      key: 'category',
+      render: (category) => category ? <Tag color="blue">{category}</Tag> : '-',
+    },
+    {
+      title: 'Cập nhật',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      render: (date) => date?.toDate?.()?.toLocaleDateString() || 'N/A',
+    },
+    {
+      title: 'Hành động',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            type="primary" 
+            size="small" 
+            onClick={() => startEdit(record)}
+          >
+            Sửa
+          </Button>
+          <Popconfirm
+            title="Xác nhận xóa sản phẩm này?"
+            onConfirm={() => deletePrice(record.id)}
+            okText="Xóa"
+            cancelText="Hủy"
+          >
+            <Button size="small" danger>Xóa</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>Quản lý giá nông sản ({prices.length})</h2>
-        <button
-          onClick={() => setShowAddForm(true)}
-          style={{
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '4px',
-            cursor: 'pointer'
+      <Card 
+        title={`Quản lý giá nông sản (${prices.length})`}
+        extra={
+          <Button 
+            type="primary" 
+            onClick={() => setShowAddForm(true)}
+            className="bg-[#52c41a]"
+          >
+            Thêm sản phẩm
+          </Button>
+        }
+      >
+        {/* Add/Edit Form */}
+        {(showAddForm || editingPrice) && (
+          <Card className="mb-4" size="small">
+            <Typography.Title level={4}>
+              {editingPrice ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}
+            </Typography.Title>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={editingPrice ? updatePrice : addPrice}
+            >
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Form.Item
+                    name="productName"
+                    label="Tên sản phẩm"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
+                  >
+                    <Input placeholder="Tên sản phẩm" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item
+                    name="currentPrice"
+                    label="Giá hiện tại"
+                    rules={[{ required: true, message: 'Vui lòng nhập giá' }]}
+                  >
+                    <Input type="number" placeholder="Giá hiện tại" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item
+                    name="unit"
+                    label="Đơn vị"
+                    rules={[{ required: true, message: 'Vui lòng nhập đơn vị' }]}
+                  >
+                    <Input placeholder="Đơn vị (kg, tấn...)" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="market"
+                    label="Thị trường"
+                    rules={[{ required: true, message: 'Vui lòng nhập thị trường' }]}
+                  >
+                    <Input placeholder="Thị trường" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="category"
+                    label="Danh mục"
+                  >
+                    <Select placeholder="Chọn danh mục" allowClear>
+                      {categories.map(cat => (
+                        <Select.Option key={cat.id} value={cat.name}>
+                          {cat.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit" className="bg-[#52c41a]">
+                    {editingPrice ? 'Cập nhật' : 'Thêm'}
+                  </Button>
+                  <Button onClick={cancelEdit}>Hủy</Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
+        )}
+
+        {/* Prices Table */}
+        <Table
+          columns={columns}
+          dataSource={prices.slice(0, 50)}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`,
           }}
-        >
-          Thêm sản phẩm
-        </button>
-      </div>
-
-      {/* Add/Edit Form */}
-      {(showAddForm || editingPrice) && (
-        <div style={{
-          backgroundColor: '#f9f9f9',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>
-          <h3>{editingPrice ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-            <input
-              type="text"
-              placeholder="Tên sản phẩm"
-              value={formData.productName}
-              onChange={(e) => setFormData({...formData, productName: e.target.value})}
-              style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-            />
-            <input
-              type="number"
-              placeholder="Giá hiện tại"
-              value={formData.currentPrice}
-              onChange={(e) => setFormData({...formData, currentPrice: e.target.value})}
-              style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-            />
-            <input
-              type="text"
-              placeholder="Đơn vị (kg, tấn...)"
-              value={formData.unit}
-              onChange={(e) => setFormData({...formData, unit: e.target.value})}
-              style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-            />
-            <input
-              type="text"
-              placeholder="Thị trường"
-              value={formData.market}
-              onChange={(e) => setFormData({...formData, market: e.target.value})}
-              style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-            />
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
-              style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-            >
-              <option value="">Chọn danh mục</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ marginTop: '15px' }}>
-            <button
-              onClick={editingPrice ? updatePrice : addPrice}
-              style={{
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginRight: '10px'
-              }}
-            >
-              {editingPrice ? 'Cập nhật' : 'Thêm'}
-            </button>
-            <button
-              onClick={() => {
-                setShowAddForm(false);
-                setEditingPrice(null);
-                setFormData({ productName: '', currentPrice: '', unit: '', market: '', category: '' });
-              }}
-              style={{
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Hủy
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Prices Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5' }}>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Sản phẩm</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Giá hiện tại</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Đơn vị</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Thị trường</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Danh mục</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Cập nhật</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {prices.slice(0, 50).map(price => (
-              <tr key={price.id}>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{price.productName}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  {new Intl.NumberFormat('vi-VN').format(price.currentPrice)}đ
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{price.unit}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{price.market}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{price.category}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  {price.updatedAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  <button
-                    onClick={() => startEdit(price)}
-                    style={{
-                      backgroundColor: '#2196F3',
-                      color: 'white',
-                      border: 'none',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      marginRight: '5px'
-                    }}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => deletePrice(price.id)}
-                    style={{
-                      backgroundColor: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          scroll={{ x: 800 }}
+        />
+      </Card>
     </div>
   );
 };
@@ -337,16 +402,19 @@ const AdminDashboard = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
   
-  // Security code authentication
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Security code authentication - Lưu vào sessionStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('admin_authenticated') === 'true';
+  });
   const [securityCode, setSecurityCode] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const ADMIN_SECURITY_CODE = 'Corenonglac05122025';
+  const ADMIN_SECURITY_CODE = 'NL_2026_AD_8f2a9c1b7d'; // Mã bảo mật mới ngẫu nhiên
 
   const handleSecurityCodeSubmit = () => {
     if (securityCode === ADMIN_SECURITY_CODE) {
       setIsAuthenticated(true);
+      sessionStorage.setItem('admin_authenticated', 'true');
       setAuthError('');
       message.success('Đăng nhập thành công!');
     } else {
@@ -367,7 +435,7 @@ const AdminDashboard = () => {
       const [usersSnap, postsSnap, productsSnap, lessonsSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'posts')),
-        getDocs(collection(db, 'products')),
+        getDocs(collection(db, 'marketplace_products')),
         getDocs(collection(db, 'lessons'))
       ]);
       setStats({
@@ -398,7 +466,7 @@ const AdminDashboard = () => {
         setPrices(pricesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setCategories(categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } else if (activeTab === 'products') {
-        const productsSnapshot = await getDocs(collection(db, 'products'));
+        const productsSnapshot = await getDocs(collection(db, 'marketplace_products'));
         setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } else if (activeTab === 'analytics') {
         const [usersSnap, postsSnap, actionsSnap] = await Promise.all([
@@ -459,9 +527,22 @@ const AdminDashboard = () => {
     try {
       await updateDoc(doc(db, 'users', userId), { role: newRole });
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-      alert('Đã cập nhật quyền người dùng');
+      message.success('Đã cập nhật quyền người dùng');
     } catch (error) {
-      alert('Lỗi cập nhật: ' + error.message);
+      message.error('Lỗi cập nhật: ' + error.message);
+    }
+  };
+
+  const verifyUser = async (userId) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { 
+        verificationStatus: 'verified',
+        updatedAt: new Date()
+      });
+      setUsers(users.map(u => u.id === userId ? { ...u, verificationStatus: 'verified' } : u));
+      message.success('Đã xác thực người dùng thành công!');
+    } catch (error) {
+      message.error('Lỗi xác thực: ' + error.message);
     }
   };
 
@@ -534,89 +615,86 @@ const AdminDashboard = () => {
           {/* Dashboard Overview */}
           {activeTab === 'dashboard' && (
             <div>
-              <h2 className="text-3xl font-bold text-[#795548] mb-6">Tổng quan hệ thống</h2>
+              <Typography.Title level={2} className="text-[#795548] mb-6">
+                Tổng quan hệ thống
+              </Typography.Title>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-600 text-sm">Người dùng</p>
-                      <p className="text-3xl font-bold text-[#4CAF50] mt-2">{stats.totalUsers}</p>
-                    </div>
-                    <Users className="w-12 h-12 text-[#4CAF50] opacity-20" />
-                  </div>
-                </div>
+              <Row gutter={[16, 16]} className="mb-8">
+                <Col xs={24} sm={12} lg={8}>
+                  <Card>
+                    <Statistic
+                      title="Người dùng"
+                      value={stats.totalUsers}
+                      valueStyle={{ color: '#4CAF50' }}
+                      prefix={<Users className="w-6 h-6" />}
+                    />
+                  </Card>
+                </Col>
                 
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-600 text-sm">Bài viết</p>
-                      <p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalPosts}</p>
-                    </div>
-                    <FileText className="w-12 h-12 text-blue-600 opacity-20" />
-                  </div>
-                </div>
+                <Col xs={24} sm={12} lg={8}>
+                  <Card>
+                    <Statistic
+                      title="Bài viết"
+                      value={stats.totalPosts}
+                      valueStyle={{ color: '#1890ff' }}
+                      prefix={<FileText className="w-6 h-6" />}
+                    />
+                  </Card>
+                </Col>
                 
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-600 text-sm">Sản phẩm</p>
-                      <p className="text-3xl font-bold text-orange-600 mt-2">{stats.totalProducts}</p>
-                    </div>
-                    <ShoppingBag className="w-12 h-12 text-orange-600 opacity-20" />
-                  </div>
-                </div>
-                
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-600 text-sm">Bài học</p>
-                      <p className="text-3xl font-bold text-purple-600 mt-2">{stats.totalLessons}</p>
-                    </div>
-                    <BookOpen className="w-12 h-12 text-purple-600 opacity-20" />
-                  </div>
-                </div>
-              </div>
+                <Col xs={24} sm={12} lg={8}>
+                  <Card>
+                    <Statistic
+                      title="Sản phẩm"
+                      value={stats.totalProducts}
+                      valueStyle={{ color: '#fa8c16' }}
+                      prefix={<ShoppingBag className="w-6 h-6" />}
+                    />
+                  </Card>
+                </Col>
+              </Row>
               
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <h3 className="text-xl font-bold text-[#795548] mb-4">Quản lý Quota</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div>
-                      <h4 className="font-semibold text-green-800">Reset Quota Gói TẬP SỰ</h4>
-                      <p className="text-sm text-green-600">
+              <Card>
+                <Typography.Title level={3} className="text-[#795548] mb-4">
+                  Quản lý Quota
+                </Typography.Title>
+                <Card className="bg-green-50 border-green-200">
+                  <Row justify="space-between" align="middle">
+                    <Col>
+                      <Typography.Title level={4} className="text-green-800 mb-2">
+                        Reset Quota Gói TẬP SỰ
+                      </Typography.Title>
+                      <Typography.Text className="text-green-600">
                         Reset lại quota về mặc định (100 câu hỏi AI, 100 bác sĩ AI, 100 bản đồ, 100 thị trường) cho tất cả user gói TẬP SỰ
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleResetApprenticeQuotas}
-                      disabled={resetLoading}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {resetLoading ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Đang reset...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-5 h-5" />
-                          Reset Quota
-                        </>
-                      )}
-                    </button>
-                  </div>
+                      </Typography.Text>
+                    </Col>
+                    <Col>
+                      <Button
+                        type="primary"
+                        size="large"
+                        loading={resetLoading}
+                        onClick={handleResetApprenticeQuotas}
+                        icon={<RefreshCw className="w-5 h-5" />}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {resetLoading ? 'Đang reset...' : 'Reset Quota'}
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card>
 
-                  {resetMessage && (
-                    <div className={`p-4 rounded-lg ${resetMessage.includes('✅') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {resetMessage && (
+                  <Card 
+                    className={`mt-4 ${resetMessage.includes('✅') ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                  >
+                    <Typography.Text 
+                      className={resetMessage.includes('✅') ? 'text-green-800' : 'text-red-800'}
+                    >
                       {resetMessage}
-                    </div>
-                  )}
-                </div>
-              </div>
+                    </Typography.Text>
+                  </Card>
+                )}
+              </Card>
             </div>
           )}
 
@@ -624,112 +702,163 @@ const AdminDashboard = () => {
 
           {/* Users Tab */}
           {activeTab === 'users' && (
-        <div>
-          <h2>Quản lý người dùng ({users.length})</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Email</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Tên</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Uy tín</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Quyền</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Ngày tham gia</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.id}>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.email}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.displayName}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.reputation || 0}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      <select
-                        value={user.role || 'user'}
-                        onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        style={{ padding: '5px' }}
-                      >
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      {user.joinDate?.toDate?.()?.toLocaleDateString() || 'N/A'}
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      <button
-                        onClick={() => deleteUser(user.id)}
-                        style={{
-                          backgroundColor: '#f44336',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
+            <div>
+              <Card title={`Quản lý người dùng (${users.length})`}>
+                <Table
+                  columns={[
+                    {
+                      title: 'SĐT/Email',
+                      key: 'contact',
+                      render: (_, record) => record.phoneNumber || record.email,
+                    },
+                    {
+                      title: 'Tên',
+                      dataIndex: 'displayName',
+                      key: 'displayName',
+                    },
+                    {
+                      title: 'Trạng thái',
+                      dataIndex: 'verificationStatus',
+                      key: 'verificationStatus',
+                      render: (status) => (
+                        status === 'pending' ? (
+                          <Tag color="orange">🕒 Chờ xác thực</Tag>
+                        ) : (
+                          <Tag color="green">✅ Đã xác thực</Tag>
+                        )
+                      ),
+                    },
+                    {
+                      title: 'Uy tín',
+                      dataIndex: 'reputation',
+                      key: 'reputation',
+                      render: (reputation) => reputation || 0,
+                    },
+                    {
+                      title: 'Quyền',
+                      dataIndex: 'role',
+                      key: 'role',
+                      render: (role, record) => (
+                        <Select
+                          value={role || 'user'}
+                          onChange={(value) => updateUserRole(record.id, value)}
+                          style={{ width: 120 }}
+                        >
+                          <Select.Option value="user">User</Select.Option>
+                          <Select.Option value="moderator">Moderator</Select.Option>
+                          <Select.Option value="admin">Admin</Select.Option>
+                        </Select>
+                      ),
+                    },
+                    {
+                      title: 'Tham gia',
+                      dataIndex: 'joinDate',
+                      key: 'joinDate',
+                      render: (date) => date?.toDate?.()?.toLocaleDateString() || 'N/A',
+                    },
+                    {
+                      title: 'Hành động',
+                      key: 'actions',
+                      render: (_, record) => (
+                        <Space>
+                          {record.verificationStatus === 'pending' && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => verifyUser(record.id)}
+                              className="bg-[#52c41a]"
+                            >
+                              Xác thực
+                            </Button>
+                          )}
+                          <Popconfirm
+                            title="Xác nhận xóa người dùng này?"
+                            onConfirm={() => deleteUser(record.id)}
+                            okText="Xóa"
+                            cancelText="Hủy"
+                          >
+                            <Button size="small" danger>Xóa</Button>
+                          </Popconfirm>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                  dataSource={users}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} người dùng`,
+                  }}
+                  scroll={{ x: 800 }}
+                />
+              </Card>
+            </div>
           )}
 
           {/* Posts Tab */}
           {activeTab === 'posts' && (
-        <div>
-          <h2>Quản lý bài viết ({posts.length})</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Tiêu đề</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Tác giả</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Danh mục</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Likes</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Ngày tạo</th>
-                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.map(post => (
-                  <tr key={post.id}>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      {post.title?.substring(0, 50)}...
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{post.authorName}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{post.category}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{post.likes || 0}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      {post.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
-                    </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                      <button
-                        onClick={() => deletePost(post.id)}
-                        style={{
-                          backgroundColor: '#f44336',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
+            <div>
+              <Card title={`Quản lý bài viết (${posts.length})`}>
+                <Table
+                  columns={[
+                    {
+                      title: 'Tiêu đề',
+                      dataIndex: 'title',
+                      key: 'title',
+                      render: (title) => title?.substring(0, 50) + '...',
+                    },
+                    {
+                      title: 'Tác giả',
+                      dataIndex: 'authorName',
+                      key: 'authorName',
+                    },
+                    {
+                      title: 'Danh mục',
+                      dataIndex: 'category',
+                      key: 'category',
+                      render: (category) => <Tag color="blue">{category}</Tag>,
+                    },
+                    {
+                      title: 'Likes',
+                      dataIndex: 'likes',
+                      key: 'likes',
+                      render: (likes) => likes || 0,
+                    },
+                    {
+                      title: 'Ngày tạo',
+                      dataIndex: 'createdAt',
+                      key: 'createdAt',
+                      render: (date) => date?.toDate?.()?.toLocaleDateString() || 'N/A',
+                    },
+                    {
+                      title: 'Hành động',
+                      key: 'actions',
+                      render: (_, record) => (
+                        <Popconfirm
+                          title="Xác nhận xóa bài viết này?"
+                          onConfirm={() => deletePost(record.id)}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                        >
+                          <Button size="small" danger>Xóa</Button>
+                        </Popconfirm>
+                      ),
+                    },
+                  ]}
+                  dataSource={posts}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bài viết`,
+                  }}
+                  scroll={{ x: 800 }}
+                />
+              </Card>
+            </div>
           )}
 
           {/* Prices Tab */}
@@ -743,42 +872,97 @@ const AdminDashboard = () => {
           {/* Products Tab */}
           {activeTab === 'products' && (
             <div>
-              <h2 className="text-2xl font-bold text-[#795548] mb-4">Quản lý sản phẩm ({products.length})</h2>
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sản phẩm</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giá</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Người bán</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {products.slice(0, 50).map(product => (
-                        <tr key={product.id}>
-                          <td className="px-6 py-4 text-sm text-gray-900">{product.productName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {new Intl.NumberFormat('vi-VN').format(product.price)}đ/{product.unit}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{product.productType}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{product.sellerName}</td>
-                          <td className="px-6 py-4 text-sm">
-                            <button
-                              onClick={() => deleteDoc(doc(db, 'products', product.id))}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              Xóa
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <Card title={`Quản lý sản phẩm (${products.length})`}>
+                <Table
+                  columns={[
+                    {
+                      title: 'Ảnh',
+                      key: 'image',
+                      width: 80,
+                      render: (_, record) => (
+                        <img 
+                          src={record.imageUrls?.[0] || record.images?.[0] || 'https://via.placeholder.com/50'} 
+                          alt={record.name}
+                          className="w-12 h-12 object-cover rounded shadow-sm"
+                        />
+                      ),
+                    },
+                    {
+                      title: 'Sản phẩm',
+                      key: 'product',
+                      render: (_, record) => (
+                        <div>
+                          <div className="font-medium text-gray-900">{record.name || record.productName}</div>
+                          <div className="text-xs text-gray-500 line-clamp-1">{record.description}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: 'Giá & SL',
+                      key: 'price',
+                      render: (_, record) => (
+                        <div>
+                          <div className="text-sm font-bold text-green-600">
+                            {new Intl.NumberFormat('vi-VN').format(record.price)}đ/{record.unit}
+                          </div>
+                          <div className="text-xs text-gray-500">Kho: {record.quantity || 0}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: 'Danh mục',
+                      key: 'category',
+                      render: (_, record) => (
+                        <Tag color="blue">{record.category || record.productType}</Tag>
+                      ),
+                    },
+                    {
+                      title: 'Liên hệ',
+                      key: 'contact',
+                      render: (_, record) => (
+                        <div>
+                          <div className="text-sm font-medium">{record.supplier || record.sellerName}</div>
+                          <div className="text-xs text-gray-500">{record.phone}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: 'Địa chỉ',
+                      dataIndex: 'address',
+                      key: 'address',
+                      ellipsis: true,
+                      width: 150,
+                    },
+                    {
+                      title: 'Hành động',
+                      key: 'actions',
+                      render: (_, record) => (
+                        <Popconfirm
+                          title="Xác nhận xóa sản phẩm này khỏi chợ?"
+                          onConfirm={async () => {
+                            await deleteDoc(doc(db, 'marketplace_products', record.id));
+                            setProducts(products.filter(p => p.id !== record.id));
+                            message.success('Đã xóa sản phẩm');
+                          }}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                        >
+                          <Button size="small" danger>Xóa</Button>
+                        </Popconfirm>
+                      ),
+                    },
+                  ]}
+                  dataSource={products.slice(0, 50)}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`,
+                  }}
+                  scroll={{ x: 800 }}
+                />
+              </Card>
             </div>
           )}
           
@@ -787,105 +971,176 @@ const AdminDashboard = () => {
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (
             <div>
-              <h2 className="text-2xl font-bold text-[#795548] mb-6">Thống kê & Phân tích</h2>
+              <Typography.Title level={2} className="text-[#795548] mb-6">
+                Thống kê & Phân tích
+              </Typography.Title>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-bold text-[#795548] mb-4">Top 10 người dùng uy tín cao</h3>
-                  <div className="space-y-3">
-                    {analytics.topUsers.map((u, idx) => (
-                      <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-[#4CAF50]">#{idx + 1}</span>
-                          <div>
-                            <p className="font-semibold text-gray-800">{u.displayName}</p>
-                            <p className="text-sm text-gray-500">{u.email}</p>
-                          </div>
-                        </div>
-                        <span className="text-lg font-bold text-[#4CAF50]">{u.reputation || 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-bold text-[#795548] mb-4">Thao tác người dùng</h3>
-                  <div className="space-y-3">
-                    {analytics.actionStats.map(stat => (
-                      <div key={stat.action} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="font-semibold text-gray-800">{stat.action}</span>
-                        <span className="text-sm font-bold text-[#4CAF50]">{stat.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 mb-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm">
-                  <h3 className="text-lg font-bold text-[#795548] mb-4">Bài viết theo danh mục</h3>
-                  <div className="space-y-3">
-                    {analytics.postsByCategory.map(cat => (
-                      <div key={cat.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="font-semibold text-gray-800">{cat.name}</span>
-                        <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
-                            <div className="bg-[#4CAF50] h-2 rounded-full" style={{ width: `${(cat.count / stats.totalPosts) * 100}%` }}></div>
-                          </div>
-                          <span className="text-sm font-bold text-gray-600">{cat.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <h3 className="text-lg font-bold text-[#795548] mb-4">Lịch sử thao tác gần đây</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Người dùng</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chi tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {analytics.recentActivity.map(action => (
-                        <tr key={action.id}>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {action.timestamp?.toDate?.()?.toLocaleString() || 'N/A'}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-800">{action.userName}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className="px-2 py-1 bg-[#4CAF50] bg-opacity-10 text-[#4CAF50] rounded text-xs">{action.action}</span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{JSON.stringify(action.details)}</td>
-                        </tr>
+              <Row gutter={[16, 16]} className="mb-6">
+                <Col xs={24} lg={12}>
+                  <Card>
+                    <Typography.Title level={3} className="text-[#795548] mb-4">
+                      Top 10 người dùng uy tín cao
+                    </Typography.Title>
+                    <div className="space-y-3">
+                      {analytics.topUsers.map((u, idx) => (
+                        <Card key={u.id} size="small" className="bg-gray-50">
+                          <Row justify="space-between" align="middle">
+                            <Col>
+                              <Space>
+                                <Tag color="green" className="text-lg font-bold">
+                                  #{idx + 1}
+                                </Tag>
+                                <div>
+                                  <Typography.Text strong className="text-gray-800">
+                                    {u.displayName}
+                                  </Typography.Text>
+                                  <br />
+                                  <Typography.Text type="secondary" className="text-sm">
+                                    {u.email}
+                                  </Typography.Text>
+                                </div>
+                              </Space>
+                            </Col>
+                            <Col>
+                              <Typography.Text strong className="text-lg text-[#4CAF50]">
+                                {u.reputation || 0}
+                              </Typography.Text>
+                            </Col>
+                          </Row>
+                        </Card>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                    </div>
+                  </Card>
+                </Col>
+
+                <Col xs={24} lg={12}>
+                  <Card>
+                    <Typography.Title level={3} className="text-[#795548] mb-4">
+                      Thao tác người dùng
+                    </Typography.Title>
+                    <div className="space-y-3">
+                      {analytics.actionStats.map(stat => (
+                        <Card key={stat.action} size="small" className="bg-gray-50">
+                          <Row justify="space-between" align="middle">
+                            <Col>
+                              <Typography.Text strong className="text-gray-800">
+                                {stat.action}
+                              </Typography.Text>
+                            </Col>
+                            <Col>
+                              <Tag color="green" className="font-bold">
+                                {stat.count}
+                              </Tag>
+                            </Col>
+                          </Row>
+                        </Card>
+                      ))}
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+
+              <Row gutter={[16, 16]} className="mb-6">
+                <Col span={24}>
+                  <Card>
+                    <Typography.Title level={3} className="text-[#795548] mb-4">
+                      Bài viết theo danh mục
+                    </Typography.Title>
+                    <div className="space-y-3">
+                      {analytics.postsByCategory.map(cat => (
+                        <Card key={cat.name} size="small" className="bg-gray-50">
+                          <Row justify="space-between" align="middle">
+                            <Col flex="auto">
+                              <Typography.Text strong className="text-gray-800">
+                                {cat.name}
+                              </Typography.Text>
+                            </Col>
+                            <Col flex="200px">
+                              <Progress 
+                                percent={Math.round((cat.count / stats.totalPosts) * 100)} 
+                                strokeColor="#4CAF50"
+                                format={() => cat.count}
+                              />
+                            </Col>
+                          </Row>
+                        </Card>
+                      ))}
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+
+              <Card>
+                <Typography.Title level={3} className="text-[#795548] mb-4">
+                  Lịch sử thao tác gần đây
+                </Typography.Title>
+                <Table
+                  columns={[
+                    {
+                      title: 'Thời gian',
+                      dataIndex: 'timestamp',
+                      key: 'timestamp',
+                      render: (timestamp) => timestamp?.toDate?.()?.toLocaleString() || 'N/A',
+                    },
+                    {
+                      title: 'Người dùng',
+                      dataIndex: 'userName',
+                      key: 'userName',
+                    },
+                    {
+                      title: 'Hành động',
+                      dataIndex: 'action',
+                      key: 'action',
+                      render: (action) => (
+                        <Tag color="green">{action}</Tag>
+                      ),
+                    },
+                    {
+                      title: 'Chi tiết',
+                      dataIndex: 'details',
+                      key: 'details',
+                      render: (details) => JSON.stringify(details),
+                      ellipsis: true,
+                    },
+                  ]}
+                  dataSource={analytics.recentActivity}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} hoạt động`,
+                  }}
+                  scroll={{ x: 600 }}
+                />
+              </Card>
             </div>
           )}
           
-          {/* Bot Tab */}
-          {activeTab === 'bot' && (
+          {/* Post Creator Tab */}
+          {activeTab === 'post-creator' && (
             <div>
-              <AutoPostBot />
+              <AdminPostCreator />
+            </div>
+          )}
+          
+          {/* Version Manager Tab */}
+          {activeTab === 'version' && (
+            <div>
+              <VersionManager />
             </div>
           )}
           
           {/* Settings Tab */}
           {activeTab === 'settings' && (
             <div>
-              <h2 className="text-2xl font-bold text-[#795548] mb-4">Cài đặt</h2>
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <p className="text-gray-600">Cài đặt hệ thống đang phát triển...</p>
-              </div>
+              <Typography.Title level={2} className="text-[#795548] mb-4">
+                Cài đặt
+              </Typography.Title>
+              <Card>
+                <Typography.Text type="secondary">
+                  Cài đặt hệ thống đang phát triển...
+                </Typography.Text>
+              </Card>
             </div>
           )}
       </div>

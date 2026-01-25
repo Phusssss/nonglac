@@ -30,7 +30,7 @@ const PhoneStep = ({ onNext, setLoading, setError, loading, error }) => {
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <Title level={4}>Nhập số điện thoại</Title>
         <Text type="secondary">
-          Chúng tôi sẽ gửi mã xác thực đến số điện thoại của bạn
+          Vui lòng nhập số điện thoại để bắt đầu đăng ký
         </Text>
       </div>
 
@@ -73,7 +73,7 @@ const PhoneStep = ({ onNext, setLoading, setError, loading, error }) => {
               size="large"
               className="bg-[#4CAF50] hover:bg-[#45a049] border-[#4CAF50] hover:border-[#45a049]"
             >
-              {loading ? 'Đang gửi...' : 'Gửi mã OTP'}
+              {loading ? 'Đang xử lý...' : 'Tiếp tục'}
             </Button>
           </div>
         </Form.Item>

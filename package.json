@@ -1,6 +1,6 @@
 {
   "name": "nonglac-social",
-  "version": "0.1.0",
+  "version": "1.1.1",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -32,10 +32,15 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "node set-build-time.js && react-app-rewired build",
+    "build": "node scripts/update-version.js && react-app-rewired build",
+    "build:version": "node scripts/update-version.js",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
-    "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js"
+    "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
+    "version:patch": "node scripts/update-version.js patch",
+    "version:minor": "node scripts/update-version.js minor",
+    "version:major": "node scripts/update-version.js major",
+    "version:set": "node scripts/update-version.js"
   },
   "eslintConfig": {
     "extends": [

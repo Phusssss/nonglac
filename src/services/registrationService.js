@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import phoneAuthService from './phoneAuthService';
 import { getErrorMessage } from '../constants/errorMessages';
 
@@ -18,14 +18,17 @@ class RegistrationService {
     };
   }
 
-  // Bước 1: Gửi OTP
+  // Bước 1: Lưu số điện thoại (tạm thời bỏ qua OTP)
   async sendPhoneOTP(phoneNumber) {
     try {
-      const result = await phoneAuthService.sendOTP(phoneNumber);
-      if (result.success) {
-        this.registrationData.phoneNumber = phoneNumber;
-      }
-      return result;
+      // Tạm thời bỏ qua việc gửi OTP thực tế
+      this.registrationData.phoneNumber = phoneNumber;
+      this.registrationData.isPhoneVerified = true; // Giả lập đã verify để qua bước tiếp theo
+      
+      return {
+        success: true,
+        message: 'Số điện thoại hợp lệ'
+      };
     } catch (error) {
       return {
         success: false,
@@ -97,14 +100,33 @@ class RegistrationService {
     };
   }
 
+  // Gửi thông báo cho Admin khi có user mới
+  async notifyAdminNewRegistration(userData) {
+    try {
+      // Lưu thông báo vào collection admin_notifications
+      await addDoc(collection(db, 'admin_notifications'), {
+        type: 'NEW_REGISTRATION',
+        userId: userData.uid,
+        userName: userData.displayName,
+        phoneNumber: userData.phoneNumber,
+        timestamp: new Date(),
+        status: 'unread',
+        message: `Người dùng mới đăng ký: ${userData.displayName} (${userData.phoneNumber})`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error notifying admin:', error);
+      return false;
+    }
+  }
+
   // Tạo tài khoản đơn giản chỉ với phone và password
   async createSimpleAccount(password) {
     try {
-      if (!this.registrationData.isPhoneVerified) {
-        throw new Error('Số điện thoại chưa được xác thực');
-      }
-
+      // Đã bỏ xác thực OTP nên không cần check isPhoneVerified chặt chẽ
       const { phoneNumber } = this.registrationData;
+      if (!phoneNumber) throw new Error('Vui lòng nhập số điện thoại');
       
       // Tạo email tạm thời từ số điện thoại
       const tempEmail = `${phoneNumber.replace('+84', '0').replace(/\D/g, '')}@nonglac.temp`;
@@ -145,8 +167,16 @@ class RegistrationService {
         postsCount: 0,
         likesReceived: 0,
         isActive: true,
+        verificationStatus: 'pending', // Tài khoản đang chờ xác thực
         createdAt: new Date(),
         updatedAt: new Date()
+      });
+
+      // Thông báo cho admin
+      await this.notifyAdminNewRegistration({
+        uid: user.uid,
+        displayName: displayName,
+        phoneNumber: phoneNumber
       });
 
       // Reset registration data
@@ -155,7 +185,7 @@ class RegistrationService {
       return {
         success: true,
         user: user,
-        message: 'Tài khoản đã được tạo thành công'
+        message: 'Đăng ký thành công. Tài khoản đang chờ xác thực bởi Admin.'
       };
 
     } catch (error) {
@@ -217,8 +247,16 @@ class RegistrationService {
         postsCount: 0,
         likesReceived: 0,
         isActive: true,
+        verificationStatus: 'pending', // Tài khoản đang chờ xác thực
         createdAt: new Date(),
         updatedAt: new Date()
+      });
+
+      // Thông báo cho admin
+      await this.notifyAdminNewRegistration({
+        uid: user.uid,
+        displayName: personalInfo.displayName,
+        phoneNumber: phoneNumber
       });
 
       // Reset registration data
@@ -227,7 +265,7 @@ class RegistrationService {
       return {
         success: true,
         user: user,
-        message: 'Tài khoản đã được tạo thành công'
+        message: 'Đăng ký thành công. Tài khoản đang chờ xác thực bởi Admin.'
       };
 
     } catch (error) {

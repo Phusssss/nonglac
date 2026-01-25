@@ -182,7 +182,7 @@ const parseArticleBlock = (htmlBlock, isMain = false) => {
       content: content || title, // Nếu không có mô tả thì dùng title
       url: url.startsWith('http') ? url : `${NNVN_BASE_URL}${url}`,
       imageUrl: imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${NNVN_BASE_URL}${imageUrl}`) : null,
-      source: 'Báo Nông nghiệp và Môi trường',
+      source: 'Khuyến nông',
       category: category,
       publishedAt: publishTime,
       scrapedAt: new Date()
@@ -227,7 +227,7 @@ const parseNewsItem = (htmlBlock) => {
       content: content || title,
       url: url.startsWith('http') ? url : `${NNVN_BASE_URL}${url}`,
       imageUrl: imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${NNVN_BASE_URL}${imageUrl}`) : null,
-      source: 'Báo Nông nghiệp và Môi trường',
+      source: 'Khuyến nông',
       category: category,
       publishedAt: publishTime,
       scrapedAt: new Date()

@@ -16,6 +16,7 @@ import { ErrorBoundary } from './utils/errorHandler';
 import { initPerformanceMonitoring } from './utils/performanceMonitor';
 import { initHealthMonitoring } from './utils/healthCheck';
 import DailyBotScheduler from './components/DailyBotScheduler';
+import versionService from './services/versionService';
 
 // Lazy load components
 const Home = React.lazy(() => import('./pages/Home'));
@@ -74,33 +75,11 @@ function App() {
     // Initialize health monitoring
     initHealthMonitoring();
     
-    // Cache busting - kiểm tra phiên bản mới
-    const checkForUpdates = () => {
-      const buildTime = process.env.REACT_APP_BUILD_TIME;
-      
-      // Chỉ check update nếu có BUILD_TIME được set (production)
-      if (!buildTime) return;
-      
-      const lastBuildTime = localStorage.getItem('app_build_time');
-      
-      if (lastBuildTime && lastBuildTime !== buildTime.toString()) {
-        // Có phiên bản mới, reload trang
-        localStorage.setItem('app_build_time', buildTime.toString());
-        window.location.reload(true);
-      } else if (!lastBuildTime) {
-        localStorage.setItem('app_build_time', buildTime.toString());
-      }
-    };
-    
-    checkForUpdates();
-    
-    // Kiểm tra cập nhật mỗi 30 giây (chỉ ở production)
-    const updateInterval = process.env.REACT_APP_BUILD_TIME 
-      ? setInterval(checkForUpdates, 30000)
-      : null;
+    // Initialize version service for automatic cache management
+    versionService.init();
     
     return () => {
-      if (updateInterval) clearInterval(updateInterval);
+      // Cleanup if needed
     };
   }, []);
 

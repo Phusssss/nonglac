@@ -10,12 +10,13 @@ import GitHubImageUpload from '../components/GitHubImageUpload';
 import SEO from '../components/SEO';
 import LoginModal from '../components/common/LoginModal';
 import WeatherWidget from '../components/WeatherWidget';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const Home = () => {
   const { user, userProfile } = useAuth();
   const { requireAuthForPost, showLoginModal, setShowLoginModal } = useAuthGuard();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [firebasePosts, setFirebasePosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,13 +27,10 @@ const Home = () => {
   const [open, setOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '', category: '', images: [] });
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
-  const [searchTerm, setSearchTerm] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
-  const [likedPosts, setLikedPosts] = useState(new Set());
-  const [savedPosts, setSavedPosts] = useState(new Set());
-  const [followedUsers, setFollowedUsers] = useState(new Set());
-  const [showComments, setShowComments] = useState(new Set());
-  const [newComment, setNewComment] = useState({});
+  
+  // Get search term from URL params
+  const searchTerm = searchParams.get('search') || '';
   
   const POSTS_PER_PAGE = 10;
   const categories = [
@@ -121,7 +119,14 @@ const Home = () => {
     
     try {
       let q;
-      if (selectedCategory === 'Tất cả') {
+      // Nếu đang search, load tất cả posts để filter ở client
+      if (searchTerm.trim()) {
+        q = query(
+          collection(db, 'posts'),
+          orderBy('createdAt', 'desc'),
+          limit(50) // Load nhiều hơn để search
+        );
+      } else if (selectedCategory === 'Tất cả') {
         q = query(
           collection(db, 'posts'),
           orderBy('createdAt', 'desc'),
@@ -144,16 +149,16 @@ const Home = () => {
       
       setFirebasePosts(postsData);
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
+      setHasMore(!searchTerm.trim() && snapshot.docs.length === POSTS_PER_PAGE);
     } catch (error) {
       console.error('Error loading posts:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, searchTerm]);
   
   const loadMorePosts = useCallback(async () => {
-    if (!hasMore || loadingMore || !lastDoc) return;
+    if (!hasMore || loadingMore || !lastDoc || searchTerm.trim()) return;
     
     setLoadingMore(true);
     try {
@@ -193,7 +198,7 @@ const Home = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [selectedCategory, lastDoc, hasMore, loadingMore]);
+  }, [selectedCategory, lastDoc, hasMore, loadingMore, searchTerm]);
   
   useEffect(() => {
     loadInitialPosts();
@@ -201,7 +206,7 @@ const Home = () => {
   
   useEffect(() => {
     const handleScroll = () => {
-      if (loadingMore || !hasMore) return;
+      if (loadingMore || !hasMore || searchTerm.trim()) return;
       
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollHeight = document.documentElement.scrollHeight;
@@ -215,7 +220,7 @@ const Home = () => {
     const throttledScroll = throttle(handleScroll, 200);
     window.addEventListener('scroll', throttledScroll, { passive: true });
     return () => window.removeEventListener('scroll', throttledScroll);
-  }, [loadMorePosts, loadingMore, hasMore]);
+  }, [loadMorePosts, loadingMore, hasMore, searchTerm]);
   
   const throttle = (func, delay) => {
     let timeoutId;
@@ -250,7 +255,8 @@ const Home = () => {
       const filtered = posts.filter(post => 
         post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.authorName?.toLowerCase().includes(searchTerm.toLowerCase())
+        post.authorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.category?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredPosts(filtered);
     }
@@ -413,6 +419,31 @@ const Home = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-6 space-y-6">
+              
+              {/* Search Results Header */}
+              {searchTerm && (
+                <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="material-icons-round text-[#4CAF50]">search</span>
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          Kết quả tìm kiếm cho: "{searchTerm}"
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Tìm thấy {filteredPosts.length} bài viết
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/')}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <span className="material-icons-round">close</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               
               {/* Trending Topics - Mobile Only */}
               <div className="lg:hidden">

@@ -11,6 +11,21 @@ const ResponsiveNavbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileAiMenu, setShowMobileAiMenu] = useState(false);
 
+  // Handle search functionality
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' || e.type === 'click') {
+      if (searchQuery.trim()) {
+        navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      } else {
+        navigate('/');
+      }
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   // Load Material Icons and Inter font
   useEffect(() => {
     // Material Icons
@@ -85,12 +100,21 @@ const ResponsiveNavbar = () => {
                   <span className="material-icons-round text-gray-400 group-focus-within:text-[#4CAF50] transition-colors text-lg">search</span>
                 </div>
                 <input 
-                  className="block w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] transition duration-150 ease-in-out shadow-sm" 
+                  className="block w-full pl-9 pr-10 py-1.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] transition duration-150 ease-in-out shadow-sm" 
                   placeholder="Tìm kiếm nông dân, sản phẩm, tin tức..." 
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
+                  onKeyPress={handleSearch}
                 />
+                {searchQuery && (
+                  <button
+                    onClick={handleSearch}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#4CAF50] hover:text-[#388E3C] transition-colors"
+                  >
+                    <span className="material-icons-round text-lg">arrow_forward</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -233,11 +257,16 @@ const ResponsiveNavbar = () => {
             </button>
             
             <button 
-              onClick={() => navigate('/missions')}
+              onClick={() => {
+                const searchTerm = prompt('Nhập từ khóa tìm kiếm:');
+                if (searchTerm && searchTerm.trim()) {
+                  navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
+                }
+              }}
               className="flex flex-col items-center"
             >
-              <span className="material-icons-round">emoji_events</span>
-              <span className="text-[10px]">Nhiệm vụ</span>
+              <span className="material-icons-round">search</span>
+              <span className="text-[10px]">Tìm kiếm</span>
             </button>
           </div>
           

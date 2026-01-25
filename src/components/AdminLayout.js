@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LayoutDashboard, Users, FileText, DollarSign, ShoppingBag, BookOpen, BarChart3, Settings, Bot, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, DollarSign, ShoppingBag, BarChart3, Settings, LogOut, Edit, RefreshCw } from 'lucide-react';
 
 const AdminLayout = ({ children }) => {
   const { userProfile, logout } = useAuth();
@@ -14,16 +14,13 @@ const AdminLayout = ({ children }) => {
     { id: 'posts', label: 'Bài viết', icon: FileText, path: '/admin?tab=posts' },
     { id: 'products', label: 'Sản phẩm', icon: ShoppingBag, path: '/admin?tab=products' },
     { id: 'prices', label: 'Giá nông sản', icon: DollarSign, path: '/admin?tab=prices' },
-    { id: 'lessons', label: 'Bài học', icon: BookOpen, path: '/lessons' },
-    { id: 'bot', label: '🤖 Auto Bot', icon: Bot, path: '/admin?tab=bot' },
+    { id: 'post-creator', label: 'Tạo bài thử', icon: Edit, path: '/admin?tab=post-creator' },
     { id: 'analytics', label: 'Thống kê', icon: BarChart3, path: '/admin?tab=analytics' },
+    { id: 'version', label: 'Version & Cache', icon: RefreshCw, path: '/admin?tab=version' },
     { id: 'settings', label: 'Cài đặt', icon: Settings, path: '/admin?tab=settings' },
   ];
 
   const isActive = (path) => {
-    if (path === '/lessons') {
-      return location.pathname === '/lessons';
-    }
     return location.pathname === '/admin' && location.search === path.split('?')[1];
   };
 

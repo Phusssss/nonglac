@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Steps, Card, Typography } from 'antd';
 import PhoneStep from './PhoneStep';
-import OTPStep from './OTPStep';
 import PersonalInfoStep from './PersonalInfoStep';
 import PasswordStep from './PasswordStep';
 import LocationStep from './LocationStep';
@@ -13,11 +12,7 @@ const { Title } = Typography;
 const steps = [
   {
     title: 'Số điện thoại',
-    description: 'Xác thực số điện thoại'
-  },
-  {
-    title: 'Mã OTP',
-    description: 'Nhập mã xác thực'
+    description: 'Nhập số điện thoại'
   },
   {
     title: 'Mật khẩu',
@@ -59,17 +54,6 @@ const Registration = () => {
           />
         );
       case 1:
-        return (
-          <OTPStep
-            onNext={handleNext}
-            onBack={handleBack}
-            setLoading={setLoading}
-            setError={setError}
-            loading={loading}
-            error={error}
-          />
-        );
-      case 2:
         return (
           <PasswordStep
             onBack={handleBack}
