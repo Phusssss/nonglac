@@ -131,14 +131,6 @@ const PhoneLogin = () => {
 
         <div className="text-center space-y-3">
           <div>
-            <Link 
-              onClick={() => navigate('/forgot-password')}
-              className="text-[#4CAF50] hover:text-[#45a049]"
-            >
-              Quên mật khẩu?
-            </Link>
-          </div>
-          <div>
             <Space>
               <Text className="text-gray-600">Chưa có tài khoản?</Text>
               <Link 

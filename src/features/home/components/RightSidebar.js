@@ -1,0 +1,156 @@
+import React from 'react';
+import { Card, Button } from 'antd';
+import { FireOutlined, TrophyOutlined } from '@ant-design/icons';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import WeatherWidget from '../../../components/WeatherWidget';
+
+const RightSidebar = ({ 
+  trendingTopics = [], 
+  topContributors = [], 
+  selectedCategory,
+  onCategoryChange 
+}) => {
+  const priceData = [
+    { name: 'Lúa OM 5451', price: '8.200 đ/kg', location: 'Hậu Giang', change: '+2.5%', trend: 'up' },
+    { name: 'Cà phê Robusta', price: '120.000 đ/kg', location: 'Đắk Lắk', change: '-4%', trend: 'down' },
+    { name: 'Tiêu đen', price: '92.500 đ/kg', location: 'Bình Phước', change: '0%', trend: 'same' }
+  ];
+
+  const getTrendIcon = (trend) => {
+    switch (trend) {
+      case 'up': return <TrendingUp size={14} className="text-green-600" />;
+      case 'down': return <TrendingDown size={14} className="text-red-600" />;
+      default: return <Minus size={14} className="text-gray-600" />;
+    }
+  };
+
+  const getTrendColor = (trend) => {
+    switch (trend) {
+      case 'up': return 'bg-green-100 text-green-700';
+      case 'down': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Weather Widget */}
+      <WeatherWidget />
+
+      {/* Live Prices */}
+      <Card className="shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-lg text-gray-900">Giá nông sản 24h</h3>
+          <span className="flex items-center gap-1 bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span> 
+            Live
+          </span>
+        </div>
+        
+        <div className="space-y-3">
+          {priceData.map((item, idx) => (
+            <div key={idx} className="p-3 hover:bg-gray-50 transition-colors cursor-pointer rounded-lg border border-gray-100">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium text-gray-900 text-sm">{item.name}</span>
+                <span className="font-bold text-gray-900 text-sm">{item.price}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">{item.location}</span>
+                <span className={`px-2 py-1 rounded-full flex items-center gap-1 ${getTrendColor(item.trend)}`}>
+                  {getTrendIcon(item.trend)}
+                  {item.change}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+          <span className="text-sm text-gray-500">
+            Giá cả được cập nhật thường xuyên
+          </span>
+        </div>
+      </Card>
+
+      {/* Trending Topics */}
+      <Card className="shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2 mb-4">
+          <FireOutlined className="text-[#4CAF50]" />
+          <h3 className="font-bold text-lg text-gray-900">Chủ đề hot</h3>
+        </div>
+        
+        <div className="space-y-2">
+          {trendingTopics.length > 0 ? (
+            trendingTopics.map((item, index) => (
+              <Button
+                key={index}
+                type={selectedCategory === item.topic ? 'primary' : 'text'}
+                onClick={() => onCategoryChange(item.topic)}
+                className={`w-full flex justify-between items-center h-auto p-3 ${
+                  selectedCategory === item.topic 
+                    ? 'bg-[#4CAF50] border-[#4CAF50]' 
+                    : 'hover:bg-green-50 text-gray-700 border-none'
+                }`}
+              >
+                <span className="text-sm font-medium">{item.topic}</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  selectedCategory === item.topic 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-[#4CAF50] text-white'
+                }`}>
+                  {item.posts}
+                </span>
+              </Button>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <span className="text-gray-500 text-sm italic">Chưa có chủ đề nào</span>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Top Contributors */}
+      <Card className="shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2 mb-4">
+          <TrophyOutlined className="text-yellow-500" />
+          <h3 className="font-bold text-lg text-gray-900">Chuyên gia tuần này</h3>
+        </div>
+        
+        <div className="space-y-3">
+          {topContributors.length > 0 ? (
+            topContributors.slice(0, 3).map((contributor, idx) => (
+              <div 
+                key={idx}
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer border border-gray-100"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#4CAF50] flex items-center justify-center text-white font-bold text-sm">
+                  {contributor.name?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {contributor.name || 'Người dùng'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {contributor.posts} bài viết
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold text-[#4CAF50]">
+                    #{idx + 1}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <span className="text-gray-500 text-sm italic">Chưa có dữ liệu</span>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default RightSidebar;

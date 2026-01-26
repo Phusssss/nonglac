@@ -9,7 +9,7 @@ import ImageGallery from './ImageGallery';
 import CommentSection from './CommentSection';
 import ShareDialog from './ShareDialog';
 import PostMenu from './PostMenu';
-import SaveButton from './SaveButton';
+
 import ReactionButton from './ReactionButton';
 import LoginModal from './common/LoginModal';
 import VideoPlayer from './VideoPlayer';
@@ -123,7 +123,6 @@ const PostCard = ({ post, isDetailView = false }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <SaveButton postId={post.id} />
             <button 
               onClick={(e) => setMenuAnchor(e.currentTarget)}
               aria-label="Tùy chọn bài viết"

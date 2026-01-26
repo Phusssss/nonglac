@@ -27,7 +27,5 @@ export const ACTIONS = {
   LOGIN: 'login',
   LOGOUT: 'logout',
   VIEW_PROFILE: 'view_profile',
-  FOLLOW_USER: 'follow_user',
-  SAVE_POST: 'save_post',
-  VIEW_LESSON: 'view_lesson'
+  FOLLOW_USER: 'follow_user'
 };

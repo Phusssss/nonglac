@@ -5,8 +5,8 @@ import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { Layout, Card, Button, Tag, Typography, Row, Col, Tabs, Avatar, Carousel } from 'antd';
 import { ArrowLeftOutlined, HeartOutlined, ShareAltOutlined, EnvironmentOutlined, UserOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
-import ContactModal from '../components/marketplace/ContactModal';
-import ProductImageGallery from '../components/marketplace/ProductImageGallery';
+import ContactModal from '../features/marketplace/components/ContactModal';
+import ProductImageGallery from '../features/marketplace/components/ProductImageGallery';
 import './ProductDetail.css';
 
 const { Title, Text, Paragraph } = Typography;

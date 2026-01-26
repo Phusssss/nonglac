@@ -397,7 +397,7 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, totalProducts: 0, totalLessons: 0 });
+  const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, totalProducts: 0 });
   const [analytics, setAnalytics] = useState({ topUsers: [], postsByCategory: [], recentActivity: [], actionStats: [] });
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
@@ -432,17 +432,15 @@ const AdminDashboard = () => {
 
   const loadStats = async () => {
     try {
-      const [usersSnap, postsSnap, productsSnap, lessonsSnap] = await Promise.all([
+      const [usersSnap, postsSnap, productsSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'posts')),
-        getDocs(collection(db, 'marketplace_products')),
-        getDocs(collection(db, 'lessons'))
+        getDocs(collection(db, 'marketplace_products'))
       ]);
       setStats({
         totalUsers: usersSnap.size,
         totalPosts: postsSnap.size,
-        totalProducts: productsSnap.size,
-        totalLessons: lessonsSnap.size
+        totalProducts: productsSnap.size
       });
     } catch (error) {
       console.error('Error loading stats:', error);

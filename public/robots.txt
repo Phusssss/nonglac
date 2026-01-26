@@ -21,7 +21,6 @@ Disallow: /admin
 Disallow: /admin-setup
 Disallow: /api-usage
 Disallow: /test-scraper
-Disallow: /post-generator
 
 # Block duplicate content
 Disallow: /*?*
