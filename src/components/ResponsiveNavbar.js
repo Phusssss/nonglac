@@ -257,16 +257,11 @@ const ResponsiveNavbar = () => {
             </button>
             
             <button 
-              onClick={() => {
-                const searchTerm = prompt('Nhập từ khóa tìm kiếm:');
-                if (searchTerm && searchTerm.trim()) {
-                  navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
-                }
-              }}
+              onClick={() => navigate('/missions')}
               className="flex flex-col items-center"
             >
-              <span className="material-icons-round">search</span>
-              <span className="text-[10px]">Tìm kiếm</span>
+              <span className="material-icons-round">emoji_events</span>
+              <span className="text-[10px]">Nhiệm vụ</span>
             </button>
           </div>
           

@@ -29,8 +29,8 @@ import {
 } from '@ant-design/icons';
 import { NongLacCard, CategoryTag } from '../common';
 import { nongLacColors } from '../../theme/nongLacTheme';
+import VideoPlayer from '../VideoPlayer';
 import { useNavigate } from 'react-router-dom';
-import moment from 'moment';
 
 const { Text, Paragraph } = Typography;
 
@@ -336,65 +336,187 @@ export const EnhancedPostCard = ({
             </Space>
           </div>
 
-          {/* Images */}
-          {post.images && post.images.length > 0 && (
+          {/* Media (Images and Videos) */}
+          {((post.media && post.media.length > 0) || (post.images && post.images.length > 0)) && (
             <div onClick={handlePostClick} style={{ cursor: 'pointer' }}>
-              {post.images.length === 1 ? (
-                <Image
-                  src={post.images[0]}
-                  alt={post.title}
-                  style={{
-                    width: '100%',
-                    borderRadius: 8,
-                    maxHeight: 400,
-                    objectFit: 'cover'
-                  }}
-                  preview={{
-                    mask: (
-                      <Space>
-                        <EyeOutlined />
-                        <span>Xem ảnh</span>
-                      </Space>
+              {/* New media structure */}
+              {post.media && post.media.length > 0 ? (
+                <div className="media-gallery">
+                  {post.media.length === 1 ? (
+                    // Single media item
+                    post.media[0].type === 'image' ? (
+                      <Image
+                        src={post.media[0].url}
+                        alt={post.title}
+                        style={{
+                          width: '100%',
+                          borderRadius: 8,
+                          maxHeight: 400,
+                          objectFit: 'cover'
+                        }}
+                        preview={{
+                          mask: (
+                            <Space>
+                              <EyeOutlined />
+                              <span>Xem ảnh</span>
+                            </Space>
+                          )
+                        }}
+                      />
+                    ) : (
+                      <VideoPlayer
+                        src={post.media[0].url}
+                        poster={post.media[0].thumbnailUrl}
+                        controls={true}
+                        lazy={false}
+                        style={{
+                          borderRadius: 8,
+                          maxHeight: 400
+                        }}
+                      />
                     )
-                  }}
-                />
+                  ) : (
+                    // Multiple media items
+                    <Row gutter={[8, 8]}>
+                      {post.media.slice(0, 4).map((mediaItem, index) => (
+                        <Col key={index} span={post.media.length === 2 ? 12 : 6}>
+                          {mediaItem.type === 'image' ? (
+                            <Image
+                              src={mediaItem.url}
+                              style={{
+                                width: '100%',
+                                height: 120,
+                                objectFit: 'cover',
+                                borderRadius: 8
+                              }}
+                            />
+                          ) : (
+                            <VideoPlayer
+                              src={mediaItem.url}
+                              poster={mediaItem.thumbnailUrl}
+                              controls={true}
+                              lazy={false}
+                              style={{
+                                width: '100%',
+                                height: 120,
+                                borderRadius: 8
+                              }}
+                            />
+                          )}
+                          {index === 3 && post.media.length > 4 && (
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundColor: 'rgba(0,0,0,0.5)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 8,
+                              color: 'white',
+                              fontSize: 16,
+                              fontWeight: 'bold'
+                            }}>
+                              +{post.media.length - 4}
+                            </div>
+                          )}
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                </div>
               ) : (
-                <Image.PreviewGroup>
-                  <Row gutter={[8, 8]}>
-                    {post.images.slice(0, 4).map((img, index) => (
-                      <Col key={index} span={post.images.length === 2 ? 12 : 6}>
-                        <Image
-                          src={img}
-                          style={{
-                            width: '100%',
-                            height: 120,
-                            objectFit: 'cover',
-                            borderRadius: 8
-                          }}
-                        />
-                        {index === 3 && post.images.length > 4 && (
-                          <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 8,
-                            color: 'white',
-                            fontSize: 16,
-                            fontWeight: 'bold'
-                          }}>
-                            +{post.images.length - 4}
-                          </div>
-                        )}
-                      </Col>
-                    ))}
-                  </Row>
-                </Image.PreviewGroup>
+                /* Backward compatibility - old images structure */
+                post.images && post.images.length > 0 && (
+                  post.images.length === 1 ? (
+                    // Single item - check if it's video or image
+                    /\.(mp4|mov|avi|wmv|mkv)$/i.test(post.images[0]) ? (
+                      <VideoPlayer
+                        src={post.images[0]}
+                        controls={true}
+                        lazy={false}
+                        style={{
+                          borderRadius: 8,
+                          maxHeight: 400
+                        }}
+                      />
+                    ) : (
+                      <Image
+                        src={post.images[0]}
+                        alt={post.title}
+                        style={{
+                          width: '100%',
+                          borderRadius: 8,
+                          maxHeight: 400,
+                          objectFit: 'cover'
+                        }}
+                        preview={{
+                          mask: (
+                            <Space>
+                              <EyeOutlined />
+                              <span>Xem ảnh</span>
+                            </Space>
+                          )
+                        }}
+                      />
+                    )
+                  ) : (
+                    // Multiple items - handle mixed images and videos
+                    <Row gutter={[8, 8]}>
+                      {post.images.slice(0, 4).map((imageUrl, index) => {
+                        const isVideo = /\.(mp4|mov|avi|wmv|mkv)$/i.test(imageUrl);
+                        
+                        return (
+                          <Col key={index} span={post.images.length === 2 ? 12 : 6} style={{ position: 'relative' }}>
+                            {isVideo ? (
+                              <VideoPlayer
+                                src={imageUrl}
+                                controls={true}
+                                lazy={false}
+                                style={{
+                                  width: '100%',
+                                  height: 120,
+                                  borderRadius: 8
+                                }}
+                              />
+                            ) : (
+                              <Image
+                                src={imageUrl}
+                                style={{
+                                  width: '100%',
+                                  height: 120,
+                                  objectFit: 'cover',
+                                  borderRadius: 8
+                                }}
+                              />
+                            )}
+                            {index === 3 && post.images.length > 4 && (
+                              <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 8,
+                                color: 'white',
+                                fontSize: 16,
+                                fontWeight: 'bold'
+                              }}>
+                                +{post.images.length - 4}
+                              </div>
+                            )}
+                          </Col>
+                        );
+                      })}
+                    </Row>
+                  )
+                )
               )}
             </div>
           )}

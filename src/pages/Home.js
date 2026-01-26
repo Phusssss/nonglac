@@ -496,19 +496,31 @@ const Home = () => {
                     />
                     <div className="flex justify-between items-center border-t border-gray-100 pt-3">
                       <div className="flex gap-2">
-                        <button className="p-2 rounded-full hover:bg-gray-100 text-green-600 transition-colors" title="Ảnh">
+                        <button 
+                          className="p-2 rounded-full hover:bg-green-50 text-green-600 transition-all duration-200 hover:scale-105 active:scale-95" 
+                          title="Thêm ảnh"
+                          onClick={() => requireAuthForPost(() => setOpen(true))}
+                        >
                           <span className="material-icons-round text-xl">image</span>
                         </button>
-                        <button className="p-2 rounded-full hover:bg-gray-100 text-blue-500 transition-colors" title="Video">
+                        <button 
+                          className="p-2 rounded-full hover:bg-blue-50 text-blue-500 transition-all duration-200 hover:scale-105 active:scale-95" 
+                          title="Thêm video"
+                          onClick={() => requireAuthForPost(() => setOpen(true))}
+                        >
                           <span className="material-icons-round text-xl">videocam</span>
                         </button>
-                        <button className="p-2 rounded-full hover:bg-gray-100 text-orange-500 transition-colors" title="Cảm xúc">
+                        <button 
+                          className="p-2 rounded-full hover:bg-orange-50 text-orange-500 transition-all duration-200 hover:scale-105 active:scale-95" 
+                          title="Thêm cảm xúc"
+                          onClick={() => requireAuthForPost(() => setOpen(true))}
+                        >
                           <span className="material-icons-round text-xl">sentiment_satisfied_alt</span>
                         </button>
                       </div>
                       <button 
                         onClick={() => requireAuthForPost(() => setOpen(true))}
-                        className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors opacity-90 hover:opacity-100"
+                        className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                       >
                         Đăng bài
                       </button>

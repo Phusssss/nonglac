@@ -1,24 +1,26 @@
-// Temporarily disabled MUI imports - will be migrated to Ant Design
-// import { Card, CardContent, TextField, Button, Box, Select, MenuItem, FormControl, InputLabel, Chip } from '@mui/material';
-// import { Send, Image } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { Card, Input, Button, Select, Tag, Space } from 'antd';
-import { SendOutlined, PictureOutlined } from '@ant-design/icons';
+import { Card, Input, Button, Select, Tag, Space, Row, Col, Typography, Form } from 'antd';
+import { SendOutlined, PictureOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import GitHubImageUpload from './GitHubImageUpload';
 
 
+const { TextArea } = Input;
+const { Option } = Select;
+const { Text } = Typography;
+
 const PostForm = ({ onPostCreated }) => {
   const { user, userProfile } = useAuth();
+  const [form] = Form.useForm();
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     category: ''
   });
-  const [images, setImages] = useState([]);
-  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [media, setMedia] = useState([]); // Changed from images to media array
+  const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const categories = [
@@ -32,34 +34,104 @@ const PostForm = ({ onPostCreated }) => {
     'Khác'
   ];
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (name, value) => {
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handleImageUpload = (imageUrl) => {
-    console.log('Image uploaded:', imageUrl);
-    setImages([...images, imageUrl]);
-    setShowImageUpload(false);
+  // Handle batch upload of mixed media (images and videos)
+  const handleBatchMediaUpload = (uploadedMedia) => {
+    console.log('Batch media uploaded:', uploadedMedia);
+    setMedia(prev => [...prev, ...uploadedMedia]);
+    setShowMediaUpload(false);
   };
 
-  const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
+  // Handle individual media upload (for backward compatibility)
+  const handleMediaUpload = (mediaUrl, mediaType = 'image', fileName = 'uploaded_file', fileSize = 0) => {
+    console.log('Media uploaded:', { url: mediaUrl, type: mediaType, fileName, fileSize });
+    const mediaItem = {
+      url: mediaUrl,
+      type: mediaType,
+      fileName: fileName,
+      fileSize: fileSize
+    };
+    setMedia(prev => [...prev, mediaItem]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user || !formData.title.trim() || !formData.content.trim()) return;
+  const removeMedia = (index) => {
+    setMedia(media.filter((_, i) => i !== index));
+  };
+
+  // Validate media metadata for consistency
+  const validateMediaMetadata = (mediaArray) => {
+    const errors = [];
+    
+    mediaArray.forEach((item, index) => {
+      // Validate required fields
+      if (!item.url) {
+        errors.push(`Media item ${index + 1}: Missing URL`);
+      }
+      if (!item.type || !['image', 'video'].includes(item.type)) {
+        errors.push(`Media item ${index + 1}: Invalid or missing type`);
+      }
+      if (!item.fileName) {
+        errors.push(`Media item ${index + 1}: Missing filename`);
+      }
+      
+      // Validate file size
+      if (item.fileSize && typeof item.fileSize !== 'number') {
+        errors.push(`Media item ${index + 1}: Invalid file size`);
+      }
+      
+      // Video-specific validation
+      if (item.type === 'video') {
+        if (item.duration && typeof item.duration !== 'number') {
+          errors.push(`Media item ${index + 1}: Invalid video duration`);
+        }
+        if (item.resolution && (!item.resolution.width || !item.resolution.height)) {
+          errors.push(`Media item ${index + 1}: Invalid video resolution`);
+        }
+      }
+    });
+    
+    return errors;
+  };
+
+  const handleSubmit = async (values) => {
+    if (!user || !values.title?.trim() || !values.content?.trim()) return;
 
     setLoading(true);
     try {
+      // Validate media metadata
+      const validationErrors = validateMediaMetadata(media);
+      if (validationErrors.length > 0) {
+        console.warn('Media validation warnings:', validationErrors);
+        // Continue with submission but log warnings
+      }
+      // Determine post type based on media content
+      let postType = 'text';
+      if (media.length > 0) {
+        const hasVideo = media.some(item => item.type === 'video');
+        const hasImage = media.some(item => item.type === 'image');
+        
+        if (hasVideo && hasImage) {
+          postType = 'mixed';
+        } else if (hasVideo) {
+          postType = 'video';
+        } else {
+          postType = 'image';
+        }
+      }
+
       const postData = {
-        title: formData.title,
-        content: formData.content,
-        category: formData.category,
+        title: values.title,
+        content: values.content,
+        category: values.category,
         authorId: user.uid,
         authorName: userProfile?.displayName || user.displayName,
         authorReputation: userProfile?.reputation || 0,
-        images: images,
+        media: media, // New media array structure
+        images: media.filter(item => item.type === 'image').map(item => item.url), // Backward compatibility
+        type: postType,
         likes: 0,
         comments: 0,
         createdAt: new Date()
@@ -77,8 +149,9 @@ const PostForm = ({ onPostCreated }) => {
       }
 
       // Reset form
+      form.resetFields();
       setFormData({ title: '', content: '', category: '' });
-      setImages([]);
+      setMedia([]);
       
       if (onPostCreated) onPostCreated();
     } catch (error) {
@@ -88,90 +161,134 @@ const PostForm = ({ onPostCreated }) => {
   };
 
   return (
-    <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box component="form" onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Tiêu đề bài viết"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            sx={{ mb: 2 }}
+    <Card style={{ marginBottom: 24 }}>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={formData}
+      >
+        <Form.Item
+          name="title"
+          label="Tiêu đề bài viết"
+          rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
+        >
+          <Input
+            placeholder="Nhập tiêu đề bài viết..."
+            onChange={(e) => handleChange('title', e.target.value)}
           />
+        </Form.Item>
 
-          <TextField
-            fullWidth
-            label="Nội dung"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            multiline
+        <Form.Item
+          name="content"
+          label="Nội dung"
+          rules={[{ required: true, message: 'Vui lòng nhập nội dung!' }]}
+        >
+          <TextArea
             rows={4}
-            required
-            sx={{ mb: 2 }}
+            placeholder="Chia sẻ kiến thức, kinh nghiệm của bạn..."
+            onChange={(e) => handleChange('content', e.target.value)}
           />
+        </Form.Item>
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Danh mục</InputLabel>
-            <Select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              label="Danh mục"
-            >
-              {categories.map(category => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <Form.Item
+          name="category"
+          label="Danh mục"
+          rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
+        >
+          <Select
+            placeholder="Chọn danh mục"
+            onChange={(value) => handleChange('category', value)}
+          >
+            {categories.map(category => (
+              <Option key={category} value={category}>
+                {category}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-          {images.length > 0 && (
-            <Box mb={2}>
-              <Box display="flex" gap={1} flexWrap="wrap">
-                {images.map((image, index) => (
-                  <Chip
+        {media.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>Media đã chọn ({media.length}):</Text>
+            <div style={{ marginTop: 8 }}>
+              <Space wrap>
+                {media.map((item, index) => (
+                  <Tag
                     key={index}
-                    label={`Ảnh ${index + 1}`}
-                    onDelete={() => removeImage(index)}
-                    color="primary"
-                    variant="outlined"
-                  />
+                    closable
+                    onClose={() => removeMedia(index)}
+                    color={item.type === 'video' ? 'blue' : 'green'}
+                    icon={item.type === 'video' ? <VideoCameraOutlined /> : <PictureOutlined />}
+                    style={{ 
+                      padding: '4px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>
+                      {item.type === 'video' ? 'Video' : 'Ảnh'} {index + 1}
+                      {item.fileSize > 0 && (
+                        <Text type="secondary" style={{ fontSize: '10px', marginLeft: '4px' }}>
+                          ({(item.fileSize / (1024 * 1024)).toFixed(1)}MB)
+                        </Text>
+                      )}
+                    </span>
+                  </Tag>
                 ))}
-              </Box>
-            </Box>
-          )}
+              </Space>
+            </div>
+          </div>
+        )}
 
-          {showImageUpload && (
-            <Box mb={2}>
-              <GitHubImageUpload onUploadComplete={handleImageUpload} />
-            </Box>
-          )}
+        {showMediaUpload && (
+          <div style={{ marginBottom: 16 }}>
+            <GitHubImageUpload 
+              onUploadComplete={handleMediaUpload}
+              onBatchUploadComplete={handleBatchMediaUpload}
+              supportVideo={true}
+              maxSize={5} // 5MB for images
+              maxVideoSize={100} // 100MB for videos
+              allowMultiple={true}
+            />
+          </div>
+        )}
 
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Space>
+              <Button
+                icon={<PictureOutlined />}
+                onClick={() => setShowMediaUpload(!showMediaUpload)}
+                type={showMediaUpload ? "primary" : "default"}
+                style={{ 
+                  borderColor: showMediaUpload ? undefined : '#d9d9d9'
+                }}
+              >
+                {showMediaUpload ? 'Ẩn upload' : 'Thêm ảnh/video'}
+              </Button>
+              {media.length > 0 && (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {media.filter(m => m.type === 'image').length} ảnh, {media.filter(m => m.type === 'video').length} video
+                </Text>
+              )}
+            </Space>
+          </Col>
+
+          <Col>
             <Button
-              startIcon={<Image />}
-              onClick={() => setShowImageUpload(!showImageUpload)}
-              variant="outlined"
-              size="small"
-            >
-              {showImageUpload ? 'Ẩn' : 'Thêm ảnh'}
-            </Button>
-
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={<Send />}
-              disabled={loading || !formData.title.trim() || !formData.content.trim()}
+              type="primary"
+              htmlType="submit"
+              icon={<SendOutlined />}
+              loading={loading}
+              disabled={!formData.title?.trim() || !formData.content?.trim()}
             >
               {loading ? 'Đang đăng...' : 'Đăng bài'}
             </Button>
-          </Box>
-        </Box>
-      </CardContent>
+          </Col>
+        </Row>
+      </Form>
     </Card>
   );
 };

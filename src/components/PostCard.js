@@ -12,6 +12,7 @@ import PostMenu from './PostMenu';
 import SaveButton from './SaveButton';
 import ReactionButton from './ReactionButton';
 import LoginModal from './common/LoginModal';
+import VideoPlayer from './VideoPlayer';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
@@ -153,12 +154,67 @@ const PostCard = ({ post, isDetailView = false }) => {
           )}
         </p>
         
-        {/* Post Images */}
-        {((post.images && post.images.length > 0) || post.imageUrl) && (
+        {/* Post Media (Images and Videos) */}
+        {((post.media && post.media.length > 0) || (post.images && post.images.length > 0) || post.imageUrl) && (
           <div className="mb-4 rounded-lg overflow-hidden">
-            {post.images && post.images.length > 0 ? (
-              <ImageGallery images={post.images} />
+            {post.media && post.media.length > 0 ? (
+              // New media structure - supports both images and videos
+              <div className="media-gallery">
+                {post.media.map((mediaItem, index) => (
+                  <div key={index} className="media-item mb-2">
+                    {mediaItem.type === 'image' ? (
+                      <OptimizedImage
+                        src={mediaItem.url}
+                        alt={`Media ${index + 1}`}
+                        width={600}
+                        height={300}
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    ) : mediaItem.type === 'video' ? (
+                      <div key={index} className="video-item mb-2">
+                        <VideoPlayer
+                          src={mediaItem.url}
+                          poster={mediaItem.thumbnailUrl}
+                          controls={true}
+                          lazy={false}
+                          style={{ borderRadius: 8 }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : post.images && post.images.length > 0 ? (
+              // Backward compatibility - old images structure (may contain videos)
+              <div className="media-gallery">
+                {post.images.map((imageUrl, index) => {
+                  // Check if URL is a video based on file extension
+                  const isVideo = /\.(mp4|mov|avi|wmv|mkv)$/i.test(imageUrl);
+                  
+                  return (
+                    <div key={index} className="media-item mb-2">
+                      {isVideo ? (
+                        <VideoPlayer
+                          src={imageUrl}
+                          controls={true}
+                          lazy={false}
+                          style={{ borderRadius: 8 }}
+                        />
+                      ) : (
+                        <OptimizedImage
+                          src={imageUrl}
+                          alt={`Media ${index + 1}`}
+                          width={600}
+                          height={300}
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : post.imageUrl ? (
+              // Backward compatibility - single image URL
               <OptimizedImage
                 src={post.imageUrl}
                 alt={post.title}
