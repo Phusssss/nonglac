@@ -293,23 +293,60 @@ export const missionsService = {
    */
   async verifyUserPhone(userId) {
     try {
+      // 1. Cập nhật hồ sơ user trước để đảm bảo tính nhất quán
+      await this.updateUserProfile(userId, { 
+        phoneVerified: true,
+        verificationStatus: 'verified' 
+      });
+
+      // 2. Lấy dữ liệu missions
       const result = await this.getUserMissionsData(userId);
       if (!result.success) return result;
 
       const userData = result.data;
-      const missions = userData.missions.map(mission => {
-        if (mission.id === 'verify_phone' && mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.WAITING_VERIFICATION) {
-          return {
-            ...mission,
-            status: MISSIONS_CONSTANTS.MISSION_STATUS.COMPLETED
-          };
+      let rewardEarned = 0;
+      let missionFound = false;
+      
+      // Đảm bảo missions luôn là mảng
+      const currentMissions = Array.isArray(userData.missions) ? userData.missions : MISSIONS_CONSTANTS.DEFAULT_MISSIONS;
+
+      const updatedMissions = currentMissions.map(mission => {
+        if (mission.id === 'verify_phone') {
+          missionFound = true;
+          // Nếu nhiệm vụ chưa hoàn thành hoặc đang chờ, chuyển sang trạng thái COMPLETED để hiện nút "Nhận thưởng"
+          if (mission.status !== MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED) {
+            return {
+              ...mission,
+              currentProgress: mission.maxProgress || 1,
+              status: MISSIONS_CONSTANTS.MISSION_STATUS.COMPLETED
+            };
+          }
         }
         return mission;
       });
 
-      // Cập nhật cả user profile và missions
-      await this.updateUserProfile(userId, { phoneVerified: true });
-      const updateResult = await this.updateUserMissionsData(userId, { missions });
+      // Nếu trong data của user thiếu mission verify_phone, ta thêm vào luôn ở trạng thái COMPLETED
+      if (!missionFound) {
+        const defaultVerifyMission = MISSIONS_CONSTANTS.DEFAULT_MISSIONS.find(m => m.id === 'verify_phone');
+        updatedMissions.push({
+          ...(defaultVerifyMission || {}),
+          id: 'verify_phone',
+          currentProgress: 1,
+          maxProgress: 1,
+          status: MISSIONS_CONSTANTS.MISSION_STATUS.COMPLETED
+        });
+      }
+
+      // 3. Không cộng điểm trực tiếp ở đây để user tự bấm nhận thưởng cho đúng quy trình
+      const newScore = userData.score || 0;
+      const newBadges = this.checkUnlockedBadges(newScore, userData.unlockedBadges || []);
+
+      // 4. Lưu lại toàn bộ
+      const updateResult = await this.updateUserMissionsData(userId, { 
+        missions: updatedMissions,
+        score: newScore,
+        unlockedBadges: newBadges
+      });
 
       return {
         success: updateResult.success,

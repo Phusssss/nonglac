@@ -33,7 +33,7 @@ const Marketplace = React.lazy(() => import('./features/marketplace/marketplace'
 const ProductDetail = React.lazy(() => import('./features/marketplace'));
 const MessagesPage = React.lazy(() => import('./features/messages'));
 
-const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const AdminDashboard = React.lazy(() => import('./features/admin/AdminDashboard'));
 
 
 const PlantDoctor = React.lazy(() => import('./pages/PlantDoctor'));
