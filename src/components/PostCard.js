@@ -4,6 +4,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { createNotification, notificationTypes } from '../services/notificationService';
+import { missionsService } from '../features/missions/services';
 import { logUserAction, ACTIONS } from '../utils/analytics';
 import ImageGallery from './ImageGallery';
 import CommentSection from './CommentSection';
@@ -78,6 +79,14 @@ const PostCard = ({ post, isDetailView = false }) => {
               `${userProfile?.displayName || user.email} đã thích bài viết: "${post.title}"`,
               post.id
             );
+            
+            // Cập nhật nhiệm vụ nhận like cho tác giả bài viết
+            try {
+              await missionsService.updateLikeMission(post.authorId);
+            } catch (missionError) {
+              console.error('Error updating like mission:', missionError);
+              // Không throw error để không ảnh hưởng đến việc like
+            }
           }
         }
       } catch (error) {

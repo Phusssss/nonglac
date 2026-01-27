@@ -29,9 +29,9 @@ const Registration = React.lazy(() => import('./components/Registration/Registra
 const PhoneLogin = React.lazy(() => import('./components/Login/PhoneLogin'));
 
 
-const Marketplace = React.lazy(() => import('./features/marketplace'));
-const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
-const MessagesPage = React.lazy(() => import('./pages/MessagesPage'));
+const Marketplace = React.lazy(() => import('./features/marketplace/marketplace'));
+const ProductDetail = React.lazy(() => import('./features/marketplace'));
+const MessagesPage = React.lazy(() => import('./features/messages'));
 
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 
@@ -40,7 +40,7 @@ const PlantDoctor = React.lazy(() => import('./pages/PlantDoctor'));
 const MarketInsights = React.lazy(() => import('./pages/MarketInsights'));
 const AgriMap = React.lazy(() => import('./pages/AgriMap'));
 
-const MissionScreen = React.lazy(() => import('./components/Mission/MissionScreen'));
+const MissionScreen = React.lazy(() => import('./features/missions'));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 const AboutUs = React.lazy(() => import('./pages/AboutUs'));
 

@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, query, orderBy, doc, getDoc } from 'fireba
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
 import { MARKETPLACE_CONSTANTS } from '../constants';
+import { missionsService } from '../../missions/services';
 
 export const useMarketplace = () => {
   const { user } = useAuth();
@@ -43,6 +44,26 @@ export const useMarketplace = () => {
       
       const productsRef = collection(db, 'marketplace_products');
       await addDoc(productsRef, newProduct);
+      
+      // Cập nhật nhiệm vụ "first_product_post" nếu chưa hoàn thành
+      if (user?.uid) {
+        try {
+          const missionsData = await missionsService.getUserMissionsData(user.uid);
+          if (missionsData.success) {
+            const firstProductMission = missionsData.data.missions.find(
+              m => m.id === 'first_product_post' && m.status === 'pending'
+            );
+            
+            if (firstProductMission) {
+              await missionsService.executeMission(user.uid, 'first_product_post');
+            }
+          }
+        } catch (missionError) {
+          console.error('Error updating mission:', missionError);
+          // Không throw error để không ảnh hưởng đến việc đăng sản phẩm
+        }
+      }
+      
       await loadProducts();
       return { success: true };
     } catch (error) {

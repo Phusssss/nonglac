@@ -3,6 +3,7 @@ import { doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
 import { createNotification, notificationTypes } from '../../../services/notificationService';
+import { missionsService } from '../../missions/services';
 import { Button } from '../../../components/ui';
 
 const FollowButton = ({ targetUserId }) => {
@@ -43,6 +44,14 @@ const FollowButton = ({ targetUserId }) => {
           `${userProfile?.displayName || user.email} đã theo dõi bạn`,
           user.uid
         );
+      }
+      
+      // Cập nhật nhiệm vụ kết bạn
+      try {
+        await missionsService.updateFollowMission(user.uid);
+      } catch (missionError) {
+        console.error('Error updating follow mission:', missionError);
+        // Không throw error để không ảnh hưởng đến việc follow
       }
     } catch (error) {
       console.error('Error following/unfollowing:', error);
