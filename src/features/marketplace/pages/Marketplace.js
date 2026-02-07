@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Button, Typography, Space, notification, Modal } from 'antd';
-import { PlusOutlined, ShopOutlined } from '@ant-design/icons';
+import { Layout, notification, Modal } from 'antd';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useMarketplace } from '../hooks';
@@ -10,13 +9,13 @@ import {
   MarketplaceFilters,
   ProductPostForm,
   ProductImageGallery,
-  ContactModal
+  ContactModal,
+  MarketplaceHeader
 } from '../components';
 import EnhancedLoginModal from '../../../components/enhanced/EnhancedLoginModal';
 import '../components/marketplace.css';
 
 const { Content } = Layout;
-const { Title } = Typography;
 
 const Marketplace = () => {
   const { user } = useAuth();
@@ -73,46 +72,21 @@ const Marketplace = () => {
 
   return (
     <div className="marketplace-container">
-      {/* Header */}
-      <div style={{ 
-        background: 'white', 
-        borderBottom: '1px solid #f0f0f0',
-        padding: '16px 0'
-      }}>
-        <div className="marketplace-main-content">
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 16
-          }}>
-            <Space align="center">
-              <ShopOutlined style={{ fontSize: 24, color: MARKETPLACE_CONSTANTS.COLORS.PRIMARY }} />
-              <Title level={3} style={{ margin: 0, color: MARKETPLACE_CONSTANTS.COLORS.PRIMARY }}>
-                {MARKETPLACE_CONSTANTS.MESSAGES.LABELS.MARKETPLACE_TITLE}
-              </Title>
-            </Space>
-            <Button 
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setPostFormOpen(true)}
-              style={{ background: MARKETPLACE_CONSTANTS.COLORS.PRIMARY, border: 'none' }}
-            >
-              {MARKETPLACE_CONSTANTS.MESSAGES.BUTTONS.POST_PRODUCT}
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Professional Header */}
+      <MarketplaceHeader onPostProduct={() => setPostFormOpen(true)} />
 
       <Content className="marketplace-main-content">
-        <MarketplaceFilters
-          onFiltersChange={applyFilters}
-          userRole={userRole}
-          transactionIntent={transactionIntent}
-        />
+        {/* Modern Filters Section */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6 mb-6">
+          <MarketplaceFilters
+            onFiltersChange={applyFilters}
+            userRole={userRole}
+            transactionIntent={transactionIntent}
+          />
+        </div>
 
-        <div style={{ marginTop: 20 }}>
+        {/* Product Grid Section */}
+        <div className="mt-8">
           <ProductGrid
             products={filteredProducts}
             loading={loading}
@@ -122,14 +96,15 @@ const Marketplace = () => {
         </div>
       </Content>
 
-      {/* Product Post Modal */}
+      {/* Modals & Overlays */}
       <Modal
-        title="🌾 Đăng bán sản phẩm"
+        title={<span className="text-xl font-bold text-agri-600">🌾 Đăng bán sản phẩm</span>}
         open={postFormOpen}
         onCancel={() => setPostFormOpen(false)}
         footer={null}
-        width={600}
-        style={{ top: 20 }}
+        width={650}
+        centered
+        className="rounded-2xl overflow-hidden"
       >
         <ProductPostForm
           onSubmit={handleProductSubmit}

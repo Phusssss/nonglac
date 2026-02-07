@@ -31,3 +31,55 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.8; }
 }
+
+/* LacLac Mascot Animations - Optimized for Brand 3.0 */
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes mascot-blink {
+  0%, 45%, 55%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
+@keyframes mascot-antenna {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+@keyframes mascot-shimmer {
+  0% { stop-opacity: 0.1; offset: 0; }
+  50% { stop-opacity: 0.6; offset: 0.5; }
+  100% { stop-opacity: 0.1; offset: 1; }
+}
+
+.animate-float {
+  animation: mascot-float 3s ease-in-out infinite;
+}
+
+.animate-blink {
+  transform-origin: center;
+  animation: mascot-blink 4s ease-in-out infinite;
+}
+
+.animate-antenna-wave {
+  transform-origin: 100px 20px;
+  animation: mascot-antenna 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: mascot-shimmer 2s infinite linear;
+}
+
+/* Custom transitions for call overlay */
+.call-overlay-enter {
+  opacity: 0;
+  transform: scale(1.1);
+}
+.call-overlay-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 300ms ease-out;
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Badge, Dropdown, Space, Typography } from 'antd';
-import { MessageOutlined, RobotOutlined, MedicineBoxOutlined, CloseOutlined } from '@ant-design/icons';
+import { MessageOutlined, RobotOutlined, MedicineBoxOutlined, CloseOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -12,7 +12,7 @@ const FloatingChatButton = () => {
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   // Simulate new messages (replace with real logic later)
   useEffect(() => {
@@ -59,13 +59,16 @@ const FloatingChatButton = () => {
     
     switch (action) {
       case 'chat':
-        navigate('/chat');
+        navigate('/messages');
         break;
       case 'ai':
         window.dispatchEvent(new CustomEvent('openChatBot'));
         break;
       case 'doctor':
         navigate('/plant-doctor');
+        break;
+      case 'video':
+        navigate('/ai-video-call');
         break;
       default:
         break;
@@ -99,6 +102,20 @@ const FloatingChatButton = () => {
       ),
       onClick: () => handleQuickAction('ai')
     },
+    // Video call option - only show if user is authenticated
+    ...(user ? [{
+      key: 'video',
+      icon: <VideoCameraOutlined />,
+      label: (
+        <div>
+          <div style={{ fontWeight: 500 }}>Gọi Video</div>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Gọi video với AI Lạc Lạc
+          </Text>
+        </div>
+      ),
+      onClick: () => handleQuickAction('video')
+    }] : []),
     {
       key: 'doctor',
       icon: <MedicineBoxOutlined />,

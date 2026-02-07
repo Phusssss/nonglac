@@ -38,7 +38,7 @@ export const SUBSCRIPTION_TIERS = {
     limits: {
       postsPerDay: 50,
       aiQuestionsPerDay: 100,
-      voiceCallsPerDay: 20,
+      voiceCallsPerDay: 200, // Tăng lên cho hợp lý hơn gói miễn phí
       imageAnalysisPerDay: 50,
       marketplaceBoosts: 4
     },
@@ -123,11 +123,12 @@ class SubscriptionService {
   // Get default quota
   getDefaultQuota() {
     return {
-      aiQuestions: 100,
-      doctorAI: 100,
-      agriMap: 100,
-      marketInsights: 100,
-      posts: 100,
+      aiQuestions: 9999, // Nâng lên 9999 để test thoải mái như bản agri-trust-os
+      doctorAI: 9999,
+      agriMap: 9999,
+      marketInsights: 9999,
+      posts: 9999,
+      voiceCalls: 9999,
       lastReset: new Date().toISOString().split('T')[0]
     };
   }
@@ -173,19 +174,24 @@ class SubscriptionService {
     const quota = await this.getRemainingQuota(userId);
     if (!quota) return false;
 
+    // Nếu quota là -1 hoặc 9999 thì luôn cho phép
+    const isUnlimited = (val) => val === -1 || val >= 9999;
+
     switch (actionType) {
       case 'askAI':
-        return quota.aiQuestions > 0;
+        return isUnlimited(quota.aiQuestions) || quota.aiQuestions > 0;
       case 'doctorAI':
-        return quota.doctorAI > 0;
+        return isUnlimited(quota.doctorAI) || quota.doctorAI > 0;
       case 'agriMap':
-        return quota.agriMap > 0;
+        return isUnlimited(quota.agriMap) || quota.agriMap > 0;
       case 'marketInsights':
-        return quota.marketInsights > 0;
+        return isUnlimited(quota.marketInsights) || quota.marketInsights > 0;
       case 'createPost':
-        return quota.posts > 0;
+        return isUnlimited(quota.posts) || quota.posts > 0;
+      case 'voiceCall':
+        return isUnlimited(quota.voiceCalls) || (quota.voiceCalls || 0) > 0;
       default:
-        return false;
+        return true; // Mặc định cho phép các action lạ trong quá trình test
     }
   }
 
@@ -228,6 +234,9 @@ class SubscriptionService {
         case 'createPost':
           quota.posts = Math.max(0, quota.posts - 1);
           break;
+        case 'voiceCall':
+          quota.voiceCalls = Math.max(0, (quota.voiceCalls || 0) - 1);
+          break;
       }
 
       await updateDoc(doc(db, 'users', userId), { quota });
@@ -267,7 +276,23 @@ class SubscriptionService {
           return newQuota;
         }
         
-        return data.quota;
+        // Đảm bảo các trường mới (như voiceCalls) được bổ sung nếu chưa có trong DB
+        const defaultQuota = this.getDefaultQuota();
+        let hasChanges = false;
+        const currentQuota = { ...data.quota };
+        
+        Object.keys(defaultQuota).forEach(key => {
+          if (currentQuota[key] === undefined) {
+            currentQuota[key] = defaultQuota[key];
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          await updateDoc(doc(db, 'users', userId), { quota: currentQuota });
+        }
+        
+        return currentQuota;
       } else {
         return this.getDefaultQuota();
       }

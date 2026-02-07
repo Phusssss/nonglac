@@ -131,13 +131,15 @@ const VideoPlayerErrorHandler = ({
         justifyContent: 'center',
         ...style 
       }}
-      bodyStyle={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        textAlign: 'center',
-        padding: 40
+      styles={{
+        body: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          textAlign: 'center',
+          padding: 40
+        }
       }}
     >
       <Space direction="vertical" size="large" align="center">

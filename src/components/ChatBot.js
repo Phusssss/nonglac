@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  CallRounded, 
+  VideocamRounded, 
+  DeleteOutlineRounded, 
+  CloseRounded, 
+  AddCircleRounded, 
+  SentimentSatisfiedAltRounded, 
+  SendRounded 
+} from '@mui/icons-material';
 import { GoogleGenAI, Modality } from '@google/genai';
+import { callLiveAI } from '../services/aiWrapper';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, writeBatch, doc } from 'firebase/firestore';
@@ -7,10 +18,8 @@ import { db } from '../firebase/config';
 import subscriptionService from '../services/subscriptionService';
 import { chatWithAgriBot, analyzePlantImage, SUGGESTED_QUESTIONS } from '../services/geminiService';
 import EnhancedLoginModal from './enhanced/EnhancedLoginModal';
+import LacLacMascot from './LacLacMascot';
 
-
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 // User Context for personalization
 let userContext = {
@@ -148,20 +157,57 @@ THÔNG TIN NGƯỜI DÙNG:
 - Thông tin vườn: ${userContext.gardenInfo || 'Chưa rõ'}`;
 };
 
+// Camera helper functions
+const checkCameraSupport = () => {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+};
+
+const stopCamera = (stream) => {
+  if (stream) {
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
+  }
+};
+
+const applyAdvancedConstraints = async (track) => {
+  try {
+    const capabilities = track.getCapabilities();
+    const advancedConstraints = {};
+    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) advancedConstraints.focusMode = 'continuous';
+    if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) advancedConstraints.exposureMode = 'continuous';
+    if (capabilities.whiteBalanceMode && capabilities.whiteBalanceMode.includes('continuous')) advancedConstraints.whiteBalanceMode = 'continuous';
+    if (Object.keys(advancedConstraints).length > 0) await track.applyConstraints(advancedConstraints);
+  } catch (error) {
+    console.warn('Failed to apply advanced constraints:', error);
+  }
+};
+
+const initializeCamera = async (facingMode) => {
+  try {
+    const constraints = {
+      video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: facingMode },
+      audio: false
+    };
+    return await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (error) {
+    console.error('Camera initialization error:', error);
+    throw error;
+  }
+};
+
 const ChatBot = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { requireAuthForAI, showLoginModal, setShowLoginModal } = useAuthGuard();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Listen for open event from navbar
   useEffect(() => {
-    const handleOpenChatBot = () => {
-      setIsOpen(true);
-    };
-    
+    const handleOpenChatBot = () => setIsOpen(true);
     window.addEventListener('openChatBot', handleOpenChatBot);
     return () => window.removeEventListener('openChatBot', handleOpenChatBot);
   }, []);
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -172,20 +218,27 @@ const ChatBot = () => {
   const [quotaRemaining, setQuotaRemaining] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
   
-  // Voice/Video Call States
   const [isCalling, setIsCalling] = useState(false);
   const [callType, setCallType] = useState('voice');
   const [callStatus, setCallStatus] = useState('idle');
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+  
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment');
+  const [showFlash, setShowFlash] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const mascotVideoRef = useRef(null);
   const lastRequestTime = useRef(0);
   
-  // Live API refs
-  const aiRef = useRef(null);
+  const cameraVideoRef = useRef(null);
+  const cameraCanvasRef = useRef(null);
   const sessionRef = useRef(null);
   const inputCtxRef = useRef(null);
   const outputCtxRef = useRef(null);
@@ -198,13 +251,15 @@ const ChatBot = () => {
   const nextStartTimeRef = useRef(0);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      loadChatHistory();
-    }
-    if (isOpen && user) {
-      updateQuota();
-    }
+    if (isOpen && messages.length === 0) loadChatHistory();
+    if (isOpen && user) updateQuota();
   }, [isOpen, user]);
+
+  useEffect(() => {
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const updateQuota = async () => {
     if (user) {
@@ -215,1055 +270,462 @@ const ChatBot = () => {
 
   const loadChatHistory = async () => {
     if (!user) return;
-    
-    // Load from Firestore
     const firestoreHistory = await loadUserHistory(user.uid);
-    
     if (firestoreHistory.length > 0) {
-      const restoredMessages = firestoreHistory.map((item, index) => ({
-        id: index + 1,
-        type: item.role === 'user' ? 'user' : 'bot',
-        content: item.content,
-        timestamp: item.timestamp?.toDate ? item.timestamp.toDate() : new Date()
-      }));
-      setMessages(restoredMessages);
+      setMessages(firestoreHistory.map((item, index) => ({
+        id: index + 1, type: item.role === 'user' ? 'user' : 'bot', content: item.content, timestamp: item.timestamp?.toDate ? item.timestamp.toDate() : new Date()
+      })));
       chatHistory = firestoreHistory;
-    } else if (chatHistory.length > 0) {
-      // Fallback to localStorage
-      const restoredMessages = chatHistory.map((item, index) => ({
-        id: index + 1,
-        type: item.role === 'user' ? 'user' : 'bot',
-        content: item.content,
-        image: item.image,
-        timestamp: new Date(item.timestamp)
-      }));
-      setMessages(restoredMessages);
     } else {
-      // Show welcome message
-      const userName = user?.displayName ? user.displayName.split(' ').pop() : 'bạn';
-      const welcomeMsg = userContext.hasConsent 
-        ? `Chào ${userName}! Lạc Lạc đây. Hôm nay vườn ${userContext.crops.join(', ') || 'nhà mình'} thế nào?`
-        : `Chào ${userName}! Mình là Lạc Lạc. Để hỗ trợ tốt nhất, bạn cho phép mình lưu cuộc trò chuyện để học hỏi nhé?`;
-      
-      const welcomeMessage = {
-        id: 1,
-        type: 'bot',
-        content: welcomeMsg,
-        timestamp: new Date()
-      };
-      
+      const welcomeMsg = `Chào bạn! Mình là Lạc Lạc. Hôm nay mình có thể giúp gì cho vườn nhà mình? 🌱`;
+      const welcomeMessage = { id: 1, type: 'bot', content: welcomeMsg, timestamp: new Date() };
       setMessages([welcomeMessage]);
       addToHistory('assistant', welcomeMsg);
-      if (user) {
-        saveToFirestore(user.uid, user.displayName, 'assistant', welcomeMsg);
-      }
     }
   };
-
-
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSuggestionClick = (suggestion) => {
-    setInputText(suggestion.replace(/^[🌱☕💰📈📉🌾🌶️🐛💧🌤️]+\s*/, '')); // Remove emoji prefix
-    setShowSuggestions(false);
-  };
-
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!inputText.trim() && !currentImage) return;
     
-    // Kiểm tra auth trước khi gửi message
     return requireAuthForAI(async () => {
-      // Rate limiting: minimum 2 seconds between requests
       const now = Date.now();
-      const timeSinceLastRequest = now - lastRequestTime.current;
-      if (timeSinceLastRequest < 2000) {
-        const waitTime = Math.ceil((2000 - timeSinceLastRequest) / 1000);
-        const warningMsg = {
-          id: Date.now(),
-          type: 'bot',
-          content: `⏳ Vui lòng chờ ${waitTime} giây nữa...`,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, warningMsg]);
-        return;
-      }
+      if (now - lastRequestTime.current < 2000) return;
       lastRequestTime.current = now;
 
-      const userMessage = {
-        id: Date.now(),
-        type: 'user',
-        content: inputText,
-        image: currentImage,
-        timestamp: new Date()
+      const userMessage = { 
+        id: Date.now(), 
+        type: 'user', 
+        content: inputText, 
+        image: currentImage ? { ...currentImage } : null, 
+        timestamp: new Date() 
       };
-
+      
       setMessages(prev => [...prev, userMessage]);
-      addToHistory('user', inputText, currentImage);
-      updateUserContextFromText(inputText);
-      if (user) {
-        saveToFirestore(user.uid, user.displayName, 'user', inputText, currentImage);
-      }
       
       const sentText = inputText;
       const sentImage = currentImage;
+      
       setInputText('');
       setCurrentImage(null);
-      setShowSuggestions(false); // Hide suggestions after sending message
       setIsLoading(true);
 
       try {
         let responseText;
         if (sentImage) {
-          const imagePrompt = sentText || "Hãy chẩn đoán tình trạng cây này và đề xuất cách điều trị.";
-          responseText = await analyzePlantImage(sentImage.data, imagePrompt);
+          responseText = await analyzePlantImage(sentImage.data, sentText || "Chẩn đoán bệnh cây");
         } else {
           responseText = await chatWithAgriBot(chatHistory, sentText);
         }
         
-        // Kiểm tra nếu service trả về null (user chưa đăng nhập)
-        if (responseText === null) {
-          // Service đã xử lý auth guard, không cần làm gì thêm
-          setIsLoading(false);
-          return;
+        if (responseText === null) { 
+          setIsLoading(false); 
+          return; 
         }
         
-        const fullText = responseText || 'Xin lỗi, Lạc Lạc không thể trả lời lúc này.';
-        
-        // Create empty bot message first
+        addToHistory('user', sentText, sentImage);
         const botMessageId = Date.now() + 1;
-        const botResponse = {
-          id: botMessageId,
-          type: 'bot',
-          content: '',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botResponse]);
+        setMessages(prev => [...prev, { id: botMessageId, type: 'bot', content: responseText, timestamp: new Date() }]);
+        addToHistory('assistant', responseText);
         
-        // Start typing animation
-        setIsLoading(false);
-        setIsTyping(true);
-        
-        // Stream text character by character
-        let currentText = '';
-        for (let i = 0; i < fullText.length; i++) {
-          currentText += fullText[i];
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === botMessageId 
-                ? { ...msg, content: currentText }
-                : msg
-            )
-          );
-          await new Promise(resolve => setTimeout(resolve, 30)); // 30ms delay per character
-        }
-      
-        // Stop typing animation
-        setIsTyping(false);
-        
-        addToHistory('assistant', fullText);
         if (user) {
-          saveToFirestore(user.uid, user.displayName, 'assistant', fullText);
-          await updateQuota(); // Update quota after AI call
+          await saveToFirestore(user.uid, user.displayName, 'user', sentText, sentImage);
+          await saveToFirestore(user.uid, user.displayName, 'assistant', responseText);
         }
+        
+        await updateQuota();
       } catch (error) {
         console.error('ChatBot error:', error);
-        setIsTyping(false);
-        
-        let errorMessage = 'Xin lỗi, Lạc Lạc đang gặp sự cố kỹ thuật. Bạn thử lại sau nhé!';
-        
-        // Handle quota exceeded error
-        if (error.message?.includes('Đã hết lượt sử dụng')) {
-          errorMessage = `😔 Bạn đã hết lượt hỏi AI hôm nay!
-
-🌱 Gói hiện tại: TẬP SỰ (20 câu hỏi/ngày)
-
-🚀 Nâng cấp gói cao hơ:
-• NHÀ NÔNG: 100 câu hỏi/ngày - 99k/tháng
-• CHUYÊN GIA: Không giới hạn - 149k/tháng
-
-🔄 Hoặc chờ đến ngày mai để có lại 20 lượt miễn phí!`;
-        } else if (error.message?.includes('429') || error.status === 429) {
-          errorMessage = '😔 Lạc Lạc đã trả lời quá nhiều hôm nay! Vui lòng chờ 1-2 phút rồi thử lại nhé. (Giới hạn API: 15 requests/phút)';
-        } else if (error.message?.includes('API key')) {
-          errorMessage = '⚠️ API key không hợp lệ. Vui lòng kiểm tra lại cấu hình!';
-        }
-        
-        const errorResponse = {
-          id: Date.now() + 1,
-          type: 'bot',
-          content: errorMessage,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, errorResponse]);
-        addToHistory('assistant', errorMessage);
-        if (user) {
-          saveToFirestore(user.uid, user.displayName, 'assistant', errorMessage);
-        }
       }
       setIsLoading(false);
     });
   };
 
-
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      setCurrentImage({
-        data: base64,
-        type: file.type,
-        url: reader.result
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Audio helper functions
-  const createPcmBlob = (data) => {
-    const l = data.length;
-    const int16 = new Int16Array(l);
-    for (let i = 0; i < l; i++) {
-      int16[i] = data[i] * 32768;
+  const handleClearChat = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    const success = await deleteUserHistory(user.uid);
+    if (success) {
+      setMessages([]);
+      chatHistory = [];
+      localStorage.removeItem('nonglac_chat_history');
+      const welcomeMsg = "Đã xóa lịch sử. Lạc Lạc sẵn sàng bắt đầu cuộc trò chuyện mới cùng bà con! 🌱";
+      setMessages([{ id: Date.now(), type: 'bot', content: welcomeMsg, timestamp: new Date() }]);
     }
-    let binary = '';
-    const bytes = new Uint8Array(int16.buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return {
-      data: btoa(binary),
-      mimeType: 'audio/pcm;rate=16000',
-    };
-  };
-
-  const decode = (base64) => {
-    const binaryString = atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
+    setIsLoading(false);
+    setShowClearConfirm(false);
   };
 
   const decodeAudioData = async (data, ctx) => {
-    const dataInt16 = new Int16Array(data.buffer);
-    const frameCount = dataInt16.length;
-    const buffer = ctx.createBuffer(1, frameCount, 24000);
-    const channelData = buffer.getChannelData(0);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i] / 32768.0;
+    // Ensure byte alignment for Int16Array
+    const buffer = data.buffer;
+    const offset = data.byteOffset;
+    const length = data.byteLength;
+    const actualData = new Int16Array(buffer.slice(offset, offset + length));
+    
+    const audioBuffer = ctx.createBuffer(1, actualData.length, 24000);
+    const channelData = audioBuffer.getChannelData(0);
+    for (let i = 0; i < actualData.length; i++) {
+      channelData[i] = actualData[i] / 32768.0;
     }
-    return buffer;
+    return audioBuffer;
   };
 
-  // Voice/Video Call Functions
   const handleVoiceCall = async () => {
-    setCallType('voice');
-    setIsCalling(true);
-    setCallStatus('connecting');
-    // Bắt đầu ngay lập tức để giảm độ trễ
-    startLiveSession(false);
+    requireAuthForAI(() => {
+      setCallType('voice');
+      setIsCalling(true);
+      setCallStatus('connecting');
+      startLiveSession(false);
+    });
+  };
+
+  const handleVideoCall = async () => {
+    requireAuthForAI(() => {
+      // Navigate to the full-screen AI Video Call page
+      navigate('/ai-video-call');
+      setIsOpen(false);
+    });
   };
 
   const startLiveSession = async (withVideo = false) => {
     try {
-      aiRef.current = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      
       inputCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       outputCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
       
-      const constraints = withVideo 
-        ? { audio: true, video: { facingMode: 'user' } }
-        : { audio: true };
-      
+      const constraints = withVideo ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+      if (withVideo && videoRef.current) videoRef.current.srcObject = stream;
       
-      if (withVideo && videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      
-      const sessionPromise = aiRef.current.live.connect({
-        model: 'gemini-2.5-flash-lite-native-audio-preview-01-2026', // Sử dụng model Lite mới nhất để giảm độ trễ
+      const liveConfig = {
+        model: 'gemini-2.5-flash-lite-native-audio-preview-01-2026',
         config: {
-          systemInstruction: getSystemInstruction() + "\n\nQUY TẮC CUỘC GỌI: Bạn đang trong cuộc gọi trực tiếp. Trả lời cực kỳ ngắn gọn (dưới 15 từ), phản hồi nhanh, thân thiện.",
+          systemInstruction: getSystemInstruction() + `\nQUY TẮC CUỘC GỌI: Cực kỳ ngắn gọn, thân thiện.`,
           responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
-          },
-          generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 200,
-            candidateCount: 1
-          }
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
         },
         callbacks: {
-          onopen: () => {
-            isSessionActiveRef.current = true;
-            setCallStatus('connected');
-            processAudioInput(stream);
-            addCallMessage('system', '🎙️ Đã kết nối voice call với Lạc Lạc AI');
-          },
+          onopen: () => { isSessionActiveRef.current = true; setCallStatus('connected'); processAudioInput(stream); },
           onmessage: async (msg) => {
             const audioData = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (audioData) {
-              playAudioOutput(audioData);
+              if (outputCtxRef.current.state === 'suspended') await outputCtxRef.current.resume();
+              const audioBuffer = await decodeAudioData(new Uint8Array(atob(audioData).split("").map(c => c.charCodeAt(0))), outputCtxRef.current);
+              const source = outputCtxRef.current.createBufferSource();
+              source.buffer = audioBuffer;
+              source.connect(outputCtxRef.current.destination);
+              const now = outputCtxRef.current.currentTime;
+              nextStartTimeRef.current = Math.max(nextStartTimeRef.current, now);
+              source.start(nextStartTimeRef.current);
+              nextStartTimeRef.current += audioBuffer.duration;
+              setIsTyping(true);
+              setTimeout(() => setIsTyping(false), audioBuffer.duration * 1000);
             }
           },
-          onclose: () => console.log("Live session closed"),
-          onerror: (e) => {
-            console.error("Live session error:", e);
-            endCall();
-          }
+          onclose: () => endCall(),
+          onerror: () => endCall()
         }
-      });
-      
-      sessionRef.current = sessionPromise;
-      
+      };
+      sessionRef.current = await callLiveAI(liveConfig, user.uid);
     } catch (error) {
-      console.error('Failed to start live session:', error);
-      setCallStatus('ended');
-      setTimeout(() => {
-        setIsCalling(false);
-        setCallStatus('idle');
-      }, 1000);
+      console.error('Call Error:', error);
+      endCall();
     }
   };
 
   const processAudioInput = (stream) => {
-    if (!inputCtxRef.current) return;
-    
     const source = inputCtxRef.current.createMediaStreamSource(stream);
-    sourceRef.current = source;
-    
     const processor = inputCtxRef.current.createScriptProcessor(2048, 1, 1);
-    processorRef.current = processor;
     
     processor.onaudioprocess = async (e) => {
-      if (isMuted || !isSessionActiveRef.current) return;
+      if (isMuted || !isSessionActiveRef.current) {
+        setIsUserSpeaking(false);
+        return;
+      }
       
       const inputData = e.inputBuffer.getChannelData(0);
-      const pcmBlob = createPcmBlob(inputData);
       
-      try {
-        const session = await sessionRef.current;
-        if (session && isSessionActiveRef.current) {
-          await session.sendRealtimeInput({ media: pcmBlob });
-        }
-      } catch (err) {
-        // Nuốt lỗi WebSocket đóng/đang đóng vì đây là hành vi bình thường khi end call
-        if (!err.message?.includes('CLOSED') && !err.message?.includes('CLOSING')) {
-          console.error("Realtime input error:", err);
-        }
+      // Basic VAD (Voice Activity Detection)
+      let sum = 0;
+      for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+      const rms = Math.sqrt(sum / inputData.length);
+      setIsUserSpeaking(rms > 0.015);
+
+      const l = inputData.length;
+      const int16 = new Int16Array(l);
+      for (let i = 0; i < l; i++) int16[i] = inputData[i] * 32768;
+      
+      const pcmBlob = { 
+        data: btoa(String.fromCharCode(...new Uint8Array(int16.buffer))), 
+        mimeType: 'audio/pcm;rate=16000' 
+      };
+      
+      if (sessionRef.current && isSessionActiveRef.current) {
+        try { await sessionRef.current.sendRealtimeInput({ media: pcmBlob }); } catch (e) {}
       }
     };
     
     source.connect(processor);
     processor.connect(inputCtxRef.current.destination);
-  };
-
-  const playAudioOutput = async (base64Audio) => {
-    if (!outputCtxRef.current || outputCtxRef.current.state === 'closed') return;
-    
-    try {
-      const audioBuffer = await decodeAudioData(decode(base64Audio), outputCtxRef.current);
-      const source = outputCtxRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(outputCtxRef.current.destination);
-      
-      const now = outputCtxRef.current.currentTime;
-      nextStartTimeRef.current = Math.max(nextStartTimeRef.current, now);
-      source.start(nextStartTimeRef.current);
-      nextStartTimeRef.current += audioBuffer.duration;
-      
-    } catch (e) {
-      console.error("Audio playback error:", e);
-    }
-  };
-
-  const addCallMessage = (type, content) => {
-    const message = {
-      id: Date.now(),
-      type,
-      content,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, message]);
-  };
-
-  const captureAndSend = () => {
-    if (!canvasRef.current || !videoRef.current || !sessionRef.current) return;
-    
-    const ctx = canvasRef.current.getContext('2d');
-    if (!ctx) return;
-    
-    canvasRef.current.width = videoRef.current.videoWidth;
-    canvasRef.current.height = videoRef.current.videoHeight;
-    ctx.drawImage(videoRef.current, 0, 0);
-    
-    const base64 = canvasRef.current.toDataURL('image/jpeg', 0.8).split(',')[1];
-    
-    sessionRef.current.then((session) => {
-      session.sendRealtimeInput({ 
-        media: { mimeType: 'image/jpeg', data: base64 }
-      });
-    });
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
-  const toggleCamera = () => {
-    if (streamRef.current) {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsCameraOn(videoTrack.enabled);
-      }
-    }
+    processorRef.current = processor;
+    sourceRef.current = source;
   };
 
   const endCall = () => {
-    setCallStatus('ended');
     isSessionActiveRef.current = false;
-    
-    if (processorRef.current) {
-      processorRef.current.onaudioprocess = null;
-      processorRef.current.disconnect();
-    }
-    
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-    }
-    
-    sessionRef.current?.then((session) => session.close());
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
+    setCallStatus('ended');
+    if (processorRef.current) { processorRef.current.onaudioprocess = null; processorRef.current.disconnect(); }
+    if (sourceRef.current) sourceRef.current.disconnect();
+    if (sessionRef.current) { try { sessionRef.current.close(); } catch(e) {} }
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     if (inputCtxRef.current?.state !== 'closed') inputCtxRef.current?.close();
     if (outputCtxRef.current?.state !== 'closed') outputCtxRef.current?.close();
-    
-    addCallMessage('system', '📞 Cuộc gọi đã kết thúc. Cảm ơn bạn đã trò chuyện với Lạc Lạc!');
-    
-    setTimeout(() => {
-      setIsCalling(false);
-      setCallStatus('idle');
-      setIsCameraOn(false);
-      setIsMuted(false);
-    }, 1000);
+    setTimeout(() => { setIsCalling(false); setCallStatus('idle'); }, 1500);
   };
 
-
-
-
-
-  if (!isOpen) {
-    return null;
-  }
+  const toggleMute = () => { setIsMuted(!isMuted); };
+  const toggleCamera = () => { if (streamRef.current) { const vt = streamRef.current.getVideoTracks()[0]; if (vt) { vt.enabled = !vt.enabled; setIsCameraOn(vt.enabled); } } };
+  const handleOpenCamera = () => requireAuthForAI(async () => { const s = await initializeCamera('environment'); setCameraStream(s); setIsCameraOpen(true); if (cameraVideoRef.current) cameraVideoRef.current.srcObject = s; });
+  const handleCloseCamera = () => { stopCamera(cameraStream); setIsCameraOpen(false); setCameraStream(null); };
+  const handleSwitchCamera = async () => { const nfm = facingMode === 'user' ? 'environment' : 'user'; stopCamera(cameraStream); const s = await initializeCamera(nfm); setFacingMode(nfm); setCameraStream(s); if (cameraVideoRef.current) cameraVideoRef.current.srcObject = s; };
+  const handleCapture = () => { setShowFlash(true); setTimeout(() => setShowFlash(false), 150); const canvas = cameraCanvasRef.current; const video = cameraVideoRef.current; canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); const b64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1]; setCurrentImage({ data: b64, type: 'image/jpeg', url: `data:image/jpeg;base64,${b64}` }); handleCloseCamera(); };
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      width: '350px',
-      height: '500px',
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: 'Inter, sans-serif'
-    }}>
-
-      {/* Header */}
+    <React.Fragment>
       <div style={{
-        background: 'linear-gradient(135deg, #4CAF50 0%, #1CBECF 100%)',
-        padding: '15px',
-        borderRadius: '12px 12px 0 0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        color: 'white'
+        position: 'fixed', bottom: '80px', right: '20px', width: '360px', height: '580px', backgroundColor: 'white', borderRadius: '24px',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.12)', zIndex: 1000, display: (isOpen && !isCalling) ? 'flex' : 'none', flexDirection: 'column', fontFamily: 'Inter, sans-serif',
+        overflow: 'hidden', border: '1px solid rgba(0,0,0,0.05)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>🌱</span>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Lạc Lạc AI</div>
-            <div style={{ fontSize: '11px', opacity: 0.9 }}>
-              {quotaRemaining ? `Còn ${quotaRemaining.aiQuestions} câu hỏi` : 'Trợ lý nông nghiệp'}
+        {/* Header - Zalo/Messenger Style */}
+        <div style={{ background: 'linear-gradient(135deg, #0084FF 0%, #00C6FF 100%)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.3)' }}>
+                <LacLacMascot size="small" status="idle" />
+              </div>
+              <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#44b700', border: '2px solid white' }}></div>
+            </div>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '15px', letterSpacing: '-0.3px' }}>Lạc Lạc AI</div>
+              <div style={{ fontSize: '12px', opacity: 0.85, fontWeight: '500' }}>
+                {quotaRemaining ? `${quotaRemaining.aiQuestions} lượt hỏi` : 'Đang hoạt động'}
+              </div>
             </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => handleVoiceCall()}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Gọi thoại với Lạc Lạc"
-          >
-            📞
-          </button>
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            🗑️
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            ×
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '15px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-      }}>
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            style={{
-              alignSelf: message.type === 'user' ? 'flex-end' : message.type === 'system' ? 'center' : 'flex-start',
-              maxWidth: message.type === 'system' ? '90%' : '80%',
-              padding: '8px 12px',
-              borderRadius: '12px',
-              backgroundColor: message.type === 'user' ? '#E0F7FA' : message.type === 'system' ? '#FFF3E0' : '#f5f5f5',
-              fontSize: '14px',
-              lineHeight: '1.4',
-              fontStyle: message.type === 'system' ? 'italic' : 'normal',
-              textAlign: message.type === 'system' ? 'center' : 'left'
-            }}
-          >
-            {message.image && (
-              <img 
-                src={message.image.url} 
-                alt="Uploaded" 
-                style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px' }}
-              />
-            )}
-            {message.content}
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div style={{
-            alignSelf: 'flex-start',
-            padding: '8px 12px',
-            borderRadius: '12px',
-            backgroundColor: '#f5f5f5',
-            fontSize: '14px',
-            fontStyle: 'italic',
-            color: '#666'
-          }}>
-            Lạc Lạc đang suy nghĩ...
-          </div>
-        )}
-
-        {/* Suggested Questions */}
-        {showSuggestions && messages.length <= 1 && (
-          <div style={{
-            alignSelf: 'flex-start',
-            maxWidth: '90%',
-            padding: '12px',
-            borderRadius: '12px',
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #e9ecef'
-          }}>
-            <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: 'bold' }}>
-              💡 Câu hỏi gợi ý:
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {SUGGESTED_QUESTIONS.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  style={{
-                    background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '6px 10px',
-                    borderRadius: '16px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(76, 175, 80, 0.2)'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 2px 4px rgba(76, 175, 80, 0.2)';
-                  }}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-            <div style={{ 
-              fontSize: '10px', 
-              color: '#999', 
-              marginTop: '8px', 
-              textAlign: 'center',
-              fontStyle: 'italic'
-            }}>
-              Nhấn vào câu hỏi để bắt đầu trò chuyện
-            </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Image Preview */}
-      {currentImage && (
-        <div style={{ padding: '10px 15px', borderTop: '1px solid #eee' }}>
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <img 
-              src={currentImage.url} 
-              alt="Preview" 
-              style={{ maxWidth: '100px', borderRadius: '8px' }}
-            />
-            <button
-              onClick={() => setCurrentImage(null)}
-              style={{
-                position: 'absolute',
-                top: '-5px',
-                right: '-5px',
-                background: '#ff4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '20px',
-                height: '20px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              ×
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button onClick={handleVoiceCall} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CallRounded sx={{ fontSize: 20 }} />
+            </button>
+            <button onClick={handleVideoCall} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <VideocamRounded sx={{ fontSize: 20 }} />
+            </button>
+            <button onClick={() => setShowClearConfirm(true)} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DeleteOutlineRounded sx={{ fontSize: 18 }} />
+            </button>
+            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CloseRounded sx={{ fontSize: 22 }} />
             </button>
           </div>
         </div>
-      )}
 
-      {/* Input */}
-      <form onSubmit={handleSendMessage} style={{
-        padding: '15px',
-        borderTop: '1px solid #eee',
-        display: 'flex',
-        gap: '8px'
-      }}>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageUpload}
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            background: '#4CAF50',
-            border: 'none',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '16px'
-          }}
-        >
-          📷
-        </button>
+        {/* Chat Area */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: '#F0F2F5' }}>
+          {messages.map(m => (
+            <div key={m.id} style={{ 
+              alignSelf: m.type === 'user' ? 'flex-end' : 'flex-start', 
+              maxWidth: '85%', 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: m.type === 'user' ? 'flex-end' : 'flex-start'
+            }}>
+              <div style={{ 
+                padding: '10px 14px', 
+                borderRadius: m.type === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
+                backgroundColor: m.type === 'user' ? '#0084FF' : 'white', 
+                color: m.type === 'user' ? 'white' : '#1C1E21',
+                fontSize: '14.5px',
+                lineHeight: '1.4',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                position: 'relative'
+              }}>
+                {m.image && (
+                  <div style={{ marginBottom: '8px', borderRadius: '12px', overflow: 'hidden' }}>
+                    <img src={m.image.url} alt="User upload" style={{ maxWidth: '100%', display: 'block' }} />
+                  </div>
+                )}
+                {m.content}
+              </div>
+              <div style={{ fontSize: '11px', color: '#65676B', marginTop: '4px', padding: '0 4px' }}>
+                {m.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div style={{ alignSelf: 'flex-start', backgroundColor: 'white', padding: '10px 16px', borderRadius: '18px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Hỏi Lạc Lạc hoặc gửi ảnh cây..."
-          disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '14px',
-            outline: 'none'
-          }}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || (!inputText.trim() && !currentImage) || cooldown > 0}
-          style={{
-            background: '#4CAF50',
-            border: 'none',
-            color: 'white',
-            padding: '10px 15px',
-            borderRadius: '8px',
-            cursor: (isLoading || cooldown > 0) ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            opacity: (isLoading || cooldown > 0) ? 0.6 : 1
-          }}
-        >
-          {isLoading ? '...' : cooldown > 0 ? cooldown : '➤'}
-        </button>
-      </form>
-
-      {/* Clear Confirmation Modal */}
-      {showClearConfirm && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '12px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            maxWidth: '280px'
-          }}>
-            <p style={{ margin: '0 0 15px 0', fontSize: '14px' }}>
-              Bạn có chắc muốn xóa toàn bộ lịch sử trò chuyện không?
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button
-                onClick={async () => {
-                  setIsLoading(true);
-                  if (user) {
-                    await deleteUserHistory(user.uid);
-                  }
-                  
-                  chatHistory = [];
-                  localStorage.removeItem('nonglac_chat_history');
-                  localStorage.removeItem('nonglac_user_context');
-                  userContext = { location: "Vietnam", crops: [], gardenInfo: "", hasConsent: false };
-                  
-                  setMessages([]);
-                  setShowClearConfirm(false);
-                  setIsLoading(false);
-                  
-                  // Re-initialize with welcome message
-                  const welcomeMsg = "Đã xóa lịch sử. Lạc Lạc sẵn sàng hỗ trợ bạn từ đầu! 🌱";
-                  const welcomeMessage = {
-                    id: Date.now(),
-                    type: 'bot',
-                    content: welcomeMsg,
-                    timestamp: new Date()
-                  };
-                  setMessages([welcomeMessage]);
-                  addToHistory('assistant', welcomeMsg);
-                }}
-                style={{
-                  background: '#ff4444',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
+        {/* Image Preview Overlay */}
+        {currentImage && (
+          <div style={{ padding: '8px 16px', backgroundColor: 'white', borderTop: '1px solid #eee', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ position: 'relative', width: '60px', height: '60px' }}>
+              <img src={currentImage.url} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+              <button 
+                onClick={() => setCurrentImage(null)}
+                style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#65676B', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                Xóa
+                ×
               </button>
-              <button
+            </div>
+            <div style={{ fontSize: '13px', color: '#65676B' }}>Ảnh đã chọn. Nhấn gửi để phân tích.</div>
+          </div>
+        )}
+
+        {/* Input Area - Messenger Style */}
+        <div style={{ padding: '12px 16px', backgroundColor: 'white', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current.click()} 
+              style={{ background: 'none', border: 'none', color: '#0084FF', padding: '4px', cursor: 'pointer', display: 'flex' }}
+            >
+              <AddCircleRounded sx={{ fontSize: 26 }} />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*"
+              onChange={(e) => { 
+                const f = e.target.files[0]; 
+                if (f) { 
+                  const r = new FileReader(); 
+                  r.onload = () => setCurrentImage({ data: r.result.split(',')[1], type: f.type, url: r.result }); 
+                  r.readAsDataURL(f); 
+                } 
+                e.target.value = ''; // Reset to allow re-selection
+              }} 
+              style={{ display: 'none' }} 
+            />
+            
+            <div style={{ flex: 1, backgroundColor: '#F0F2F5', borderRadius: '20px', padding: '0 12px', display: 'flex', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                value={inputText} 
+                onChange={e => setInputText(e.target.value)} 
+                placeholder="Nhắn tin cho Lạc Lạc..." 
+                style={{ flex: 1, padding: '10px 0', border: 'none', backgroundColor: 'transparent', outline: 'none', fontSize: '15px' }} 
+              />
+              <SentimentSatisfiedAltRounded sx={{ color: '#0084FF', fontSize: 20, cursor: 'pointer', opacity: inputText ? 1 : 0.5 }} />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={!inputText.trim() && !currentImage}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: (inputText.trim() || currentImage) ? '#0084FF' : '#B0B3B8', 
+                padding: '4px', 
+                cursor: 'pointer',
+                display: 'flex',
+                transition: 'transform 0.2s'
+              }}
+              className="active:scale-90"
+            >
+              <SendRounded sx={{ fontSize: 28 }} />
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Clear Confirmation Dialog */}
+      {showClearConfirm && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '16px', width: '100%', maxWidth: '300px', padding: '20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>Xóa trò chuyện?</div>
+            <div style={{ fontSize: '14px', color: '#65676B', marginBottom: '20px' }}>Toàn bộ lịch sử trò chuyện sẽ bị xóa vĩnh viễn và không thể khôi phục.</div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
                 onClick={() => setShowClearConfirm(false)}
-                style={{
-                  background: '#ccc',
-                  color: 'black',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white', cursor: 'pointer' }}
               >
                 Hủy
               </button>
+              <button 
+                onClick={handleClearChat}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: '#FF3B30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Xóa
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Voice/Video Call Overlay */}
       {isCalling && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '12px',
-          color: 'white',
-          zIndex: 2000
-        }}>
-          {/* Call Header */}
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            right: '20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              padding: '8px 12px',
-              borderRadius: '20px',
-              fontSize: '12px'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: callStatus === 'connected' ? '#4CAF50' : '#FFA726',
-                animation: 'pulse 2s infinite'
-              }} />
-              {callStatus === 'connecting' ? 'Đang kết nối...' : 
-               callStatus === 'connected' ? 'Đã kết nối' : 
-               callStatus === 'ended' ? 'Đã kết thúc' : 'Đang gọi...'}
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0B0C0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', zIndex: 9999, fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ position: 'absolute', top: '24px', left: '24px' }}>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '8px 16px', borderRadius: '100px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4CAF50', boxShadow: '0 0 10px #4CAF50' }} />
+              <span style={{ fontWeight: '500' }}>Chế độ Offline</span>
             </div>
           </div>
-
-          {/* Avatar and Info */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            marginTop: '60px'
-          }}>
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              backgroundColor: '#4CAF50',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              marginBottom: '20px',
-              border: '4px solid rgba(255,255,255,0.2)',
-              animation: callStatus === 'connecting' ? 'pulse 2s infinite' : 'none'
-            }}>
-              🌱
+          <button onClick={endCall} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>×</button>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '40px' }}>
+            <div style={{ backgroundColor: 'white', padding: '12px 28px', borderRadius: '16px', color: '#111315', fontSize: '16px', fontWeight: '700', position: 'relative', boxShadow: '0 15px 35px rgba(0,0,0,0.4)', animation: 'bounce 2s infinite' }}>
+              {isTyping ? 'Đang trả lời...' : 'Chạm vào tui đi'}
+              <div style={{ position: 'absolute', bottom: '-10px', left: '50%', transform: 'translateX(-50%)', borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderTop: '10px solid white' }} />
             </div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold' }}>
-              Lạc Lạc AI
-            </h3>
-            <p style={{ margin: 0, fontSize: '14px', opacity: 0.8 }}>
-              {callType === 'video' ? 'Cuộc gọi video' : 'Cuộc gọi thoại'}
-            </p>
+            <div onClick={async () => { if (outputCtxRef.current?.state === 'suspended') await outputCtxRef.current.resume(); }}>
+              <LacLacMascot status={callStatus === 'connecting' ? 'thinking' : isTyping ? 'speaking' : 'idle'} size="large" />
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', letterSpacing: '4px', color: 'white', opacity: 0.4, fontWeight: '800', marginBottom: '8px' }}>CHẠM ĐỂ TƯƠNG TÁC (OFFLINE)</div>
+            </div>
           </div>
-
-          {/* Video Preview (for video calls) */}
-          {callType === 'video' && (
-            <div style={{
-              marginTop: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <video 
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: '200px',
-                  height: '150px',
-                  backgroundColor: '#333',
-                  borderRadius: '12px',
-                  objectFit: 'cover',
-                  transform: 'scaleX(-1)'
-                }}
-              />
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-              {callStatus === 'connected' && (
-                <button
-                  onClick={captureAndSend}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: 'rgba(76, 175, 80, 0.8)',
-                    border: 'none',
-                    borderRadius: '20px',
-                    color: 'white',
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  📷 Gửi ảnh cho AI
-                </button>
-              )}
+          <div style={{ width: '100%', padding: '60px 24px', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+              <button onClick={toggleCamera} style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '24px' }}>{isCameraOn ? '📹' : '📷'}</button>
+              <button onClick={endCall} style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#FF3B30', border: 'none', color: 'white', fontSize: '36px', boxShadow: '0 0 30px rgba(255, 59, 48, 0.4)', transform: 'rotate(135deg)' }}>📞</button>
+              <button onClick={toggleMute} style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '24px' }}>{isMuted ? '🔇' : '🎤'}</button>
             </div>
-          )}
-
-          {/* Call Controls */}
-          <div style={{
-            position: 'absolute',
-            bottom: '40px',
-            display: 'flex',
-            gap: '20px',
-            alignItems: 'center'
-          }}>
-            {callStatus === 'connected' && (
-              <>
-                <button
-                  onClick={toggleMute}
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    backgroundColor: isMuted ? 'rgba(244, 67, 54, 0.8)' : 'rgba(255,255,255,0.2)',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: '20px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  title={isMuted ? "Bật mic" : "Tắt mic"}
-                >
-                  {isMuted ? '🔇' : '🎤'}
-                </button>
-                {callType === 'video' && (
-                  <button
-                    onClick={toggleCamera}
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      backgroundColor: !isCameraOn ? 'rgba(244, 67, 54, 0.8)' : 'rgba(255,255,255,0.2)',
-                      border: 'none',
-                      color: 'white',
-                      fontSize: '20px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title={isCameraOn ? "Tắt camera" : "Bật camera"}
-                  >
-                    {isCameraOn ? '📹' : '📷'}
-                  </button>
-                )}
-              </>
-            )}
-            
-            <button
-              onClick={endCall}
-              style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: '#f44336',
-                border: 'none',
-                color: 'white',
-                fontSize: '24px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(244, 67, 54, 0.4)'
-              }}
-              title="Kết thúc cuộc gọi"
-            >
-              📞
-            </button>
           </div>
         </div>
       )}
 
-      <style>
-        {`
-          @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
-            100% { opacity: 1; transform: scale(1); }
-          }
-        `}
-      </style>
+      {isCameraOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>📸 Chụp ảnh cây trồng</div>
+            <button onClick={handleCloseCamera} style={{ background: 'none', border: 'none', color: 'white', fontSize: '32px' }}>×</button>
+          </div>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <video ref={cameraVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
+          </div>
+          <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '40px' }}>
+            <button onClick={handleSwitchCamera} style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '30px' }}>🔄</button>
+            <button onClick={handleCapture} style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'white', border: '5px solid #4CAF50' }} />
+            <button onClick={handleCloseCamera} style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '30px' }}>×</button>
+          </div>
+          <canvas ref={cameraCanvasRef} style={{ display: 'none' }} />
+        </div>
+      )}
 
-      {/* Enhanced Login Modal */}
-      <EnhancedLoginModal
-        open={showLoginModal}
-        onCancel={() => setShowLoginModal(false)}
-        title="Đăng nhập để sử dụng AI"
-        message="Đăng nhập để trò chuyện với Lạc Lạc - AI nông nghiệp"
-        feature="sử dụng trợ lý AI nông nghiệp"
-      />
-    </div>
+      <EnhancedLoginModal open={showLoginModal} onCancel={() => setShowLoginModal(false)} title="Đăng nhập AI" message="Đăng nhập để trò chuyện với Lạc Lạc" feature="sử dụng AI" />
+    </React.Fragment>
   );
 };
 

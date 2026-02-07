@@ -100,7 +100,7 @@ const UserManagement = ({ users, updateUserRole, verifyUser, deleteUser }) => {
         <Tag color="blue" className="w-fit">Tổng cộng: {users.length}</Tag>
       </div>
 
-      <Card bordered={false} className="shadow-sm overflow-hidden" bodyStyle={{ padding: 0 }}>
+      <Card bordered={false} className="shadow-sm overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table
           columns={columns}
           dataSource={users}

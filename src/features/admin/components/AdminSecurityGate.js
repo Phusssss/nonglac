@@ -1,14 +1,13 @@
 import React from 'react';
 import { Card, Input, Button, Typography, message } from 'antd';
 import { Lock } from 'lucide-react';
+import { ADMIN_CONSTANTS } from '../constants';
 
 const { Title, Text } = Typography;
 
-const ADMIN_SECURITY_CODE = 'NL_2026_AD_8f2a9c1b7d';
-
 const AdminSecurityGate = ({ securityCode, setSecurityCode, setIsAuthenticated }) => {
   const handleSecurityCodeSubmit = () => {
-    if (securityCode === ADMIN_SECURITY_CODE) {
+    if (securityCode === ADMIN_CONSTANTS.SECURITY_CODE) {
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_authenticated', 'true');
       message.success('Đăng nhập thành công!');
@@ -18,31 +17,43 @@ const AdminSecurityGate = ({ securityCode, setSecurityCode, setIsAuthenticated }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <Lock className="w-16 h-16 text-[#795548] mx-auto mb-4" />
-          <Title level={2} className="text-[#795548]">Admin Dashboard</Title>
-          <Text type="secondary">Nhập mã bảo mật để truy cập</Text>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border-none rounded-2xl">
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-agri-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-10 h-10 text-agri-600" />
+          </div>
+          <Title level={2} className="text-agri-800 m-0">Admin Access</Title>
+          <Text type="secondary" className="text-gray-500">Nhập mã bảo mật để quản trị hệ thống</Text>
         </div>
         
-        <div className="space-y-4">
-          <Input.Password
-            placeholder="Nhập mã bảo mật"
-            value={securityCode}
-            onChange={(e) => setSecurityCode(e.target.value)}
-            onPressEnter={handleSecurityCodeSubmit}
-            size="large"
-          />
+        <div className="space-y-5">
+          <div>
+            <Text strong className="text-xs uppercase tracking-widest text-gray-400 mb-2 block">Security Code</Text>
+            <Input.Password
+              placeholder="••••••••••••"
+              value={securityCode}
+              onChange={(e) => setSecurityCode(e.target.value)}
+              onPressEnter={handleSecurityCodeSubmit}
+              size="large"
+              className="rounded-xl h-12"
+            />
+          </div>
           <Button 
             type="primary" 
             size="large" 
             block
             onClick={handleSecurityCodeSubmit}
-            className="bg-[#795548] hover:bg-[#6d4c41]"
+            className="bg-agri-600 hover:bg-agri-700 border-none h-12 rounded-xl font-bold shadow-lg shadow-agri-100"
           >
-            Xác thực
+            Xác thực truy cập
           </Button>
+        </div>
+        
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <Text className="text-[10px] text-gray-400 uppercase tracking-tighter">
+            © 2026 NôngLạc - Secure Administration Environment
+          </Text>
         </div>
       </Card>
     </div>

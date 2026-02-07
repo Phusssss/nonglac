@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Trang chủ NôngLạc - Phương án tái cấu trúc</title>
+    <style>
+        body {
+            font-family: "Comic Sans MS", "Inter", sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .wireframe-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            border: 2px solid #000;
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-weight: bold;
+            font-size: 24px;
+            border: 1px dashed #666;
+            padding: 5px 10px;
+        }
+        .search-box {
+            border: 2px solid #000;
+            padding: 8px 15px;
+            width: 40%;
+            border-radius: 20px;
+            background: #eee;
+        }
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        .nav-item {
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+        }
+        .beta-banner-soft {
+            border: 1px solid #000;
+            background: #eef;
+            text-align: center;
+            padding: 5px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        main {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+            .sidebar { display: none; }
+        }
+        .card {
+            border: 2px solid #000;
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .reuse-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .new-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #FF9800;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .placeholder-img {
+            background: #ccc;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #000;
+            margin-bottom: 10px;
+        }
+        .post-item {
+            border-bottom: 1px solid #ccc;
+            padding: 15px 0;
+        }
+        .btn {
+            border: 2px solid #000;
+            padding: 8px 16px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            background: #ddd;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="wireframe-container">
+        <h1>[Wireframe] Tối ưu hóa Trang chủ</h1>
+        <p>Phiên bản đề xuất: Cải thiện phân cấp thông tin và khả năng truy cập nhanh các công cụ AI.</p>
+
+        <!-- REUSABLE: Beta Banner (Modified Color) -->
+        <div class="beta-banner-soft">
+            <span class="reuse-badge" title="src/App.js">BETA Banner</span>
+            Phiên bản thử nghiệm 1.0 (Màu xanh dương dịu mắt hơn)
+        </div>
+
+        <header>
+            <div class="logo">NONGLAC</div>
+            
+            <!-- REUSABLE: Search Bar -->
+            <div class="search-box">
+                <span class="reuse-badge" title="src/components/ResponsiveNavbar.js">Search Input</span>
+                Tìm kiếm nông sản, kinh nghiệm...
+            </div>
+
+            <div class="nav-links">
+                <div class="nav-item">Trang chủ</div>
+                <div class="nav-item">Nhiệm vụ</div>
+                <div class="nav-item">Chợ</div>
+                <div class="btn">Đăng nhập</div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <!-- REUSABLE: CategoryFilter -->
+                <div class="card">
+                    <span class="reuse-badge" title="src/features/home/components/CategoryFilter.js">CategoryFilter</span>
+                    <h3>Danh mục</h3>
+                    <ul>
+                        <li>Trồng trọt</li>
+                        <li>Chăn nuôi</li>
+                        <li>Thủy sản</li>
+                    </ul>
+                </div>
+
+                <!-- NEW: Quick AI Links -->
+                <div class="card">
+                    <span class="new-badge" title="QuickAIButtons">QuickAI</span>
+                    <h3>Công cụ AI</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="btn" style="font-size: 10px;">Bác sĩ cây</div>
+                        <div class="btn" style="font-size: 10px;">Giá thị trường</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed Area -->
+            <div class="feed">
+                <!-- REUSABLE: CreatePostForm -->
+                <div class="card">
+                    <span class="reuse-badge" title="src/features/home/components/CreatePostForm.js">CreatePostForm</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="avatar-circle"></div>
+                        <div style="flex: 1; border: 1px solid #000; padding: 10px; border-radius: 20px;">Bạn đang nghĩ gì?</div>
+                    </div>
+                </div>
+
+                <!-- REUSABLE: PostsList -->
+                <div class="card">
+                    <span class="reuse-badge" title="src/features/home/components/PostsList.js">PostsList</span>
+                    <div class="post-item">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                            <div class="avatar-circle"></div>
+                            <strong>Tên người dùng</strong>
+                        </div>
+                        <h3>Tiêu đề bài viết mẫu</h3>
+                        <p>Nội dung chia sẻ kinh nghiệm về kỹ thuật canh tác lúa...</p>
+                        <div class="placeholder-img">[Hình ảnh nông sản: 600x300]</div>
+                        <div style="display: flex; gap: 20px;">
+                            <span>Thích (12)</span>
+                            <span>Bình luận (5)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar">
+                <!-- REUSABLE: WeatherWidget -->
+                <div class="card">
+                    <span class="reuse-badge" title="src/components/WeatherWidget.js">WeatherWidget</span>
+                    <h3>Thời tiết hôm nay</h3>
+                    <div style="font-size: 32px;">28°C</div>
+                    <p>Nắng ráo, thích hợp bón phân.</p>
+                </div>
+
+                <!-- REUSABLE: RightSidebar (Price Table) -->
+                <div class="card">
+                    <span class="reuse-badge" title="src/features/home/components/RightSidebar.js">PriceList</span>
+                    <h3>Giá nông sản Live</h3>
+                    <table style="width: 100%; font-size: 12px;">
+                        <tr><td>Lúa</td><td>8.500đ</td><td style="color: green;">↑</td></tr>
+                        <tr><td>Cà phê</td><td>120k</td><td style="color: red;">↓</td></tr>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

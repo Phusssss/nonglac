@@ -36,6 +36,9 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      if (!registration) {
+        return;
+      }
       console.log('SW registered: ', registration);
       
       registration.onupdatefound = () => {

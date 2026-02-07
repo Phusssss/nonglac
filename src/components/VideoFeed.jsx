@@ -157,7 +157,7 @@ const VideoFeedItem = ({
   return (
     <div ref={inViewRef} style={{ marginBottom: 16 }}>
       <Card
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
         style={{ 
           borderRadius: 12,
           overflow: 'hidden',

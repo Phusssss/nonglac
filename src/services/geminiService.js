@@ -116,6 +116,13 @@ export const chatWithAgriBot = async (history, newMessage) => {
 
     let config;
     
+    // Clean history to remove heavy base64 image data before sending to AI
+    const cleanedHistory = history.slice(-5).map(item => ({
+      role: item.role,
+      content: item.content,
+      hasImage: !!item.image
+    }));
+
     if (isPriceQuery) {
       // Sử dụng Google Search cho câu hỏi về giá - Cấu trúc chuẩn cho @google/genai SDK
       config = {
@@ -123,7 +130,7 @@ export const chatWithAgriBot = async (history, newMessage) => {
         contents: [{
           role: 'user',
           parts: [{ 
-            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nCâu hỏi: ${newMessage}\n\nBẮT BUỘC: Sử dụng Google Search để tìm giá cà phê và nông sản tại Việt Nam NGAY HÔM NAY (${new Date().toLocaleDateString('vi-VN')}). Hãy trích xuất giá từ kết quả tìm kiếm mới nhất, không dùng dữ liệu cũ.` 
+            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(cleanedHistory)}\n\nCâu hỏi: ${newMessage}\n\nBẮT BUỘC: Sử dụng Google Search để tìm giá cà phê và nông sản tại Việt Nam NGAY HÔM NAY (${new Date().toLocaleDateString('vi-VN')}). Hãy trích xuất giá từ kết quả tìm kiếm mới nhất, không dùng dữ liệu cũ.` 
           }]
         }],
         config: {
@@ -144,7 +151,7 @@ export const chatWithAgriBot = async (history, newMessage) => {
         contents: [{
           role: 'user',
           parts: [{ 
-            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(history.slice(-5))}\n\nTin nhắn mới: ${newMessage}` 
+            text: `${SYSTEM_INSTRUCTION_AGRI}\n\nLịch sử cuộc trò chuyện: ${JSON.stringify(cleanedHistory)}\n\nTin nhắn mới: ${newMessage}` 
           }]
         }]
       };

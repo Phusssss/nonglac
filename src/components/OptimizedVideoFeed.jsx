@@ -204,7 +204,7 @@ const OptimizedVideoItem = React.memo(({
 
   return (
     <div style={style} ref={inViewRef}>
-      <Card bodyStyle={{ padding: 0 }} style={{ marginBottom: 16 }}>
+      <Card styles={{ body: { padding: 0 } }} style={{ marginBottom: 16 }}>
         {inView ? (
           <VideoPlayer
             src={video.url}

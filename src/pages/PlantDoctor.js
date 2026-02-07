@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Button } from 'antd';
+import { VideoCameraOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { analyzePlantImage } from '../services/geminiService';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthGuard } from '../hooks/useAuthGuard';
@@ -9,12 +12,17 @@ import EnhancedLoginModal from '../components/enhanced/EnhancedLoginModal';
 const PlantDoctor = () => {
   const { user } = useAuth();
   const { requireAuthForAI, showLoginModal, setShowLoginModal } = useAuthGuard();
+  const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
   const { handleAsyncError } = useErrorHandler();
+
+  const handleVideoCall = () => {
+    navigate('/ai-video-call');
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
@@ -79,19 +87,33 @@ const PlantDoctor = () => {
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-5xl mx-auto p-4">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-agri-800 flex items-center gap-3">
-            <div className="bg-agri-100 p-2 rounded-lg">
-              <svg className="w-8 h-8 text-agri-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h2 className="text-2xl md:text-3xl font-bold text-agri-800 flex items-center gap-2 md:gap-3">
+            <div className="bg-agri-100 p-1.5 md:p-2 rounded-lg">
+              <svg className="w-6 h-6 md:w-8 md:h-8 text-agri-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             Bác Sĩ Cây Trồng AI
           </h2>
-          <div className="flex items-center gap-4 mt-2 ml-14">
-            <p className="text-gray-600">
-              Chẩn đoán bệnh cây trồng chính xác trong vài giây nhờ công nghệ Gemini Vision.
-            </p>
-            <AIQuotaIndicator actionType="doctorAI" />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mt-3 md:mt-2 md:ml-14">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <p className="text-sm md:text-base text-gray-600">
+                Chẩn đoán bệnh cây trồng chính xác trong vài giây nhờ công nghệ Gemini Vision.
+              </p>
+              <AIQuotaIndicator actionType="doctorAI" />
+            </div>
+            {user && (
+              <Button
+                type="primary"
+                size="large"
+                icon={<VideoCameraOutlined />}
+                onClick={handleVideoCall}
+                className="flex-shrink-0 w-full sm:w-auto"
+              >
+                <span className="hidden sm:inline">Gọi Video với Lạc Lạc</span>
+                <span className="sm:hidden">Gọi Video AI</span>
+              </Button>
+            )}
           </div>
         </div>
 

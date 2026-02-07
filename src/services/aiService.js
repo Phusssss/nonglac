@@ -149,6 +149,257 @@ class AIService {
     }
   }
 
+  // Video frame analysis (optimized for video call)
+  async analyzeVideoFrame(base64Image, context = '') {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        // Trả về null để component xử lý auth guard
+        return null;
+      }
+
+      // Validate image size (video frames should be smaller)
+      const imageSizeKB = (base64Image.length * 3) / 4 / 1024;
+      if (imageSizeKB > 2048) {
+        throw new Error('Khung hình quá lớn. Kích thước tối đa: 2MB');
+      }
+
+      // Build prompt with context
+      let prompt = 'Phân tích hình ảnh này về cây trồng, bệnh hại, và đưa ra lời khuyên nông nghiệp.';
+      if (context) {
+        prompt = `${context}\n\n${prompt}`;
+      }
+
+      const data = {
+        image: base64Image,
+        prompt: prompt.trim(),
+        userId: user.uid,
+        type: 'video_frame' // Mark as video frame for backend optimization
+      };
+
+      const response = await this.apiCall('/image', data);
+      
+      // Kiểm tra nếu apiCall trả về null
+      if (response === null) {
+        return null;
+      }
+      
+      return {
+        success: true,
+        result: this.formatAIResponse(response.result),
+        confidence: response.confidence,
+        type: response.type,
+        timestamp: response.timestamp,
+        usage: response.usage
+      };
+    } catch (error) {
+      handleError(error, { 
+        component: 'AIService', 
+        action: 'analyzeVideoFrame',
+        hasContext: !!context
+      });
+      throw error;
+    }
+  }
+
+  // Process tool calls from AI (for video call feature)
+  async processToolCall(toolCall) {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        return null;
+      }
+
+      if (!toolCall || !toolCall.name) {
+        throw new Error('Tool call không hợp lệ');
+      }
+
+      const { name, args } = toolCall;
+
+      switch (name) {
+        case 'lookup_price':
+          return await this._handleLookupPrice(args);
+        
+        case 'diagnose_disease':
+          return await this._handleDiagnoseDisease(args);
+        
+        case 'find_agri_store':
+          return await this._handleFindAgriStore(args);
+        
+        default:
+          throw new Error(`Tool không được hỗ trợ: ${name}`);
+      }
+    } catch (error) {
+      handleError(error, { 
+        component: 'AIService', 
+        action: 'processToolCall',
+        toolName: toolCall?.name
+      });
+      throw error;
+    }
+  }
+
+  // Private helper: Handle price lookup
+  async _handleLookupPrice(args) {
+    try {
+      const { product, region } = args;
+      
+      if (!product) {
+        throw new Error('Thiếu thông tin sản phẩm');
+      }
+
+      // Call backend API for real price data
+      const data = {
+        product: product.trim(),
+        region: region?.trim() || 'Việt Nam',
+        userId: auth.currentUser?.uid
+      };
+
+      const response = await this.apiCall('/tools/lookup-price', data);
+      
+      if (response === null) {
+        return null;
+      }
+
+      return {
+        success: true,
+        tool: 'lookup_price',
+        result: {
+          product: response.product,
+          region: response.region,
+          price: response.price,
+          priceRange: response.priceRange,
+          unit: response.unit,
+          lastUpdated: response.lastUpdated,
+          source: response.source
+        }
+      };
+    } catch (error) {
+      handleError(error, { 
+        component: 'AIService', 
+        action: '_handleLookupPrice',
+        product: args?.product
+      });
+      
+      // Return fallback data on error
+      return {
+        success: false,
+        tool: 'lookup_price',
+        result: {
+          product: args?.product || 'Unknown',
+          region: args?.region || 'Việt Nam',
+          price: 'Không có dữ liệu',
+          error: error.message
+        }
+      };
+    }
+  }
+
+  // Private helper: Handle disease diagnosis
+  async _handleDiagnoseDisease(args) {
+    try {
+      const { crop, symptoms } = args;
+      
+      if (!crop || !symptoms) {
+        throw new Error('Thiếu thông tin cây trồng hoặc triệu chứng');
+      }
+
+      // Call backend API for disease diagnosis
+      const data = {
+        crop: crop.trim(),
+        symptoms: symptoms.trim(),
+        userId: auth.currentUser?.uid
+      };
+
+      const response = await this.apiCall('/tools/diagnose-disease', data);
+      
+      if (response === null) {
+        return null;
+      }
+
+      return {
+        success: true,
+        tool: 'diagnose_disease',
+        result: {
+          crop: response.crop,
+          disease: response.disease,
+          confidence: response.confidence,
+          symptoms: response.symptoms,
+          treatment: response.treatment,
+          prevention: response.prevention,
+          severity: response.severity
+        }
+      };
+    } catch (error) {
+      handleError(error, { 
+        component: 'AIService', 
+        action: '_handleDiagnoseDisease',
+        crop: args?.crop
+      });
+      
+      // Return fallback data on error
+      return {
+        success: false,
+        tool: 'diagnose_disease',
+        result: {
+          crop: args?.crop || 'Unknown',
+          disease: 'Không thể chẩn đoán',
+          treatment: 'Vui lòng tham khảo chuyên gia nông nghiệp',
+          error: error.message
+        }
+      };
+    }
+  }
+
+  // Private helper: Handle agri store finder
+  async _handleFindAgriStore(args) {
+    try {
+      const { productType, location } = args;
+
+      // Call backend API for store finder
+      const data = {
+        productType: productType?.trim() || '',
+        location: location?.trim() || '',
+        userId: auth.currentUser?.uid
+      };
+
+      const response = await this.apiCall('/tools/find-agri-store', data);
+      
+      if (response === null) {
+        return null;
+      }
+
+      return {
+        success: true,
+        tool: 'find_agri_store',
+        result: {
+          stores: response.stores || [],
+          location: response.location,
+          productType: response.productType,
+          totalResults: response.totalResults
+        }
+      };
+    } catch (error) {
+      handleError(error, { 
+        component: 'AIService', 
+        action: '_handleFindAgriStore',
+        location: args?.location
+      });
+      
+      // Return fallback data on error
+      return {
+        success: false,
+        tool: 'find_agri_store',
+        result: {
+          stores: [],
+          location: args?.location || 'Unknown',
+          productType: args?.productType || '',
+          error: error.message
+        }
+      };
+    }
+  }
+
   // Market analysis
   async analyzeMarket(product, timeframe = '1month', additionalContext = '') {
     try {
@@ -272,6 +523,12 @@ const aiService = new AIService();
 // Export individual methods for backward compatibility
 export const analyzePlantImage = (base64Image, prompt) => 
   aiService.analyzePlantImage(base64Image, prompt);
+
+export const analyzeVideoFrame = (base64Image, context) => 
+  aiService.analyzeVideoFrame(base64Image, context);
+
+export const processToolCall = (toolCall) => 
+  aiService.processToolCall(toolCall);
 
 export const analyzeText = (prompt, type) => 
   aiService.analyzeText(prompt, type);

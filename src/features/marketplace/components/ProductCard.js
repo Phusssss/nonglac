@@ -38,7 +38,7 @@ const ProductCard = ({
           cursor: 'pointer',
           border: '1px solid #f0f0f0'
         }}
-        bodyStyle={{ padding: 12 }}
+        styles={{ body: { padding: 12 } }}
         onClick={handleCardClick}
         cover={
           <div style={{ 

@@ -4,6 +4,20 @@ import { useAuth } from '../hooks/useAuth';
 import { useUnreadMessages } from '../features/messages/hooks';
 import PWAInstallButton from './PWAInstallButton';
 import logo from '../assets/images/logo.demo.nontext.png';
+import { 
+  SearchRounded, 
+  ArrowForwardRounded, 
+  HomeRounded, 
+  EmojiEventsRounded, 
+  PsychologyAltRounded, 
+  ExpandMoreRounded, 
+  StorefrontRounded, 
+  PersonRounded, 
+  ChatRounded,
+  MedicalServicesRounded,
+  TrendingUpRounded,
+  MapRounded
+} from '@mui/icons-material';
 
 const ResponsiveNavbar = () => {
   const navigate = useNavigate();
@@ -28,16 +42,8 @@ const ResponsiveNavbar = () => {
     setSearchQuery(e.target.value);
   };
 
-  // Load Material Icons and Inter font
+  // Load Inter font
   useEffect(() => {
-    // Material Icons
-    if (!document.querySelector('link[href*="material-icons"]')) {
-      const materialLink = document.createElement('link');
-      materialLink.rel = 'stylesheet';
-      materialLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons+Round';
-      document.head.appendChild(materialLink);
-    }
-
     // Inter font
     if (!document.querySelector('link[href*="Inter"]')) {
       const fontLink = document.createElement('link');
@@ -77,10 +83,10 @@ const ResponsiveNavbar = () => {
   }, [logout, navigate]);
 
   const aiMenuItems = useMemo(() => [
-    { text: 'ChatBot AI', action: 'chatbot', icon: 'chat', color: 'bg-blue-500' },
-    { text: 'Bác sĩ cây trồng', path: '/plant-doctor', icon: 'medical_services', color: 'bg-green-500' },
-    { text: 'Thị trường', path: '/market-insights', icon: 'trending_up', color: 'bg-orange-500' },
-    { text: 'Bản đồ nông vụ', path: '/agri-map', icon: 'map', color: 'bg-purple-500' },
+    { text: 'ChatBot AI', action: 'chatbot', icon: <ChatRounded fontSize="small" />, color: 'bg-blue-500' },
+    { text: 'Bác sĩ cây trồng', path: '/plant-doctor', icon: <MedicalServicesRounded fontSize="small" />, color: 'bg-green-500' },
+    { text: 'Thị trường', path: '/market-insights', icon: <TrendingUpRounded fontSize="small" />, color: 'bg-orange-500' },
+    { text: 'Bản đồ nông vụ', path: '/agri-map', icon: <MapRounded fontSize="small" />, color: 'bg-purple-500' },
   ], []);
 
   return (
@@ -99,7 +105,7 @@ const ResponsiveNavbar = () => {
             <div className="hidden md:flex flex-1 max-w-lg mx-4">
               <div className="relative w-full group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-icons-round text-gray-400 group-focus-within:text-[#4CAF50] transition-colors text-lg">search</span>
+                  <SearchRounded className="text-gray-400 group-focus-within:text-[#4CAF50] transition-colors" sx={{ fontSize: 20 }} />
                 </div>
                 <input 
                   className="block w-full pl-9 pr-10 py-1.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] transition duration-150 ease-in-out shadow-sm" 
@@ -114,7 +120,7 @@ const ResponsiveNavbar = () => {
                     onClick={handleSearch}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#4CAF50] hover:text-[#388E3C] transition-colors"
                   >
-                    <span className="material-icons-round text-lg">arrow_forward</span>
+                    <ArrowForwardRounded sx={{ fontSize: 20 }} />
                   </button>
                 )}
               </div>
@@ -128,7 +134,7 @@ const ResponsiveNavbar = () => {
                   location.pathname === '/' ? 'text-[#4CAF50]' : 'hover:text-[#4CAF50]'
                 }`}
               >
-                <span className="material-icons-round text-lg">home</span>
+                <HomeRounded sx={{ fontSize: 20 }} />
                 <span>Trang chủ</span>
               </button>
               
@@ -136,16 +142,16 @@ const ResponsiveNavbar = () => {
                 onClick={() => navigate('/missions')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
               >
-                <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">emoji_events</span>
+                <EmojiEventsRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Nhiệm vụ</span>
               </button>
               
               {/* AI Tools Dropdown */}
               <div className="relative group cursor-pointer flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors">
-                <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">smart_toy</span>
+                <PsychologyAltRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 22 }} />
                 <div className="flex items-center">
                   AI 
-                  <span className="material-icons-round text-xs ml-0.5">expand_more</span>
+                  <ExpandMoreRounded sx={{ fontSize: 16, ml: 0.2 }} />
                 </div>
                 
                 {/* Dropdown Menu */}
@@ -162,7 +168,7 @@ const ResponsiveNavbar = () => {
                       }}
                       className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors flex items-center gap-3 text-sm text-gray-700 hover:text-[#4CAF50]"
                     >
-                      <span className="material-icons-round text-lg">{item.icon}</span>
+                      {item.icon}
                       {item.text}
                     </button>
                   ))}
@@ -173,7 +179,7 @@ const ResponsiveNavbar = () => {
                 onClick={() => navigate('/marketplace')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
               >
-                <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">storefront</span>
+                <StorefrontRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Chợ</span>
               </button>
               
@@ -181,7 +187,7 @@ const ResponsiveNavbar = () => {
                 onClick={() => user ? navigate('/profile') : navigate('/phone-login')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
               >
-                <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">person</span>
+                <PersonRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Profile</span>
               </button>
             </nav>
@@ -194,7 +200,7 @@ const ResponsiveNavbar = () => {
                   onClick={() => navigate('/messages')}
                   className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#4CAF50] transition-colors"
                 >
-                  <span className="material-icons-round text-lg">chat</span>
+                  <ChatRounded sx={{ fontSize: 22 }} />
                   {totalUnreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                       {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
@@ -259,15 +265,15 @@ const ResponsiveNavbar = () => {
               onClick={() => navigate('/')}
               className={`flex flex-col items-center ${location.pathname === '/' ? 'text-[#4CAF50]' : ''}`}
             >
-              <span className="material-icons-round">home</span>
+              <HomeRounded />
               <span className="text-[10px]">Trang chủ</span>
             </button>
             
             <button 
               onClick={() => navigate('/missions')}
-              className="flex flex-col items-center"
+              className={`flex flex-col items-center ${location.pathname === '/missions' ? 'text-[#4CAF50]' : ''}`}
             >
-              <span className="material-icons-round">emoji_events</span>
+              <EmojiEventsRounded />
               <span className="text-[10px]">Nhiệm vụ</span>
             </button>
           </div>
@@ -276,9 +282,9 @@ const ResponsiveNavbar = () => {
           <div className="relative mx-4">
             <button 
               onClick={() => setShowMobileAiMenu(!showMobileAiMenu)}
-              className="relative -top-6 bg-[#4CAF50] p-4 rounded-full text-white shadow-lg shadow-green-500/40 flex items-center justify-center"
+              className="relative -top-6 bg-gradient-to-tr from-[#4CAF50] to-[#8BC34A] p-4 rounded-full text-white shadow-lg shadow-green-500/40 flex items-center justify-center transition-transform active:scale-90"
             >
-              <span className="material-icons-round text-2xl">smart_toy</span>
+              <PsychologyAltRounded sx={{ fontSize: 28 }} />
             </button>
             
             {/* Mobile AI Dropdown */}
@@ -297,7 +303,7 @@ const ResponsiveNavbar = () => {
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors flex items-center gap-3 text-sm text-gray-700 hover:text-[#4CAF50] first:rounded-t-lg last:rounded-b-lg"
                   >
-                    <span className="material-icons-round text-lg">{item.icon}</span>
+                    {item.icon}
                     {item.text}
                   </button>
                 ))}
@@ -309,17 +315,17 @@ const ResponsiveNavbar = () => {
           <div className="flex-1 flex justify-around">
             <button 
               onClick={() => navigate('/marketplace')}
-              className="flex flex-col items-center"
+              className={`flex flex-col items-center ${location.pathname === '/marketplace' ? 'text-[#4CAF50]' : ''}`}
             >
-              <span className="material-icons-round">storefront</span>
+              <StorefrontRounded />
               <span className="text-[10px]">Chợ</span>
             </button>
             
             <button 
               onClick={() => user ? navigate('/profile') : navigate('/phone-login')}
-              className="flex flex-col items-center"
+              className={`flex flex-col items-center ${location.pathname === '/profile' ? 'text-[#4CAF50]' : ''}`}
             >
-              <span className="material-icons-round">person</span>
+              <PersonRounded />
               <span className="text-[10px]">Profile</span>
             </button>
           </div>

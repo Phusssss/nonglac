@@ -33,12 +33,13 @@ const Marketplace = React.lazy(() => import('./features/marketplace/marketplace'
 const ProductDetail = React.lazy(() => import('./features/marketplace'));
 const MessagesPage = React.lazy(() => import('./features/messages'));
 
-const AdminDashboard = React.lazy(() => import('./features/admin/AdminDashboard'));
+const AdminDashboard = React.lazy(() => import('./features/admin'));
 
 
 const PlantDoctor = React.lazy(() => import('./pages/PlantDoctor'));
 const MarketInsights = React.lazy(() => import('./pages/MarketInsights'));
 const AgriMap = React.lazy(() => import('./pages/AgriMap'));
+const AIVideoCall = React.lazy(() => import('./pages/AIVideoCall'));
 
 const MissionScreen = React.lazy(() => import('./features/missions'));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
@@ -98,7 +99,7 @@ function App() {
                 {/* Beta Banner */}
                 <div className="beta-banner">
                   <span className="beta-text">
-                    🚧 Bản thử nghiệm - Không chịu trách nhiệm với dữ liệu 🚧
+                    Phiên bản beta 1.0
                   </span>
                 </div>
                 
@@ -129,6 +130,7 @@ function App() {
             <Route path="/plant-doctor" element={<PlantDoctor />} />
             <Route path="/market-insights" element={<MarketInsights />} />
             <Route path="/agri-map" element={<AgriMap />} />
+            <Route path="/ai-video-call" element={<AIVideoCall />} />
 
             <Route path="/missions" element={<MissionScreen />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />

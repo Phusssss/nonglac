@@ -72,7 +72,7 @@ const PostManagement = ({ posts, deletePost }) => {
         <Tag color="cyan">Số lượng: {posts.length}</Tag>
       </div>
 
-      <Card bordered={false} className="shadow-sm overflow-hidden" bodyStyle={{ padding: 0 }}>
+      <Card bordered={false} className="shadow-sm overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table
           columns={columns}
           dataSource={posts}

@@ -153,7 +153,7 @@ export const VideoFeedLoading = ({
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} bodyStyle={{ padding: compact ? 12 : 16 }}>
+        <Card key={index} styles={{ body: { padding: compact ? 12 : 16 } }}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {/* Video Thumbnail Skeleton */}
             <Skeleton.Image 

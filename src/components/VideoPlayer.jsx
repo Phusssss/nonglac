@@ -213,7 +213,7 @@ const VideoPlayer = ({
     <Card 
       className={className} 
       style={style}
-      bodyStyle={{ padding: 0 }}
+      styles={{ body: { padding: 0 } }}
     >
       <div style={{ position: 'relative' }}>
         {/* Video Element */}
