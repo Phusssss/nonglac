@@ -26,6 +26,7 @@ const ResponsiveNavbar = () => {
   const { totalUnreadCount } = useUnreadMessages();
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileAiMenu, setShowMobileAiMenu] = useState(false);
+  const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
 
   // Handle search functionality
   const handleSearch = (e) => {
@@ -42,24 +43,13 @@ const ResponsiveNavbar = () => {
     setSearchQuery(e.target.value);
   };
 
-  // Load Inter font
+  // Custom styles cleanup
   useEffect(() => {
-    // Inter font
-    if (!document.querySelector('link[href*="Inter"]')) {
-      const fontLink = document.createElement('link');
-      fontLink.rel = 'stylesheet';
-      fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
-      document.head.appendChild(fontLink);
-    }
-
     // Tailwind config and custom styles
     if (!document.querySelector('#custom-styles')) {
       const style = document.createElement('style');
       style.id = 'custom-styles';
       style.textContent = `
-        body {
-          font-family: 'Inter', sans-serif;
-        }
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -97,32 +87,50 @@ const ResponsiveNavbar = () => {
           <div className="flex justify-between items-center h-14 gap-4">
             
             {/* Logo */}
-            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => navigate('/')}>
+            <div 
+              className="flex-shrink-0 flex items-center cursor-pointer" 
+              onClick={() => navigate('/')}
+              role="button"
+              aria-label="Về trang chủ NôngLạc"
+            >
               <img src={logo} alt="NôngLạc Logo" className="h-8 w-auto" />
             </div>
 
-            {/* Search Bar - Desktop */}
-            <div className="hidden md:flex flex-1 max-w-lg mx-4">
+            {/* Search Bar - Logic mới cho Mobile */}
+            <div className={`flex-1 max-w-lg transition-all duration-300 ${isMobileSearchVisible ? 'absolute inset-x-0 top-0 h-full bg-white z-[60] flex items-center px-4 md:relative md:inset-auto md:bg-transparent md:px-0 md:mx-4' : 'hidden md:flex md:mx-4'}`}>
               <div className="relative w-full group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <SearchRounded className="text-gray-400 group-focus-within:text-[#4CAF50] transition-colors" sx={{ fontSize: 20 }} />
                 </div>
                 <input 
                   className="block w-full pl-9 pr-10 py-1.5 border border-gray-200 rounded-full leading-5 bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-[#4CAF50] transition duration-150 ease-in-out shadow-sm" 
-                  placeholder="Tìm kiếm nông dân, sản phẩm, tin tức..." 
+                  placeholder="Tìm kiếm nông sản, tin tức..." 
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onKeyPress={handleSearch}
+                  aria-label="Tìm kiếm nội dung"
+                  autoFocus={isMobileSearchVisible}
                 />
-                {searchQuery && (
-                  <button
-                    onClick={handleSearch}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#4CAF50] hover:text-[#388E3C] transition-colors"
-                  >
-                    <ArrowForwardRounded sx={{ fontSize: 20 }} />
-                  </button>
-                )}
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
+                  {searchQuery && (
+                    <button
+                      onClick={handleSearch}
+                      className="p-1 text-[#4CAF50] hover:text-[#388E3C]"
+                      aria-label="Thực hiện tìm kiếm"
+                    >
+                      <ArrowForwardRounded sx={{ fontSize: 20 }} />
+                    </button>
+                  )}
+                  {isMobileSearchVisible && (
+                    <button 
+                      onClick={() => setIsMobileSearchVisible(false)}
+                      className="md:hidden text-gray-400 px-2 text-xs font-medium"
+                    >
+                      Hủy
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -133,6 +141,7 @@ const ResponsiveNavbar = () => {
                 className={`flex flex-col items-center gap-0.5 transition-colors ${
                   location.pathname === '/' ? 'text-[#4CAF50]' : 'hover:text-[#4CAF50]'
                 }`}
+                aria-label="Trang chủ"
               >
                 <HomeRounded sx={{ fontSize: 20 }} />
                 <span>Trang chủ</span>
@@ -141,6 +150,7 @@ const ResponsiveNavbar = () => {
               <button 
                 onClick={() => navigate('/missions')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
+                aria-label="Nhiệm vụ"
               >
                 <EmojiEventsRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Nhiệm vụ</span>
@@ -178,6 +188,7 @@ const ResponsiveNavbar = () => {
               <button 
                 onClick={() => navigate('/marketplace')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
+                aria-label="Chợ nông sản"
               >
                 <StorefrontRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Chợ</span>
@@ -186,6 +197,7 @@ const ResponsiveNavbar = () => {
               <button 
                 onClick={() => user ? navigate('/profile') : navigate('/phone-login')}
                 className="flex flex-col items-center gap-0.5 hover:text-[#4CAF50] transition-colors group"
+                aria-label="Hồ sơ cá nhân"
               >
                 <PersonRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
                 <span>Profile</span>
@@ -193,12 +205,22 @@ const ResponsiveNavbar = () => {
             </nav>
 
             {/* User Actions */}
-            <div className="flex items-center gap-2">
-              {/* Messages - chỉ hiện khi đã đăng nhập */}
+            <div className={`flex items-center gap-1.5 sm:gap-2 ${isMobileSearchVisible ? 'hidden md:flex' : 'flex'}`}>
+              {/* Mobile Search Trigger */}
+              <button 
+                className="md:hidden p-1.5 text-gray-500 hover:text-[#4CAF50]"
+                onClick={() => setIsMobileSearchVisible(true)}
+                aria-label="Mở tìm kiếm"
+              >
+                <SearchRounded />
+              </button>
+
+            {/* Messages - chỉ hiện khi đã đăng nhập */}
               {user && (
                 <button 
                   onClick={() => navigate('/messages')}
                   className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#4CAF50] transition-colors"
+                  aria-label="Tin nhắn"
                 >
                   <ChatRounded sx={{ fontSize: 22 }} />
                   {totalUnreadCount > 0 && (
@@ -238,14 +260,14 @@ const ResponsiveNavbar = () => {
                 <>
                   <button 
                     onClick={() => navigate('/phone-register')}
-                    className="hidden sm:block text-gray-700 hover:text-[#4CAF50] font-medium text-xs transition-colors"
+                    className="hidden sm:block text-gray-700 hover:text-[#4CAF50] font-medium text-[11px] transition-colors whitespace-nowrap"
                   >
                     Đăng ký
                   </button>
                   
                   <button 
                     onClick={() => navigate('/phone-login')}
-                    className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg shadow-green-500/30 transition-all hover:shadow-green-500/50 transform hover:-translate-y-0.5"
+                    className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-3 sm:px-4 py-1.5 rounded-full text-[11px] font-semibold shadow-lg shadow-green-500/30 transition-all whitespace-nowrap"
                   >
                     Đăng nhập
                   </button>
@@ -283,6 +305,7 @@ const ResponsiveNavbar = () => {
             <button 
               onClick={() => setShowMobileAiMenu(!showMobileAiMenu)}
               className="relative -top-6 bg-gradient-to-tr from-[#4CAF50] to-[#8BC34A] p-4 rounded-full text-white shadow-lg shadow-green-500/40 flex items-center justify-center transition-transform active:scale-90"
+              aria-label="Công cụ AI"
             >
               <PsychologyAltRounded sx={{ fontSize: 28 }} />
             </button>
@@ -322,11 +345,17 @@ const ResponsiveNavbar = () => {
             </button>
             
             <button 
-              onClick={() => user ? navigate('/profile') : navigate('/phone-login')}
-              className={`flex flex-col items-center ${location.pathname === '/profile' ? 'text-[#4CAF50]' : ''}`}
+              onClick={() => user ? navigate('/messages') : navigate('/phone-login')}
+              className={`flex flex-col items-center relative ${location.pathname === '/messages' ? 'text-[#4CAF50]' : ''}`}
+              aria-label="Tin nhắn"
             >
-              <PersonRounded />
-              <span className="text-[10px]">Profile</span>
+              <ChatRounded />
+              {totalUnreadCount > 0 && (
+                <span className="absolute -top-1 right-2 bg-red-500 text-white text-[8px] rounded-full h-4 w-4 flex items-center justify-center font-bold border border-white">
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                </span>
+              )}
+              <span className="text-[10px]">Tin nhắn</span>
             </button>
           </div>
         </div>

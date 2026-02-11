@@ -24,6 +24,11 @@ const VideoCallHeader = ({ status, isSimulationMode = false, onClose }) => {
       color: 'bg-yellow-500',
       dotColor: 'bg-yellow-400',
     },
+    connected: {
+      text: 'Đã kết nối',
+      color: 'bg-green-500',
+      dotColor: 'bg-green-400',
+    },
     listening: {
       text: 'Đang lắng nghe',
       color: 'bg-green-500',
@@ -39,6 +44,16 @@ const VideoCallHeader = ({ status, isSimulationMode = false, onClose }) => {
       color: 'bg-purple-500',
       dotColor: 'bg-purple-400',
     },
+    analyzing: {
+      text: 'Đang phân tích...',
+      color: 'bg-cyan-500',
+      dotColor: 'bg-cyan-400',
+    },
+    idle: {
+      text: 'Sẵn sàng',
+      color: 'bg-gray-500',
+      dotColor: 'bg-gray-400',
+    },
     error: {
       text: 'Lỗi kết nối',
       color: 'bg-red-500',
@@ -48,6 +63,16 @@ const VideoCallHeader = ({ status, isSimulationMode = false, onClose }) => {
       text: 'Thông báo',
       color: 'bg-cyan-500',
       dotColor: 'bg-cyan-400',
+    },
+    simulation: {
+      text: 'Chế độ mô phỏng',
+      color: 'bg-orange-500',
+      dotColor: 'bg-orange-400',
+    },
+    disconnected: {
+      text: 'Đã ngắt kết nối',
+      color: 'bg-gray-500',
+      dotColor: 'bg-gray-400',
     },
   };
 
@@ -98,11 +123,16 @@ const VideoCallHeader = ({ status, isSimulationMode = false, onClose }) => {
 VideoCallHeader.propTypes = {
   status: PropTypes.oneOf([
     'connecting',
+    'connected',
     'listening',
     'thinking',
     'speaking',
+    'analyzing',
+    'idle',
     'error',
     'announcement',
+    'simulation',
+    'disconnected',
   ]).isRequired,
   isSimulationMode: PropTypes.bool,
   onClose: PropTypes.func.isRequired,

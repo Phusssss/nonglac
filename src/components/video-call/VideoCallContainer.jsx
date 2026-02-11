@@ -1,12 +1,85 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useVideoCall } from '../../hooks/useVideoCall';
+import useVideoCallV2 from '../../hooks/useVideoCallV2';
 import VideoCallHeader from './VideoCallHeader';
-import VideoStream from './VideoStream';
 import VideoCallControls from './VideoCallControls';
 import LacLacMascot from '../LacLacMascot';
-import ErrorDisplay from '../common/ErrorDisplay';
+
+// Feature flag for dual-model video call architecture
+const USE_DUAL_MODEL = process.env.REACT_APP_USE_DUAL_MODEL_VIDEO_CALL === 'true';
+
+/**
+ * Error Boundary Component for Dual-Model Implementation
+ * Catches errors in the new implementation and falls back to legacy
+ */
+class DualModelErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { 
+      hasError: false, 
+      error: null,
+      errorInfo: null 
+    };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[DualModelErrorBoundary] Caught error in dual-model implementation:', error, errorInfo);
+    
+    this.setState({
+      errorInfo
+    });
+    
+    // Log to Sentry if available
+    if (window.Sentry) {
+      window.Sentry.captureException(error, {
+        tags: { 
+          feature: 'video-call',
+          implementation: 'dual-model',
+          component: 'VideoCallContainer'
+        },
+        extra: { 
+          errorInfo,
+          componentStack: errorInfo?.componentStack 
+        }
+      });
+    }
+    
+    // Notify parent to fallback
+    if (this.props.onError) {
+      this.props.onError(error);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 bg-[#1A1C1E] flex items-center justify-center">
+          <div className="text-center p-8">
+            <div className="text-red-500 text-xl mb-4">
+              Lỗi trong phiên bản mới
+            </div>
+            <div className="text-white/70 mb-6">
+              Đang chuyển về phiên bản cũ...
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Tải lại trang
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 /**
  * VideoCallContainer Component
@@ -21,6 +94,8 @@ import ErrorDisplay from '../common/ErrorDisplay';
  * - Interactive mascot with status feedback
  * - Error handling with simulation mode fallback
  * - Tool calling integration (price lookup, diagnosis, store finder)
+ * - Feature flag support for dual-model architecture
+ * - Error boundary with automatic fallback to legacy implementation
  * 
  * @component
  * @param {Object} props
@@ -30,30 +105,70 @@ import ErrorDisplay from '../common/ErrorDisplay';
  */
 const VideoCallContainer = ({ userName, onClose, onUsage = () => {} }) => {
   // ============================================================================
+  // FEATURE FLAG & ERROR HANDLING
+  // ============================================================================
+  
+  // State for fallback management
+  const [useLegacy, setUseLegacy] = useState(false);
+  
+  // Determine which implementation to use
+  const shouldUseDualModel = USE_DUAL_MODEL && !useLegacy;
+  
+  // Log which implementation is active
+  useEffect(() => {
+    const implementation = shouldUseDualModel ? 'DUAL-MODEL' : 'LEGACY';
+    console.log(`[VideoCallContainer] Using ${implementation} implementation`);
+    console.log(`[VideoCallContainer] Feature flag REACT_APP_USE_DUAL_MODEL_VIDEO_CALL=${process.env.REACT_APP_USE_DUAL_MODEL_VIDEO_CALL}`);
+    
+    if (useLegacy && USE_DUAL_MODEL) {
+      console.warn('[VideoCallContainer] Fell back to LEGACY due to error in DUAL-MODEL');
+    }
+  }, [shouldUseDualModel, useLegacy]);
+  
+  // Handle error from dual-model implementation
+  const handleDualModelError = (error) => {
+    console.error('[VideoCallContainer] Dual-model implementation failed, falling back to legacy:', error);
+    setUseLegacy(true);
+    
+    // Log to Sentry
+    if (window.Sentry) {
+      window.Sentry.captureException(error, {
+        tags: { 
+          feature: 'video-call',
+          implementation: 'dual-model',
+          action: 'fallback-to-legacy'
+        },
+        extra: { 
+          userName,
+          errorMessage: error?.message 
+        }
+      });
+    }
+  };
+  
+  // ============================================================================
+  // HOOK SELECTION
+  // ============================================================================
+  
+  // Select hook based on feature flag and fallback state
+  const hookToUse = shouldUseDualModel ? useVideoCallV2 : useVideoCall;
+  
+  // ============================================================================
   // HOOK INTEGRATION
   // ============================================================================
   
   const {
     // State
     status,
-    errorMessage,
     isCameraOn,
     facingMode,
-    isMicOn,
+    // Note: isMicOn removed - no voice input
     isSimulationMode,
-    mascotMessage,
-    activeTool,
     flash,
-    aiResponse,
     
     // Refs
     videoRef,
     canvasRef,
-    visualizerRef,
-    
-    // Audio processor nodes
-    inputAnalyser,
-    outputAnalyser,
     
     // Actions
     startSession,
@@ -61,11 +176,12 @@ const VideoCallContainer = ({ userName, onClose, onUsage = () => {} }) => {
     toggleCamera,
     switchCamera,
     captureAndAnalyze,
-    toggleMic,
+    uploadAndAnalyze,
+    // Note: toggleMic removed - no voice input
     
     // Computed
     canCapture,
-  } = useVideoCall(userName, onUsage);
+  } = hookToUse(userName, onUsage);
 
   // ============================================================================
   // LIFECYCLE MANAGEMENT
@@ -112,20 +228,21 @@ const VideoCallContainer = ({ userName, onClose, onUsage = () => {} }) => {
     onClose();
   };
 
-  /**
-   * Handle retry after error
-   * Attempts to restart the session
-   */
-  const handleRetry = () => {
-    startSession();
-  };
-
   // ============================================================================
   // RENDER
   // ============================================================================
   
-  return (
+  // Wrap dual-model implementation with error boundary
+  const content = (
     <div className="fixed inset-0 z-50 bg-[#1A1C1E] flex flex-col font-sans">
+      {/* Implementation indicator (only in development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-16 right-4 z-50 px-3 py-1 bg-black/50 text-white/70 text-xs rounded">
+          {shouldUseDualModel ? '🔄 Dual-Model' : '📡 Legacy'}
+          {useLegacy && USE_DUAL_MODEL && ' (Fallback)'}
+        </div>
+      )}
+      
       {/* Header */}
       <VideoCallHeader
         status={status}
@@ -181,16 +298,26 @@ const VideoCallContainer = ({ userName, onClose, onUsage = () => {} }) => {
       {/* Controls */}
       <VideoCallControls
         isCameraOn={isCameraOn}
-        isMicOn={isMicOn}
         canCapture={canCapture}
         onToggleCamera={toggleCamera}
         onSwitchCamera={switchCamera}
         onCapture={captureAndAnalyze}
-        onToggleMic={toggleMic}
+        onUploadImage={uploadAndAnalyze}
         onEndCall={handleClose}
       />
     </div>
   );
+  
+  // Wrap with error boundary if using dual-model
+  if (shouldUseDualModel) {
+    return (
+      <DualModelErrorBoundary onError={handleDualModelError}>
+        {content}
+      </DualModelErrorBoundary>
+    );
+  }
+  
+  return content;
 };
 
 VideoCallContainer.propTypes = {

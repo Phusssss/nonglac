@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'antd';
 import {
   VideoCameraOutlined,
   VideoCameraAddOutlined,
   CameraOutlined,
-  AudioOutlined,
-  AudioMutedOutlined,
   PhoneOutlined,
+  PictureOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 
@@ -15,31 +14,57 @@ import { motion } from 'framer-motion';
  * VideoCallControls Component
  * 
  * Bottom control panel for video call interface
- * Provides buttons for camera, microphone, capture, and call management
+ * Provides buttons for camera, capture, upload, and call management
+ * Note: Microphone/voice input removed - TTS output only
  * 
  * @component
  * @param {Object} props
  * @param {boolean} props.isCameraOn - Whether camera is active
- * @param {boolean} props.isMicOn - Whether microphone is active
  * @param {boolean} props.canCapture - Whether image capture is available
  * @param {Function} props.onToggleCamera - Handler for camera toggle
  * @param {Function} props.onSwitchCamera - Handler for camera switch (front/back)
  * @param {Function} props.onCapture - Handler for image capture
- * @param {Function} props.onToggleMic - Handler for microphone toggle
+ * @param {Function} props.onUploadImage - Handler for image upload
  * @param {Function} props.onEndCall - Handler for ending call
  */
 const VideoCallControls = ({
   isCameraOn,
-  isMicOn,
   canCapture,
   onToggleCamera,
   onSwitchCamera,
   onCapture,
-  onToggleMic,
+  onUploadImage,
   onEndCall,
 }) => {
+  // File input ref for image upload
+  const fileInputRef = useRef(null);
+
+  // Handle file selection
+  const handleFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (file && onUploadImage) {
+      onUploadImage(file);
+    }
+    // Reset input to allow selecting the same file again
+    event.target.value = '';
+  };
+
+  // Trigger file input click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
-    <div className="h-32 bg-white/5 backdrop-blur-lg flex items-center justify-center space-x-12 pb-6 pt-4 z-20 rounded-t-[2rem] border-t border-white/5">
+    <div className="h-32 bg-white/5 backdrop-blur-lg flex items-center justify-center space-x-8 pb-6 pt-4 z-20 rounded-t-[2rem] border-t border-white/5">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+        aria-label="Chọn ảnh để upload"
+      />
       {/* Camera Toggle Button */}
       <Button
         type="text"
@@ -58,23 +83,7 @@ const VideoCallControls = ({
         aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
       />
 
-      {/* Microphone Toggle Button */}
-      <Button
-        type="text"
-        shape="circle"
-        size="large"
-        icon={isMicOn ? <AudioOutlined /> : <AudioMutedOutlined />}
-        onClick={onToggleMic}
-        className={`
-          w-14 h-14 flex items-center justify-center
-          transition-all duration-200
-          ${isMicOn 
-            ? 'bg-white/20 text-white hover:bg-white/30' 
-            : 'bg-white/10 text-white/50 hover:bg-white/20'
-          }
-        `}
-        aria-label={isMicOn ? 'Tắt mic' : 'Bật mic'}
-      />
+      {/* Note: Microphone button removed - no voice input support */}
 
       {/* Capture Button */}
       <motion.div
@@ -99,6 +108,17 @@ const VideoCallControls = ({
           aria-label="Chụp ảnh"
         />
       </motion.div>
+
+      {/* Upload Image Button */}
+      <Button
+        type="text"
+        shape="circle"
+        size="large"
+        icon={<PictureOutlined />}
+        onClick={handleUploadClick}
+        className="w-14 h-14 flex items-center justify-center bg-white/20 text-white hover:bg-white/30 transition-all duration-200"
+        aria-label="Upload ảnh"
+      />
 
       {/* Camera Switch Button */}
       {isCameraOn && (
@@ -152,12 +172,11 @@ const VideoCallControls = ({
 
 VideoCallControls.propTypes = {
   isCameraOn: PropTypes.bool.isRequired,
-  isMicOn: PropTypes.bool.isRequired,
   canCapture: PropTypes.bool.isRequired,
   onToggleCamera: PropTypes.func.isRequired,
   onSwitchCamera: PropTypes.func.isRequired,
   onCapture: PropTypes.func.isRequired,
-  onToggleMic: PropTypes.func.isRequired,
+  onUploadImage: PropTypes.func,
   onEndCall: PropTypes.func.isRequired,
 };
 

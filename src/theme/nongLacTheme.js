@@ -73,7 +73,7 @@ export const nongLacTheme = {
     paddingXS: 8,
     
     // Typography
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSize: 14,
     fontSizeLG: 16,
     fontSizeXL: 20,

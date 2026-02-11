@@ -276,13 +276,12 @@ export const useVideoCall = (userName, onUsage) => {
             console.log('Gemini Live is ready to talk');
             setStatus('listening');
             
-            // Trigger initial greeting from AI now that setup is complete
+            // SIMPLIFIED FLOW: Just greeting, no realtime analysis
             if (videoCallServiceRef.current) {
-              videoCallServiceRef.current.sendTextInput('Chào bà con nông dân thật nồng nhiệt và nhắc họ bật camera để Lạc Lạc hỗ trợ nhé. Hãy nói bằng tiếng Việt tự nhiên.');
+              videoCallServiceRef.current.sendTextInput('Chào bà con thật nồng nhiệt và nhắc họ bật camera rồi chụp ảnh cây trồng để Lạc Lạc phân tích nhé. Nói ngắn gọn 2-3 câu bằng tiếng Việt tự nhiên.');
             }
 
-            // Start background loops
-            startRealtimeAnalysis();
+            // REMOVED: startRealtimeAnalysis() - No background analysis
             startAudioKeepAlive();
           },
           onClose: () => {
@@ -426,44 +425,19 @@ export const useVideoCall = (userName, onUsage) => {
   }, []); // Empty deps - uses refs only
 
   // ============================================================================
-  // REALTIME ANALYSIS
+  // REALTIME ANALYSIS - REMOVED FOR SIMPLICITY
   // ============================================================================
   
-  /**
-   * Start sending low-res frames for realtime visual context
-   */
+  // Realtime analysis has been removed to optimize accuracy
+  // Now only analyzes when user explicitly captures an image
+  
   const startRealtimeAnalysis = useCallback(() => {
-    if (realtimeTimerRef.current) return;
-    
-    // Increased interval to 3 seconds to give AI more processing time per high-quality frame
-    realtimeTimerRef.current = setInterval(() => {
-      if (videoRef.current && videoCallServiceRef.current && isCameraOn && (status === 'listening' || status === 'speaking')) {
-        try {
-          // Capture Ultra-high-res frame for maximum recognition accuracy (0.9 quality)
-          const base64Image = captureFrame(videoRef.current, 0.9);
-          if (base64Image) {
-            const base64Data = base64Image.split(',')[1];
-            videoCallServiceRef.current.geminiService?.sendRealtimeInput({
-              type: 'image',
-              data: base64Data,
-              mimeType: 'image/jpeg'
-            });
-          }
-        } catch (e) {
-          // Fail silently for realtime frames
-        }
-      }
-    }, 3000); // Every 3 seconds
-  }, [isCameraOn, status]);
+    // Disabled - no background analysis
+    console.log('Realtime analysis disabled for optimal accuracy');
+  }, []);
 
-  /**
-   * Stop realtime analysis
-   */
   const stopRealtimeAnalysis = useCallback(() => {
-    if (realtimeTimerRef.current) {
-      clearInterval(realtimeTimerRef.current);
-      realtimeTimerRef.current = null;
-    }
+    // No-op since realtime is disabled
   }, []);
 
   /**
@@ -574,6 +548,7 @@ export const useVideoCall = (userName, onUsage) => {
   
   /**
    * Capture current video frame and send to AI for analysis
+   * OPTIMIZED: AI says "wait" first, then analyzes carefully
    */
   const captureAndAnalyze = useCallback(async () => {
     try {
@@ -582,28 +557,61 @@ export const useVideoCall = (userName, onUsage) => {
         return;
       }
       
+      console.log('=== CAPTURE AND ANALYZE START ===');
+      
       // Step 1: Trigger flash effect
       setFlash(true);
       setTimeout(() => setFlash(false), 150);
       
-      // Step 2: Capture frame from video
-      const base64Image = captureFrame(videoRef.current, 0.8);
+      // Step 2: Update status
+      setStatus('thinking');
+      setMascotMessage('Chờ Lạc Lạc 1 xíu nhé...');
+      
+      // Step 3: Wait for video to stabilize after flash
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Step 4: Capture HIGHEST QUALITY frame (0.98 for maximum detail)
+      const base64Image = captureFrame(videoRef.current, 0.98);
       
       if (!base64Image) {
         throw new Error('Failed to capture video frame');
       }
       
-      // Step 3: Update status to show analysis in progress
-      setStatus('thinking');
-      setMascotMessage('Đang phân tích hình ảnh...');
+      const imageSizeKB = (base64Image.length * 3 / 4 / 1024).toFixed(2);
+      console.log('Captured image size:', imageSizeKB, 'KB');
       
-      // Step 4: Send to AI for analysis
+      // Step 5: Send to AI with TWO-PHASE approach
       try {
         if (videoCallServiceRef.current && !isSimulationMode) {
-          // Use VideoCallService when available (Task 8)
-          await videoCallServiceRef.current.sendImageInput(base64Image);
+          // PHASE 1: Tell AI to say "wait" message first
+          console.log('Phase 1: Sending wait instruction...');
+          videoCallServiceRef.current.sendTextInput(
+            'Hãy nói với bà con: "Chờ Lạc Lạc 1 xíu nhé bà con, để Lạc Lạc xem kỹ hình ảnh này." ' +
+            'Chỉ nói câu này thôi, KHÔNG phân tích gì cả. Nói ngắn gọn bằng tiếng Việt.'
+          );
+          
+          // Wait for AI to say the wait message (2 seconds)
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // PHASE 2: Now send image for CAREFUL analysis
+          console.log('Phase 2: Sending image for analysis...');
+          
+          const analysisPrompt = `Bây giờ hãy QUAN SÁT KỸ LƯỠNG hình ảnh này và phân tích CHÍNH XÁC.
+
+QUAN TRỌNG - Hãy xem thật kỹ trước khi trả lời:
+- Nếu là NGƯỜI (có mặt người, tay, chân): Nói "Lạc Lạc thấy bà con đang đứng trước camera. Hãy chụp cây trồng để Lạc Lạc phân tích nhé!"
+- Nếu là CÂY TRỒNG (có lá, cành, thân cây): Nói CHÍNH XÁC tên cây + đánh giá tình trạng
+- Nếu là VẬT KHÁC (điện thoại, bàn, ghế, v.v.): Nói "Đây là [tên vật]. Bà con hãy chụp cây trồng để Lạc Lạc phân tích nhé!"
+
+Hãy chắc chắn 100% trước khi trả lời. Nếu thấy mặt người, tay người, chân người thì đó là NGƯỜI, không phải cây.
+
+Trả lời ngắn gọn 2-3 câu bằng tiếng Việt tự nhiên, phong cách Lạc Lạc.`;
+          
+          await videoCallServiceRef.current.sendImageInput(base64Image, analysisPrompt);
+          
+          console.log('Image sent successfully, waiting for AI analysis...');
         } else {
-          // Fallback to aiService for now (or in simulation mode)
+          // Fallback to aiService in simulation mode
           const { analyzePlantImage } = await import('../services/aiService');
           
           const result = await analyzePlantImage(
@@ -612,7 +620,6 @@ export const useVideoCall = (userName, onUsage) => {
           );
           
           if (result && result.success) {
-            // Update mascot with AI response
             setMascotMessage(result.result);
             setStatus('listening');
           } else {
@@ -622,7 +629,6 @@ export const useVideoCall = (userName, onUsage) => {
       } catch (analysisError) {
         console.error('AI analysis error:', analysisError);
         
-        // Handle specific error cases
         if (analysisError.message?.includes('hết lượt AI')) {
           setErrorMessage('Bạn đã sử dụng hết lượt AI. Vui lòng thử lại sau.');
         } else if (analysisError.message?.includes('đăng nhập')) {
@@ -633,14 +639,13 @@ export const useVideoCall = (userName, onUsage) => {
         
         setStatus('error');
         
-        // Log to Sentry if available
         if (window.Sentry) {
           window.Sentry.captureException(analysisError, {
             tags: { feature: 'video-call', action: 'captureAndAnalyze' },
             extra: { 
               isSimulationMode,
               hasVideoService: !!videoCallServiceRef.current,
-              imageSizeKB: (base64Image.length * 3) / 4 / 1024
+              imageSizeKB
             }
           });
         }
@@ -648,20 +653,20 @@ export const useVideoCall = (userName, onUsage) => {
         return;
       }
       
-      // Step 5: Call usage callback to track AI usage
+      // Step 6: Track AI usage
       if (onUsage && typeof onUsage === 'function') {
         try {
           onUsage();
         } catch (usageError) {
           console.error('Error calling onUsage callback:', usageError);
-          // Don't fail the entire operation if usage tracking fails
         }
       }
+      
+      console.log('=== CAPTURE AND ANALYZE END ===');
       
     } catch (error) {
       console.error('Error capturing and analyzing:', error);
       
-      // Set user-friendly error message
       if (error.message?.includes('capture')) {
         setErrorMessage('Không thể chụp hình ảnh từ camera');
       } else {
@@ -670,7 +675,6 @@ export const useVideoCall = (userName, onUsage) => {
       
       setStatus('error');
       
-      // Log to Sentry if available
       if (window.Sentry) {
         window.Sentry.captureException(error, {
           tags: { feature: 'video-call', action: 'captureAndAnalyze' },
@@ -763,6 +767,7 @@ export const useVideoCall = (userName, onUsage) => {
     toggleCamera,
     switchCamera,
     captureAndAnalyze,
+    uploadAndAnalyze: captureAndAnalyze, // Alias for backward compatibility
     toggleMic,
     
     // Computed properties

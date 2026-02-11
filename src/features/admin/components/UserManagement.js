@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Table, Tag, Select, Space, Button, Popconfirm, Typography } from 'antd';
 
-const UserManagement = ({ users, updateUserRole, verifyUser, deleteUser }) => {
+const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, deleteUser }) => {
   const columns = [
     {
       title: 'Người dùng',
@@ -65,10 +65,10 @@ const UserManagement = ({ users, updateUserRole, verifyUser, deleteUser }) => {
       title: 'Thao tác',
       key: 'actions',
       fixed: 'right',
-      width: 150,
+      width: 200,
       render: (_, record) => (
-        <Space size="middle">
-          {record.verificationStatus === 'pending' && (
+        <Space size="small">
+          {record.verificationStatus === 'pending' ? (
             <Button
               type="primary"
               size="small"
@@ -77,6 +77,22 @@ const UserManagement = ({ users, updateUserRole, verifyUser, deleteUser }) => {
             >
               Duyệt
             </Button>
+          ) : (
+            <Popconfirm
+              title="Hủy xác thực?"
+              description="Chuyển user về trạng thái chờ xác thực"
+              onConfirm={() => unverifyUser(record.id)}
+              okText="Hủy xác thực"
+              cancelText="Không"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                size="small"
+                className="text-xs h-7"
+              >
+                Hủy duyệt
+              </Button>
+            </Popconfirm>
           )}
           <Popconfirm
             title="Xóa người dùng này?"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Button, Modal } from 'antd';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, where, limit, startAfter, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
@@ -17,6 +17,7 @@ const HomePage = () => {
   const { user, userProfile } = useAuth();
   const { showLoginModal, setShowLoginModal } = useAuthGuard();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   // Posts state
   const [posts, setPosts] = useState([]);
@@ -220,7 +221,7 @@ const HomePage = () => {
 
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             {/* Left Sidebar - Categories */}
             <Col xs={24} lg={6}>
               <div className="space-y-6">
@@ -276,6 +277,39 @@ const HomePage = () => {
                   selectedCategory={selectedCategory}
                   onCategoryChange={handleCategoryChange}
                 />
+
+                {/* Quick AI Tools Sidebar - Desktop Only */}
+                <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 bg-blue-50/50">
+                    <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                      <span className="text-blue-500">🤖</span>
+                      Công cụ AI
+                    </h3>
+                  </div>
+                  <div className="p-3 grid grid-cols-1 gap-2">
+                    <button 
+                      onClick={() => navigate('/plant-doctor')}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors text-gray-700 text-sm font-medium"
+                    >
+                      <span className="text-xl">🩺</span>
+                      Bác sĩ cây trồng
+                    </button>
+                    <button 
+                      onClick={() => navigate('/market-insights')}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 transition-colors text-gray-700 text-sm font-medium"
+                    >
+                      <span className="text-xl">📈</span>
+                      Thị trường
+                    </button>
+                    <button 
+                      onClick={() => navigate('/agri-map')}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors text-gray-700 text-sm font-medium"
+                    >
+                      <span className="text-xl">🗺️</span>
+                      Bản đồ nông vụ
+                    </button>
+                  </div>
+                </div>
               </div>
             </Col>
 

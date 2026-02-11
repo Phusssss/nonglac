@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,13 +6,13 @@
 
 @layer base {
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
   }
 }
 
 /* Beta banner global styles */
 .beta-banner {
-  background: linear-gradient(135deg, #ff7875, #ff4d4f);
+  background: linear-gradient(135deg, #40a9ff, #1890ff);
   color: white;
   text-align: center;
   padding: 8px 16px;
@@ -24,12 +24,8 @@
 }
 
 .beta-banner .beta-text {
-  animation: beta-pulse 2s infinite;
-}
-
-@keyframes beta-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
+  /* Removed pulse animation to reduce distraction as per design review */
+  opacity: 1;
 }
 
 /* LacLac Mascot Animations - Optimized for Brand 3.0 */

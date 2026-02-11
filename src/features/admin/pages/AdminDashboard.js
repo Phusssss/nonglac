@@ -83,7 +83,18 @@ const AdminDashboard = () => {
                 message.success('Đã xác thực và cập nhật nhiệm vụ');
                 loadTabData('users'); 
               } catch (e) { message.error(e.message); }
-            }} 
+            }}
+            unverifyUser={async (id) => { 
+              try {
+                const result = await adminService.unverifyUser(id);
+                if (result.pointsDeducted > 0) {
+                  message.success(`Đã hủy xác thực và trừ ${result.pointsDeducted} điểm`);
+                } else {
+                  message.success('Đã hủy xác thực');
+                }
+                loadTabData('users'); 
+              } catch (e) { message.error(e.message); }
+            }}
             deleteUser={async (id) => { 
               await adminService.deleteUser(id);
               loadTabData('users');

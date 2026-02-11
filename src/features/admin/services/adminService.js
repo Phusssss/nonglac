@@ -75,6 +75,17 @@ export const adminService = {
     return await missionsService.verifyUserPhone(userId);
   },
 
+  async unverifyUser(userId) {
+    // Cập nhật users collection
+    await updateDoc(doc(db, 'users', userId), { 
+      verificationStatus: 'pending',
+      phoneVerified: false
+    });
+    
+    // Cập nhật userMissions collection - reset nhiệm vụ verify_phone
+    return await missionsService.unverifyUserPhone(userId);
+  },
+
   async updateUserRole(userId, role) {
     return await updateDoc(doc(db, 'users', userId), { role });
   },

@@ -359,6 +359,63 @@ export const missionsService = {
   },
 
   /**
+   * Hủy xác thực số điện thoại (gọi từ admin)
+   * @param {string} userId - ID của user
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async unverifyUserPhone(userId) {
+    try {
+      // 1. Lấy dữ liệu missions
+      const result = await this.getUserMissionsData(userId);
+      if (!result.success) return result;
+
+      const userData = result.data;
+      const currentMissions = Array.isArray(userData.missions) ? userData.missions : MISSIONS_CONSTANTS.DEFAULT_MISSIONS;
+
+      // 2. Tìm nhiệm vụ verify_phone và kiểm tra trạng thái
+      const verifyMission = currentMissions.find(m => m.id === 'verify_phone');
+      let pointsToDeduct = 0;
+
+      // Nếu nhiệm vụ đã claimed (đã nhận thưởng), trừ điểm
+      if (verifyMission && verifyMission.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED) {
+        pointsToDeduct = verifyMission.reward || 50;
+      }
+
+      // 3. Reset nhiệm vụ về trạng thái pending
+      const updatedMissions = currentMissions.map(mission => {
+        if (mission.id === 'verify_phone') {
+          return {
+            ...mission,
+            currentProgress: 0,
+            status: MISSIONS_CONSTANTS.MISSION_STATUS.PENDING
+          };
+        }
+        return mission;
+      });
+
+      // 4. Trừ điểm nếu đã nhận thưởng
+      const newScore = Math.max(0, (userData.score || 0) - pointsToDeduct);
+      const newBadges = this.checkUnlockedBadges(newScore, userData.unlockedBadges || []);
+
+      // 5. Lưu lại
+      const updateResult = await this.updateUserMissionsData(userId, { 
+        missions: updatedMissions,
+        score: newScore,
+        unlockedBadges: newBadges
+      });
+
+      return {
+        success: updateResult.success,
+        pointsDeducted: pointsToDeduct,
+        error: updateResult.error
+      };
+    } catch (error) {
+      console.error('Error unverifying user phone:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
    * Cập nhật tiến độ nhiệm vụ
    * @param {string} userId - ID của user
    * @param {string} missionId - ID của nhiệm vụ

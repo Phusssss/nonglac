@@ -161,8 +161,8 @@ class VideoCallService {
         throw error;
       }
       
-      // Set session as active
-      this.isSessionActive = true;
+      // Note: isSessionActive will be set to true in onOpen callback when session truly opens
+      // Don't set it here to avoid timing issues
       
       addBreadcrumb('Video call session started successfully', 'service', 'info');
     } catch (error) {
@@ -512,11 +512,20 @@ class VideoCallService {
         return;
       }
       
-      this.geminiService.sendRealtimeInput({
-        type: 'audio',
-        data: audioData.data,
-        mimeType: audioData.mimeType
-      });
+      // Ensure session is ready before sending audio
+      if (!this.geminiService.session) {
+        console.warn('Gemini session not ready for audio');
+        return;
+      }
+      
+      // Only send audio if session is truly connected
+      if (this.isSessionActive) {
+        this.geminiService.sendRealtimeInput({
+          type: 'audio',
+          data: audioData.data,
+          mimeType: audioData.mimeType
+        });
+      }
     } catch (error) {
       // Don't throw - audio errors shouldn't break the session
       console.warn('Error sending audio input:', error.message);
@@ -529,7 +538,7 @@ class VideoCallService {
    * @param {string} base64Image - Base64 encoded image
    * @param {string} prompt - Optional prompt for image analysis
    */
-  sendImageInput(base64Image, prompt = 'Hãy xem kỹ hình ảnh này. Nếu đây là cây trồng, hãy cho biết tên cây và tình trạng sức khỏe của nó kèm lời khuyên ngắn gọn. Nếu đây không phải là cây trồng, hãy nói cho bà con biết đây không phải cây và nhờ bà con chụp lại cây nhé. Trả lời ngắn gọn 2-3 câu bằng tiếng Việt tự nhiên.') {
+  async sendImageInput(base64Image, prompt = 'Hãy xem kỹ hình ảnh này. Nếu đây là cây trồng, hãy cho biết tên cây và tình trạng sức khỏe của nó kèm lời khuyên ngắn gọn. Nếu đây không phải là cây trồng, hãy nói cho bà con biết đây không phải cây và nhờ bà con chụp lại cây nhé. Trả lời ngắn gọn 2-3 câu bằng tiếng Việt tự nhiên.') {
     try {
       addBreadcrumb('Sending image to Gemini', 'service', 'info');
       
@@ -555,9 +564,26 @@ class VideoCallService {
         );
       }
       
+      // Critical: Wait until session is truly open before sending image
+      // This is important for first image to be recognized correctly
+      let attempts = 0;
+      while (!this.geminiService.session && attempts < 15) {
+        console.log(`Waiting for session to be ready... (attempt ${attempts + 1}/15)`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      
+      if (!this.geminiService.session) {
+        throw createVideoCallError(
+          'api/session-not-ready',
+          'Session chưa sẵn sàng sau khi chờ đợi',
+          { attemptsWaited: attempts }
+        );
+      }
+      
       // Extract base64 data (remove data:image/jpeg;base64, prefix if present)
-      const base64Data = base64Image.includes(',') 
-        ? base64Image.split(',')[1] 
+      const base64Data = base64Image.includes(',')
+        ? base64Image.split(',')[1]
         : base64Image;
       
       if (!base64Data) {
@@ -568,14 +594,23 @@ class VideoCallService {
         );
       }
       
-      // Send image with prompt
+      // CRITICAL: Increase delay to 1500ms (1.5 seconds) for MAXIMUM accuracy
+      // This ensures Gemini fully processes the high-quality image
+      // Especially important for distinguishing between people and plants
       this.geminiService.sendRealtimeInput({
         type: 'image',
         data: base64Data,
         mimeType: 'image/jpeg'
       });
       
-      // Send prompt as text
+      console.log('Image sent, waiting 1500ms for thorough processing...');
+      
+      // Wait for image to be FULLY processed and analyzed
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('Sending analysis prompt after thorough image processing...');
+      
+      // Send prompt as text after image is received and processed
       this.geminiService.sendRealtimeInput({
         type: 'text',
         data: prompt
@@ -641,6 +676,15 @@ class VideoCallService {
         );
       }
       
+      if (!this.geminiService.session) {
+        console.warn('Gemini session not ready for text input');
+        throw createVideoCallError(
+          'api/session-not-ready',
+          'Session chưa sẵn sàng',
+          { session: !!this.geminiService.session }
+        );
+      }
+      
       this.geminiService.sendRealtimeInput({
         type: 'text',
         data: text
@@ -674,28 +718,144 @@ class VideoCallService {
    */
   async handleToolCall(toolCall) {
     try {
-      addBreadcrumb(`Handling tool call: ${toolCall.name}`, 'service', 'info');
+      // Handle Gemini Live API tool call format
+      // Format: { functionCalls: [{ name: '...', args: {...}, id: '...' }] }
       
-      if (!toolCall || !toolCall.name) {
+      const responses = [];
+      
+      // Check if this is the new functionCalls format
+      if (toolCall?.functionCalls && Array.isArray(toolCall.functionCalls)) {
+        console.log(`Processing ${toolCall.functionCalls.length} function calls`);
+        
+        // Process each function call
+        for (const call of toolCall.functionCalls) {
+          const toolName = call.name;
+          const toolArgs = call.args || {};
+          const toolId = call.id;
+          
+          if (!toolName) {
+            console.warn('Invalid function call: missing name');
+            continue;
+          }
+          
+          addBreadcrumb(`Handling tool call: ${toolName}`, 'service', 'info');
+          
+          // In simulation mode, simulate tool execution
+          if (this.isSimulationMode) {
+            this._simulateToolCall(toolName);
+            continue;
+          }
+          
+          // Normalize toolCall object for handlers
+          const normalizedToolCall = {
+            id: toolId,
+            name: toolName,
+            args: toolArgs
+          };
+          
+          // Notify callback about tool call
+          if (this.callbacks.onToolCall) {
+            try {
+              this.callbacks.onToolCall(toolName);
+            } catch (callbackError) {
+              console.error('Error in onToolCall callback:', callbackError);
+              reportError(callbackError, {
+                component: 'VideoCallService',
+                action: 'handleToolCall',
+                step: 'callback',
+                severity: 'warning'
+              });
+            }
+          }
+          
+          try {
+            switch (toolName) {
+              case 'lookup_price':
+                responses.push(await this._handleLookupPrice(normalizedToolCall));
+                break;
+                
+              case 'diagnose_disease':
+                responses.push(await this._handleDiagnoseDisease(normalizedToolCall));
+                break;
+                
+              case 'find_agri_store':
+                responses.push(await this._handleFindAgriStore(normalizedToolCall));
+                break;
+                
+              default:
+                console.warn(`Unknown tool call: ${toolName}`);
+                addBreadcrumb(`Unknown tool: ${toolName}`, 'service', 'warning');
+                responses.push({
+                  id: toolId,
+                  name: toolName,
+                  response: {
+                    result: 'Xin lỗi, tôi không thể thực hiện yêu cầu này.'
+                  }
+                });
+            }
+          } catch (toolError) {
+            console.error(`Error executing tool ${toolName}:`, toolError);
+            
+            const wrappedError = createVideoCallError(
+              'tool/execution-failed',
+              `Lỗi khi thực hiện ${toolName}`,
+              { toolName: toolName, originalError: toolError.message }
+            );
+            
+            reportError(wrappedError, {
+              component: 'VideoCallService',
+              action: 'handleToolCall',
+              toolName: toolName,
+              severity: 'error'
+            });
+            
+            // Return error response instead of throwing
+            responses.push({
+              id: toolId,
+              name: toolName,
+              response: {
+                result: 'Xin lỗi, có lỗi xảy ra khi thực hiện yêu cầu này.'
+              }
+            });
+          }
+        }
+        
+        return responses;
+      }
+      
+      // Handle old/alternative format: { name, id, args } or { action: { name, args, id } }
+      const toolName = toolCall?.name || toolCall?.action?.name;
+      const toolArgs = toolCall?.args || toolCall?.action?.args || {};
+      const toolId = toolCall?.id || toolCall?.action?.id;
+      
+      if (!toolName) {
+        console.warn('Invalid tool call structure:', JSON.stringify(toolCall, null, 2));
         throw createVideoCallError(
           'tool/invalid-params',
           'Tool call không hợp lệ',
-          { toolCall: toolCall ? 'missing name' : 'null' }
+          { toolCall: JSON.stringify(toolCall) }
         );
       }
       
+      addBreadcrumb(`Handling tool call: ${toolName}`, 'service', 'info');
+      
       // In simulation mode, simulate tool execution
       if (this.isSimulationMode) {
-        this._simulateToolCall(toolCall.name);
+        this._simulateToolCall(toolName);
         return [];
       }
       
-      const responses = [];
+      // Normalize toolCall object for handlers
+      const normalizedToolCall = {
+        id: toolId,
+        name: toolName,
+        args: toolArgs
+      };
       
       // Notify callback about tool call
       if (this.callbacks.onToolCall) {
         try {
-          this.callbacks.onToolCall(toolCall.name);
+          this.callbacks.onToolCall(toolName);
         } catch (callbackError) {
           console.error('Error in onToolCall callback:', callbackError);
           reportError(callbackError, {
@@ -708,50 +868,50 @@ class VideoCallService {
       }
       
       try {
-        switch (toolCall.name) {
+        switch (toolName) {
           case 'lookup_price':
-            responses.push(await this._handleLookupPrice(toolCall));
+            responses.push(await this._handleLookupPrice(normalizedToolCall));
             break;
             
           case 'diagnose_disease':
-            responses.push(await this._handleDiagnoseDisease(toolCall));
+            responses.push(await this._handleDiagnoseDisease(normalizedToolCall));
             break;
             
           case 'find_agri_store':
-            responses.push(await this._handleFindAgriStore(toolCall));
+            responses.push(await this._handleFindAgriStore(normalizedToolCall));
             break;
             
           default:
-            console.warn(`Unknown tool call: ${toolCall.name}`);
-            addBreadcrumb(`Unknown tool: ${toolCall.name}`, 'service', 'warning');
+            console.warn(`Unknown tool call: ${toolName}`);
+            addBreadcrumb(`Unknown tool: ${toolName}`, 'service', 'warning');
             responses.push({
-              id: toolCall.id,
-              name: toolCall.name,
+              id: toolId,
+              name: toolName,
               response: {
                 result: 'Xin lỗi, tôi không thể thực hiện yêu cầu này.'
               }
             });
         }
       } catch (toolError) {
-        console.error(`Error executing tool ${toolCall.name}:`, toolError);
+        console.error(`Error executing tool ${toolName}:`, toolError);
         
         const wrappedError = createVideoCallError(
           'tool/execution-failed',
-          `Lỗi khi thực hiện ${toolCall.name}`,
-          { toolName: toolCall.name, originalError: toolError.message }
+          `Lỗi khi thực hiện ${toolName}`,
+          { toolName: toolName, originalError: toolError.message }
         );
         
         reportError(wrappedError, {
           component: 'VideoCallService',
           action: 'handleToolCall',
-          toolName: toolCall.name,
+          toolName: toolName,
           severity: 'error'
         });
         
         // Return error response instead of throwing
         responses.push({
-          id: toolCall.id,
-          name: toolCall.name,
+          id: toolId,
+          name: toolName,
           response: {
             result: 'Xin lỗi, có lỗi xảy ra khi thực hiện yêu cầu này.'
           }
@@ -761,21 +921,36 @@ class VideoCallService {
       return responses;
     } catch (error) {
       console.error('Error handling tool call:', error);
+      console.error('Original toolCall object:', JSON.stringify(toolCall, null, 2));
+      
+      const toolNameAtError = toolCall?.name || toolCall?.action?.name || toolCall?.functionCalls?.[0]?.name;
+      const toolIdAtError = toolCall?.id || toolCall?.action?.id || toolCall?.functionCalls?.[0]?.id;
       
       const wrappedError = error.code ? error : createVideoCallError(
         'tool/execution-failed',
         getVideoCallErrorMessage(error),
-        { toolName: toolCall?.name, originalError: error.message }
+        { toolName: toolNameAtError, originalError: error.message }
       );
       
       reportError(wrappedError, {
         component: 'VideoCallService',
         action: 'handleToolCall',
-        toolName: toolCall?.name,
+        toolName: toolNameAtError,
         severity: 'error'
       });
       
-      // Return empty array instead of throwing to prevent session break
+      // Return error response with proper format instead of empty array
+      if (toolNameAtError && toolIdAtError) {
+        return [{
+          id: toolIdAtError,
+          name: toolNameAtError,
+          response: {
+            result: 'Xin lỗi, có lỗi xảy ra khi thực hiện yêu cầu này.'
+          }
+        }];
+      }
+      
+      // If we can't extract tool info, return empty array to prevent session break
       return [];
     }
   }
@@ -787,8 +962,8 @@ class VideoCallService {
    */
   sendToolResponse(responses) {
     try {
-      if (!responses || !Array.isArray(responses)) {
-        console.warn('Tool responses must be an array');
+      if (!responses || !Array.isArray(responses) || responses.length === 0) {
+        console.warn('Tool responses must be a non-empty array');
         return;
       }
       
@@ -807,9 +982,17 @@ class VideoCallService {
         return;
       }
       
+      // Format responses for Gemini Live API
+      // Ensure each response has required fields
+      const formattedResponses = responses.map(resp => ({
+        id: resp.id,
+        name: resp.name,
+        response: resp.response || { result: '' }
+      }));
+      
       // Session is already resolved, use directly
       this.geminiService.session.sendToolResponse({ 
-        functionResponses: responses 
+        functionResponses: formattedResponses 
       });
       
       addBreadcrumb('Tool responses sent to Gemini', 'service', 'info');
@@ -1057,13 +1240,20 @@ class VideoCallService {
       // Process audio chunks
       this.scriptProcessor.onaudioprocess = (event) => {
         try {
+          // Double-check session is active and connected
           if (!this.isSessionActive) return;
+          if (!this.geminiService || !this.geminiService.isServiceConnected()) return;
+          if (!this.geminiService.session) return;
           
           const inputData = event.inputBuffer.getChannelData(0);
           const pcmData = createPcmBlob(inputData);
           
-          // Send to Gemini
-          this.sendAudioInput(pcmData);
+          // Send to Gemini with error handling
+          try {
+            this.sendAudioInput(pcmData);
+          } catch (sendError) {
+            console.warn('Failed to send audio chunk:', sendError.message);
+          }
         } catch (processError) {
           console.error('Error processing audio chunk:', processError);
           reportError(processError, {
@@ -1144,6 +1334,9 @@ class VideoCallService {
           console.log('Connected to Gemini Live');
           addBreadcrumb('Gemini Live connection opened', 'service', 'info');
           
+          // Mark session as active - ready to receive audio/video
+          this.isSessionActive = true;
+          
           if (this.callbacks.onStatusChange) {
             this.callbacks.onStatusChange('listening');
           }
@@ -1206,6 +1399,9 @@ class VideoCallService {
         try {
           console.log('Disconnected from Gemini Live');
           addBreadcrumb('Gemini Live connection closed', 'service', 'info');
+          
+          // Mark session as inactive
+          this.isSessionActive = false;
           
           if (this.callbacks.onStatusChange) {
             this.callbacks.onStatusChange('disconnected');
@@ -1276,6 +1472,11 @@ class VideoCallService {
    */
   _handleGeminiMessage(message) {
     try {
+      // Debug logging for tool calls
+      if (message.toolCall) {
+        console.log('Incoming toolCall from Gemini:', JSON.stringify(message.toolCall, null, 2));
+      }
+      
       // Handle setup complete - session is ready
       if (message.setupComplete) {
         console.log('Gemini Live setup complete');
@@ -1323,9 +1524,23 @@ class VideoCallService {
       
       // Handle tool calls
       if (message.toolCall) {
-        this.handleToolCall(message.toolCall).then(responses => {
-          this.sendToolResponse(responses);
-        });
+        this.handleToolCall(message.toolCall)
+          .then(responses => {
+            if (responses && responses.length > 0) {
+              this.sendToolResponse(responses);
+            } else {
+              console.warn('Tool call returned empty responses');
+            }
+          })
+          .catch(toolError => {
+            console.error('Error in tool call handler:', toolError);
+            reportError(toolError, {
+              component: 'VideoCallService',
+              action: '_handleGeminiMessage',
+              step: 'toolCallHandler',
+              severity: 'error'
+            });
+          });
       }
     } catch (error) {
       console.error('Error handling Gemini message:', error);
@@ -1356,22 +1571,29 @@ class VideoCallService {
     try {
       const { product, region } = toolCall.args;
       
-      // Mock price data (in real app, fetch from API)
-      const mockPrices = {
-        'lúa': '6,500 - 7,000 đồng/kg',
-        'cà phê': '45,000 - 50,000 đồng/kg',
-        'tiêu': '120,000 - 130,000 đồng/kg',
-        'cao su': '35,000 - 40,000 đồng/kg'
-      };
+      // Import real-time price service
+      const { getRealTimePrice } = await import('./realTimePriceService');
       
-      const price = mockPrices[product.toLowerCase()] || 'Không có thông tin giá';
-      const regionText = region ? ` tại ${region}` : '';
+      // Fetch real price from internet
+      const priceData = await getRealTimePrice(product, region);
       
+      if (priceData && priceData.success) {
+        const regionText = region ? ` tại ${region}` : '';
+        return {
+          id: toolCall.id,
+          name: 'lookup_price',
+          response: {
+            result: `Giá ${product}${regionText} hôm nay là ${priceData.price} ${priceData.unit}. ${priceData.trend ? `Xu hướng: ${priceData.trend}.` : ''} Nguồn: ${priceData.source}, cập nhật ${priceData.lastUpdated}.`
+          }
+        };
+      }
+      
+      // Fallback if real-time data unavailable
       return {
         id: toolCall.id,
         name: 'lookup_price',
         response: {
-          result: `Giá ${product}${regionText} hiện tại: ${price}`
+          result: `Xin lỗi bà con, Lạc Lạc chưa tìm được giá ${product} lúc này. Bà con thử hỏi lại sau nhé.`
         }
       };
     } catch (error) {
@@ -1380,7 +1602,7 @@ class VideoCallService {
         id: toolCall.id,
         name: 'lookup_price',
         response: {
-          result: 'Xin lỗi, không thể tra cứu giá lúc này.'
+          result: 'Xin lỗi bà con, Lạc Lạc đang gặp chút vấn đề khi tra giá. Bà con thử lại sau nhé.'
         }
       };
     }

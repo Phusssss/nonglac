@@ -270,6 +270,31 @@ const useAudioProcessor = (inputSampleRate = 16000, outputSampleRate = 24000) =>
     nextStartTimeRef.current = 0;
   }, []);
   
+  /**
+   * Pause audio input processing (to prevent feedback during AI speech)
+   */
+  const pauseInput = useCallback(() => {
+    if (scriptProcessorRef.current) {
+      // Store current callback and disable processing
+      const currentCallback = scriptProcessorRef.current.onaudioprocess;
+      scriptProcessorRef.current._pausedCallback = currentCallback;
+      scriptProcessorRef.current.onaudioprocess = null;
+      console.log('Audio input paused to prevent feedback');
+    }
+  }, []);
+  
+  /**
+   * Resume audio input processing
+   */
+  const resumeInput = useCallback(() => {
+    if (scriptProcessorRef.current && scriptProcessorRef.current._pausedCallback) {
+      // Restore the paused callback
+      scriptProcessorRef.current.onaudioprocess = scriptProcessorRef.current._pausedCallback;
+      scriptProcessorRef.current._pausedCallback = null;
+      console.log('Audio input resumed');
+    }
+  }, []);
+  
   return {
     inputContext: inputContextRef.current,
     outputContext: outputContextRef.current,
@@ -277,6 +302,8 @@ const useAudioProcessor = (inputSampleRate = 16000, outputSampleRate = 24000) =>
     outputAnalyser: outputAnalyserRef.current,
     processInput,
     playOutput,
+    pauseInput,
+    resumeInput,
     cleanup
   };
 };

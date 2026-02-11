@@ -7,7 +7,7 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(fast-check|pure-rand|@google)/)'
+    'node_modules/(?!(fast-check|pure-rand|@google|google-auth-library)/)'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

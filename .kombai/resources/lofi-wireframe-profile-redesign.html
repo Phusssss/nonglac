@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Trang Hồ Sơ Nông Lạc - Phong cách chuyên nghiệp</title>
+    <style>
+        body {
+            font-family: "Comic Sans MS", "Be Vietnam Pro", sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding-bottom: 50px;
+        }
+        .cover-photo {
+            height: 250px;
+            background: #ccc;
+            border-bottom: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .profile-main-header {
+            background: #fff;
+            padding: 0 40px 20px;
+            border-bottom: 2px solid #000;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .avatar-container {
+            position: absolute;
+            top: -80px;
+            left: 40px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-info-row {
+            margin-top: 90px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .user-meta h1 { margin: 0; font-size: 32px; }
+        .user-meta p { margin: 5px 0; color: #666; }
+        .action-btns { display: flex; gap: 10px; }
+        .btn {
+            border: 2px solid #000;
+            padding: 10px 20px;
+            background: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-primary { background: #e8f5e9; }
+        
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            padding: 0 20px;
+        }
+        .sidebar-card {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .stat-val { font-weight: bold; font-size: 18px; }
+        .stat-lbl { font-size: 11px; color: #888; }
+        
+        .content-area {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 12px;
+            min-height: 500px;
+            overflow: hidden;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #000;
+            background: #fafafa;
+        }
+        .tab-item {
+            padding: 15px 30px;
+            font-weight: bold;
+            border-right: 1px solid #ccc;
+        }
+        .tab-active { background: #fff; border-bottom: 3px solid #4CAF50; }
+        
+        .post-mock {
+            padding: 20px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .reuse-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- New Cover Photo Feature -->
+        <div class="cover-photo">
+            <span style="font-weight: bold; color: #666;">[Ảnh bìa nông trại: 1200x300]</span>
+            <button class="btn" style="position: absolute; bottom: 10px; right: 10px; font-size: 12px;">Thay đổi ảnh bìa</button>
+        </div>
+
+        <div class="profile-main-header">
+            <div class="avatar-container">
+                <span style="font-size: 60px;">👨‍🌾</span>
+            </div>
+            
+            <!-- REUSABLE: ProfileHeader (Modified Layout) -->
+            <div class="header-info-row">
+                <span class="reuse-badge" title="src/features/profile/components/ProfileHeader.js">ProfileHeader</span>
+                <div class="user-meta">
+                    <h1>Nguyễn Văn A</h1>
+                    <p>⭐ Chuyên gia cây ăn trái | 📍 Tiền Giang</p>
+                    <p style="font-size: 13px;">Gia nhập từ tháng 01/2024</p>
+                </div>
+                <div class="action-btns">
+                    <button class="btn btn-primary">Chỉnh sửa hồ sơ</button>
+                    <button class="btn">Cài đặt</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <!-- REUSABLE: ProfileSidebar -->
+                <div class="sidebar-card">
+                    <span class="reuse-badge" title="src/features/profile/components/ProfileSidebar.js">ProfileSidebar</span>
+                    <h3 style="margin-top: 0;">Giới thiệu</h3>
+                    <p style="font-size: 14px; line-height: 1.5;">Hơn 20 năm kinh nghiệm trồng sầu riêng và bưởi da xanh theo tiêu chuẩn GlobalGAP...</p>
+                    
+                    <div class="stats-grid">
+                        <div><div class="stat-val">1.2k</div><div class="stat-lbl">Theo dõi</div></div>
+                        <div><div class="stat-val">450</div><div class="stat-lbl">Đang theo</div></div>
+                        <div><div class="stat-val">86</div><div class="stat-lbl">Bài viết</div></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3 style="margin-top: 0;">Chuyên môn</h3>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <span style="background: #eee; padding: 4px 10px; border-radius: 15px; font-size: 12px;">Sầu riêng</span>
+                        <span style="background: #eee; padding: 4px 10px; border-radius: 15px; font-size: 12px;">Phân hữu cơ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content-area">
+                <!-- REUSABLE: ProfileTabs -->
+                <div class="tabs">
+                    <span class="reuse-badge" title="src/features/profile/components/ProfileTabs.js">ProfileTabs</span>
+                    <div class="tab-item tab-active">Bài viết</div>
+                    <div class="tab-item">Sản phẩm</div>
+                    <div class="tab-item">Đánh giá</div>
+                </div>
+
+                <!-- REUSABLE: ProfileContent -->
+                <div class="feed-container" style="position: relative;">
+                    <span class="reuse-badge" title="src/features/profile/components/ProfileContent.js">ProfileContent</span>
+                    <div class="post-mock">
+                        <div style="font-weight: bold;">Kỹ thuật xử lý ra hoa nghịch vụ...</div>
+                        <p style="font-size: 13px; color: #666;">2 ngày trước • Trong mục Trồng trọt</p>
+                        <div style="background: #eee; height: 100px; margin: 10px 0; border: 1px solid #000;">[Ảnh bài viết]</div>
+                    </div>
+                    <div class="post-mock">
+                        <div style="font-weight: bold;">Chia sẻ cách phòng trừ sâu đục thân...</div>
+                        <p style="font-size: 13px; color: #666;">1 tuần trước • Trong mục Cây ăn quả</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

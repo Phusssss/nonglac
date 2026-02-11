@@ -4,14 +4,14 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useMarketplace } from '../hooks';
 import { MARKETPLACE_CONSTANTS } from '../constants';
-import {
-  ProductGrid,
-  MarketplaceFilters,
-  ProductPostForm,
-  ProductImageGallery,
-  ContactModal,
-  MarketplaceHeader
-} from '../components';
+import ProductGrid from '../components/ProductGrid';
+  import MarketplaceFilters from '../components/MarketplaceFilters';
+  import ProductPostForm from '../components/ProductPostForm';
+  import ProductImageGallery from '../components/ProductImageGallery';
+  import ContactModal from '../components/ContactModal';
+  import MarketplaceHeader from '../components/MarketplaceHeader';
+  import ProductDetailModal from '../components/ProductDetailModal';
+import { marketplaceService } from '../services';
 import EnhancedLoginModal from '../../../components/enhanced/EnhancedLoginModal';
 import '../components/marketplace.css';
 
@@ -30,6 +30,7 @@ const Marketplace = () => {
 
   const [postFormOpen, setPostFormOpen] = useState(false);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [productDetailOpen, setProductDetailOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -91,6 +92,10 @@ const Marketplace = () => {
             products={filteredProducts}
             loading={loading}
             onContactClick={handleContactClick}
+            onProductClick={(product) => {
+              setSelectedProduct(product);
+              setProductDetailOpen(true);
+            }}
             user={user}
           />
         </div>
@@ -124,6 +129,15 @@ const Marketplace = () => {
         onClose={() => setContactModalOpen(false)}
         product={selectedProduct}
         seller={selectedSeller}
+      />
+
+      <ProductDetailModal
+        product={selectedProduct}
+        open={productDetailOpen}
+        onClose={() => setProductDetailOpen(false)}
+        user={user}
+        onContactClick={handleContactClick}
+        formatPrice={marketplaceService.formatPrice}
       />
 
       <EnhancedLoginModal

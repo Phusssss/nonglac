@@ -1,12 +1,13 @@
 import React from 'react';
 import { Row, Col, Skeleton } from 'antd';
-import { ProductCard } from '../components';
+import ProductCard from './ProductCard';
 import { marketplaceService } from '../services';
 
 const ProductGrid = ({ 
   products = [], 
   loading, 
   onContactClick, 
+  onProductClick,
   user 
 }) => {
   // Guard clause for invalid products
@@ -50,6 +51,7 @@ const ProductGrid = ({
             <ProductCard
               product={product}
               onContactClick={onContactClick}
+              onProductClick={onProductClick}
               getTrustScoreIcon={marketplaceService.getTrustScoreIcon}
               formatPrice={marketplaceService.formatPrice}
               formatDate={marketplaceService.formatDate}
