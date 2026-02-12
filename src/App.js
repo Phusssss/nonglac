@@ -17,6 +17,8 @@ import { initPerformanceMonitoring } from './utils/performanceMonitor';
 import { initHealthMonitoring } from './utils/healthCheck';
 import DailyBotScheduler from './components/DailyBotScheduler';
 import versionService from './services/versionService';
+import { ProtectionProvider } from './contexts/ProtectionContext';
+import protectionConfig from './config/protectionConfig';
 
 // Lazy load components
 const Home = React.lazy(() => import('./features/home'));
@@ -83,9 +85,10 @@ function App() {
       <HelmetProvider>
         <ConfigProvider theme={nongLacTheme}>
           <AntApp>
-            <AuthProvider>
-              <ChatProvider>
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <ProtectionProvider config={protectionConfig}>
+              <AuthProvider>
+                <ChatProvider>
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AdvancedSEO 
                 title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
                 description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime."
@@ -152,8 +155,9 @@ function App() {
                 <ChatBot />
               </Suspense>
               </Router>
-              </ChatProvider>
-            </AuthProvider>
+                </ChatProvider>
+              </AuthProvider>
+            </ProtectionProvider>
           </AntApp>
         </ConfigProvider>
       </HelmetProvider>
