@@ -6,10 +6,12 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useMissions } from '../hooks';
 import { MISSIONS_CONSTANTS } from '../constants';
 import { missionsUtils } from '../utils';
+import { missionsService } from '../services';
 import {
   MissionCard,
   BadgeCard,
-  UltimateRewardCard
+  UltimateRewardCard,
+  BadgeSelectionModal
 } from '../components';
 import EnhancedLoginModal from '../../../components/enhanced/EnhancedLoginModal';
 
@@ -19,6 +21,7 @@ const { Title, Text } = Typography;
  * Trang chính của missions feature
  */
 const MissionsPage = () => {
+  const { user } = useAuth();
   const { requireAuth, showLoginModal, setShowLoginModal } = useAuthGuard();
   const {
     missionsData,
@@ -28,6 +31,81 @@ const MissionsPage = () => {
 
   const [activeTab, setActiveTab] = useState('missions');
   const [actionLoading, setActionLoading] = useState(false);
+  const [showBadgeSelection, setShowBadgeSelection] = useState(false);
+
+  // Kiểm tra xem có cần hiển thị modal chọn badge không
+  React.useEffect(() => {
+    const checkAndCleanupBadges = async () => {
+      if (!user) return;
+      
+      // Kiểm tra dữ liệu hợp lệ
+      if (!missionsData.unlockedBadges || !Array.isArray(missionsData.unlockedBadges)) {
+        return;
+      }
+
+      // Cleanup dữ liệu cũ nếu có nhiều badge profession
+      const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+      const userProfessionBadges = missionsData.unlockedBadges.filter(
+        badge => professionBadges.includes(badge)
+      );
+
+      // Nếu có nhiều hơn 1 badge profession, cleanup
+      if (userProfessionBadges.length > 1) {
+        const result = await missionsService.cleanupProfessionBadges(user.uid);
+        if (result.success && result.cleaned) {
+          notification.info({
+            message: 'Đã cập nhật danh hiệu',
+            description: `Hệ thống đã giữ lại danh hiệu: ${MISSIONS_CONSTANTS.BADGES[result.keptBadge]?.label}`,
+            duration: 5
+          });
+          // Reload để cập nhật UI
+          setTimeout(() => window.location.reload(), 1000);
+          return;
+        }
+      }
+
+      // Kiểm tra có cần hiển thị modal chọn badge không
+      if (missionsData.score >= 500) {
+        const hasSelectedProfession = professionBadges.some(badge => 
+          missionsData.unlockedBadges.includes(badge)
+        );
+        
+        if (!hasSelectedProfession) {
+          setShowBadgeSelection(true);
+        }
+      }
+    };
+
+    checkAndCleanupBadges();
+  }, [user, missionsData.score, missionsData.unlockedBadges]);
+
+  /**
+   * Xử lý chọn badge chuyên môn
+   */
+  const handleSelectBadge = async (badgeId) => {
+    if (!user) return;
+    
+    setActionLoading(true);
+    const result = await missionsService.selectProfessionBadge(user.uid, badgeId);
+    setActionLoading(false);
+    
+    if (result.success) {
+      setShowBadgeSelection(false);
+      notification.success({
+        message: 'Chọn danh hiệu thành công!',
+        description: `Bạn đã chọn danh hiệu: ${result.badge.label}`,
+        duration: 5
+      });
+      
+      // Reload missions data
+      window.location.reload();
+    } else {
+      notification.error({
+        message: 'Lỗi',
+        description: result.error || 'Không thể chọn danh hiệu'
+      });
+    }
+  };
 
   /**
    * Xử lý thực hiện nhiệm vụ
@@ -287,6 +365,14 @@ const MissionsPage = () => {
 
 
         
+        {/* Badge Selection Modal */}
+        <BadgeSelectionModal
+          open={showBadgeSelection}
+          onSelect={handleSelectBadge}
+          onCancel={() => {}} // Không cho phép đóng modal
+          loading={actionLoading}
+        />
+
         {/* Enhanced Login Modal */}
         <EnhancedLoginModal
           open={showLoginModal}

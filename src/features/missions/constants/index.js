@@ -168,7 +168,8 @@ export const MISSIONS_CONSTANTS = {
       icon: '✅',
       minScore: 200,
       type: 'bronze',
-      benefits: ['Bài viết được ưu tiên hiển thị']
+      benefits: ['Bài viết được ưu tiên hiển thị'],
+      autoUnlock: true
     },
     PRODUCER: {
       id: 'producer',
@@ -177,7 +178,9 @@ export const MISSIONS_CONSTANTS = {
       icon: '🌾',
       minScore: 500,
       type: 'silver',
-      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn']
+      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
+      requiresSelection: true,
+      selectionGroup: 'profession'
     },
     SUPPLIER: {
       id: 'supplier',
@@ -186,7 +189,9 @@ export const MISSIONS_CONSTANTS = {
       icon: '🚚',
       minScore: 500,
       type: 'silver',
-      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn']
+      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
+      requiresSelection: true,
+      selectionGroup: 'profession'
     },
     TRADER: {
       id: 'trader',
@@ -195,7 +200,9 @@ export const MISSIONS_CONSTANTS = {
       icon: '🏪',
       minScore: 500,
       type: 'silver',
-      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn']
+      benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
+      requiresSelection: true,
+      selectionGroup: 'profession'
     },
     CONNECTOR: {
       id: 'connector',
@@ -204,7 +211,8 @@ export const MISSIONS_CONSTANTS = {
       icon: '🥇',
       minScore: 1000,
       type: 'gold',
-      benefits: ['Nhận Nút Bạc vật lý', 'Ghép xe logistics', 'BNPL', 'Ưu tiên tối đa']
+      benefits: ['Nhận Nút Bạc vật lý', 'Ghép xe logistics', 'BNPL', 'Ưu tiên tối đa'],
+      autoUnlock: true
     },
     LOAN_ELIGIBLE: {
       id: 'loan_eligible',
@@ -214,7 +222,8 @@ export const MISSIONS_CONSTANTS = {
       minScore: 1500,
       type: 'diamond',
       benefits: ['Vay vốn ngân hàng', 'Tất cả quyền lợi cao cấp'],
-      comingSoon: '2027'
+      comingSoon: '2027',
+      autoUnlock: true
     }
   },
 

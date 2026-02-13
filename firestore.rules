@@ -125,5 +125,17 @@ service cloud.firestore {
     match /analytics/{analyticsId} {
       allow read, write: if isAdmin();
     }
+    
+    // Missions collection - users can read and update their own missions data
+    match /userMissions/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && 
+        // Chỉ cho phép update các field được phép
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['missions', 'score', 'unlockedBadges', 'selectedProfessionBadge', 
+                    'dailyLoginStreak', 'lastLoginDate', 'lastUpdated']);
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -513,11 +513,150 @@ export const missionsService = {
    * @returns {string[]} Danh sách badges đã mở khóa
    */
   checkUnlockedBadges(score, currentBadges = []) {
+    // Kiểm tra xem user đã có badge trong nhóm profession chưa
+    const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+    const hasSelectedProfession = professionBadges.some(badge => 
+      currentBadges.includes(badge)
+    );
+
     const allBadges = Object.entries(MISSIONS_CONSTANTS.BADGES)
-      .filter(([_, badge]) => score >= badge.minScore)
+      .filter(([badgeKey, badge]) => {
+        // Điều kiện 1: Đạt đủ điểm
+        if (score < badge.minScore) return false;
+        
+        // Điều kiện 2: Nếu là badge yêu cầu chọn (profession group)
+        if (badge.requiresSelection && badge.selectionGroup === 'profession') {
+          // Chỉ thêm nếu badge này đã có trong currentBadges (đã được chọn)
+          // Không tự động thêm badge mới trong nhóm này
+          return currentBadges.includes(badgeKey);
+        }
+        
+        // Điều kiện 3: Badge tự động mở khóa
+        return badge.autoUnlock || !badge.requiresSelection;
+      })
       .map(([key, _]) => key);
     
     return [...new Set([...currentBadges, ...allBadges])];
+  },
+
+  /**
+   * Kiểm tra xem user có đủ điểm để chọn badge chuyên môn không
+   * @param {number} score - Điểm số hiện tại
+   * @param {string[]} currentBadges - Badges hiện tại
+   * @returns {boolean} True nếu đủ điểm và chưa chọn
+   */
+  canSelectProfessionBadge(score, currentBadges = []) {
+    // Kiểm tra đủ 500 điểm
+    if (score < 500) return false;
+    
+    // Kiểm tra đã chọn badge chuyên môn chưa
+    const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+    const hasSelectedProfession = professionBadges.some(badge => 
+      currentBadges.includes(badge)
+    );
+    
+    return !hasSelectedProfession;
+  },
+
+  /**
+   * Chọn badge chuyên môn cho user
+   * @param {string} userId - ID của user
+   * @param {string} badgeId - ID của badge được chọn (PRODUCER, SUPPLIER, hoặc TRADER)
+   * @returns {Promise<object>} Kết quả
+   */
+  async selectProfessionBadge(userId, badgeId) {
+    try {
+      // Validate badge ID
+      const validBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+      if (!validBadges.includes(badgeId)) {
+        return { success: false, error: 'Badge không hợp lệ' };
+      }
+
+      // Lấy dữ liệu user hiện tại
+      const userData = await this.getUserMissionsData(userId);
+      
+      // Đảm bảo unlockedBadges là array
+      const currentBadges = Array.isArray(userData.unlockedBadges) 
+        ? userData.unlockedBadges 
+        : [];
+      
+      // Kiểm tra điều kiện
+      if (!this.canSelectProfessionBadge(userData.score, currentBadges)) {
+        return { success: false, error: 'Không đủ điều kiện hoặc đã chọn badge' };
+      }
+
+      // Xóa tất cả badge profession cũ (nếu có - cleanup dữ liệu cũ)
+      const cleanedBadges = currentBadges.filter(
+        badge => !validBadges.includes(badge)
+      );
+
+      // Thêm badge mới vào danh sách
+      const updatedBadges = [...cleanedBadges, badgeId];
+
+      // Cập nhật Firestore
+      await this.updateUserMissionsData(userId, {
+        unlockedBadges: updatedBadges,
+        selectedProfessionBadge: badgeId
+      });
+
+      return { 
+        success: true, 
+        badge: MISSIONS_CONSTANTS.BADGES[badgeId]
+      };
+    } catch (error) {
+      console.error('Error selecting profession badge:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Cleanup dữ liệu cũ - xóa các badge profession thừa
+   * Dùng cho user đã có nhiều hơn 1 badge profession từ logic cũ
+   * @param {string} userId - ID của user
+   * @returns {Promise<object>} Kết quả
+   */
+  async cleanupProfessionBadges(userId) {
+    try {
+      const userData = await this.getUserMissionsData(userId);
+      
+      // Kiểm tra dữ liệu hợp lệ
+      if (!userData || !userData.unlockedBadges || !Array.isArray(userData.unlockedBadges)) {
+        return { success: true, cleaned: false, message: 'Không có dữ liệu badge' };
+      }
+
+      const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+      
+      // Tìm các badge profession user đang có
+      const userProfessionBadges = userData.unlockedBadges.filter(
+        badge => professionBadges.includes(badge)
+      );
+
+      // Nếu có nhiều hơn 1 badge profession
+      if (userProfessionBadges.length > 1) {
+        // Giữ lại badge đầu tiên, xóa các badge còn lại
+        const badgeToKeep = userProfessionBadges[0];
+        const cleanedBadges = userData.unlockedBadges.filter(
+          badge => !professionBadges.includes(badge) || badge === badgeToKeep
+        );
+
+        await this.updateUserMissionsData(userId, {
+          unlockedBadges: cleanedBadges,
+          selectedProfessionBadge: badgeToKeep
+        });
+
+        return { 
+          success: true, 
+          cleaned: true,
+          keptBadge: badgeToKeep,
+          removedBadges: userProfessionBadges.filter(b => b !== badgeToKeep)
+        };
+      }
+
+      return { success: true, cleaned: false, message: 'Không cần cleanup' };
+    } catch (error) {
+      console.error('Error cleaning up profession badges:', error);
+      return { success: false, error: error.message };
+    }
   },
 
   /**

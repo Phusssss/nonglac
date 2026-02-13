@@ -11,7 +11,8 @@ const { Title, Text } = Typography;
 const BadgeCard = ({ 
   badgeId, 
   isUnlocked, 
-  currentScore 
+  currentScore,
+  canSelect = false
 }) => {
   const badge = missionsUtils.getBadgeInfo(badgeId);
   
@@ -19,21 +20,22 @@ const BadgeCard = ({
 
   const badgeColor = missionsUtils.getBadgeColor(badge.type);
   const pointsNeeded = Math.max(0, badge.minScore - currentScore);
+  const isSelectable = badge.requiresSelection && currentScore >= badge.minScore && !isUnlocked;
 
   return (
     <Card 
       className="text-center h-full" 
       style={{ 
-        opacity: isUnlocked ? 1 : 0.5, 
-        background: isUnlocked ? '#f6ffed' : '#f5f5f5',
-        borderColor: isUnlocked ? badgeColor : undefined
+        opacity: isUnlocked ? 1 : (isSelectable ? 0.8 : 0.5), 
+        background: isUnlocked ? '#f6ffed' : (isSelectable ? '#fffbe6' : '#f5f5f5'),
+        borderColor: isUnlocked ? badgeColor : (isSelectable ? '#faad14' : undefined)
       }}
     >
       {/* Badge Icon */}
       <div style={{ 
         fontSize: window.innerWidth < 768 ? '36px' : '48px', 
         marginBottom: '12px',
-        filter: isUnlocked ? 'none' : 'grayscale(100%)'
+        filter: isUnlocked ? 'none' : (isSelectable ? 'none' : 'grayscale(100%)')
       }}>
         {badge.icon}
       </div>
@@ -53,6 +55,12 @@ const BadgeCard = ({
             status="success" 
             text="Đã đạt" 
             style={{ color: MISSIONS_CONSTANTS.COLORS.SUCCESS }}
+          />
+        ) : isSelectable ? (
+          <Badge 
+            status="warning" 
+            text="Có thể chọn" 
+            style={{ color: MISSIONS_CONSTANTS.COLORS.WARNING }}
           />
         ) : (
           <Badge 

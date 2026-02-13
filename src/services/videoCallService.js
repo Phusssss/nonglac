@@ -594,23 +594,17 @@ class VideoCallService {
         );
       }
       
-      // CRITICAL: Increase delay to 1500ms (1.5 seconds) for MAXIMUM accuracy
-      // This ensures Gemini fully processes the high-quality image
-      // Especially important for distinguishing between people and plants
+      // Send image and prompt together with small delay to ensure correct processing
       this.geminiService.sendRealtimeInput({
         type: 'image',
         data: base64Data,
         mimeType: 'image/jpeg'
       });
       
-      console.log('Image sent, waiting 1500ms for thorough processing...');
+      // Add small delay to ensure image is processed before prompt
+      await new Promise(resolve => setTimeout(resolve, 150));
       
-      // Wait for image to be FULLY processed and analyzed
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Sending analysis prompt after thorough image processing...');
-      
-      // Send prompt as text after image is received and processed
+      // Send prompt as text after image is received
       this.geminiService.sendRealtimeInput({
         type: 'text',
         data: prompt
@@ -1571,29 +1565,22 @@ class VideoCallService {
     try {
       const { product, region } = toolCall.args;
       
-      // Import real-time price service
-      const { getRealTimePrice } = await import('./realTimePriceService');
+      // Mock price data (in real app, fetch from API)
+      const mockPrices = {
+        'lúa': '6,500 - 7,000 đồng/kg',
+        'cà phê': '45,000 - 50,000 đồng/kg',
+        'tiêu': '120,000 - 130,000 đồng/kg',
+        'cao su': '35,000 - 40,000 đồng/kg'
+      };
       
-      // Fetch real price from internet
-      const priceData = await getRealTimePrice(product, region);
+      const price = mockPrices[product.toLowerCase()] || 'Không có thông tin giá';
+      const regionText = region ? ` tại ${region}` : '';
       
-      if (priceData && priceData.success) {
-        const regionText = region ? ` tại ${region}` : '';
-        return {
-          id: toolCall.id,
-          name: 'lookup_price',
-          response: {
-            result: `Giá ${product}${regionText} hôm nay là ${priceData.price} ${priceData.unit}. ${priceData.trend ? `Xu hướng: ${priceData.trend}.` : ''} Nguồn: ${priceData.source}, cập nhật ${priceData.lastUpdated}.`
-          }
-        };
-      }
-      
-      // Fallback if real-time data unavailable
       return {
         id: toolCall.id,
         name: 'lookup_price',
         response: {
-          result: `Xin lỗi bà con, Lạc Lạc chưa tìm được giá ${product} lúc này. Bà con thử hỏi lại sau nhé.`
+          result: `Giá ${product}${regionText} hiện tại: ${price}`
         }
       };
     } catch (error) {
@@ -1602,7 +1589,7 @@ class VideoCallService {
         id: toolCall.id,
         name: 'lookup_price',
         response: {
-          result: 'Xin lỗi bà con, Lạc Lạc đang gặp chút vấn đề khi tra giá. Bà con thử lại sau nhé.'
+          result: 'Xin lỗi, không thể tra cứu giá lúc này.'
         }
       };
     }
