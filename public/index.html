@@ -55,49 +55,84 @@
     
     <!-- Critical CSS for above-the-fold content -->
     <style>
-      *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background-color:#f9fafb;line-height:1.5}
-      .loading{display:flex;justify-content:center;align-items:center;height:100vh;background:#f9fafb}
-      .spinner{width:40px;height:40px;border:4px solid #e5e7eb;border-top:4px solid #4CAF50;border-radius:50%;animation:spin 1s linear infinite}
-      @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background-color:#f9fafb;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      .loading{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;background:#f9fafb;z-index:9999}
+      .spinner{width:48px;height:48px;border:5px solid #e5e7eb;border-top:5px solid #4CAF50;border-radius:50%;animation:spin .8s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
       img{max-width:100%;height:auto;display:block}
-      .hero-section{min-height:60vh;background:#4CAF50;color:white;display:flex;align-items:center;justify-content:center}
+      .hero-section{min-height:60vh;background:linear-gradient(135deg,#4CAF50 0%,#45a049 100%);color:#fff;display:flex;align-items:center;justify-content:center}
+      /* Prevent FOUC */
+      .fonts-loading body{opacity:0}
+      .fonts-loaded body{opacity:1;transition:opacity .3s}
     </style>
     
-    <!-- Preconnect to external origins -->
+    <!-- Preconnect to external origins (highest priority) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://nonglac-2025.firebaseapp.com">
-    <link rel="preconnect" href="https://www.googleapis.com">
-    <link rel="preconnect" href="https://apis.google.com">
-    <link rel="preconnect" href="https://ui-avatars.com">
-    <link rel="preconnect" href="https://raw.githubusercontent.com">
-    
-    <!-- Resource hints for critical images -->
-    <link rel="prefetch" href="https://images.unsplash.com">
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com">
+    <link rel="dns-prefetch" href="//www.googleapis.com">
+    <link rel="dns-prefetch" href="//apis.google.com">
+    <link rel="dns-prefetch" href="//ui-avatars.com">
+    <link rel="dns-prefetch" href="//raw.githubusercontent.com">
     <link rel="dns-prefetch" href="//lh3.googleusercontent.com">
     <link rel="dns-prefetch" href="//firestore.googleapis.com">
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/static/css/main.css" as="style">
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2" as="font" type="font/woff2" crossorigin>
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <!-- Load fonts asynchronously -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     </noscript>
     
     <title>NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam | Cộng đồng nông dân 4.0</title>
     
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-910KJYRSXM"></script>
+    <!-- Google Analytics - Load async with delay -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-910KJYRSXM');
+      gtag('config', 'G-910KJYRSXM', {
+        'send_page_view': false
+      });
+      
+      // Delay GA loading
+      setTimeout(function() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-910KJYRSXM';
+        document.head.appendChild(script);
+      }, 3000);
     </script>
     
+    <!-- Defer non-critical scripts -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY" defer></script>
+    
+    <!-- Performance optimization script -->
+    <script>
+      // Mark fonts as loading
+      document.documentElement.className += ' fonts-loading';
+      
+      // Detect when fonts are loaded
+      if ('fonts' in document) {
+        Promise.all([
+          document.fonts.load('400 1em Inter'),
+          document.fonts.load('600 1em Inter')
+        ]).then(function() {
+          document.documentElement.className = document.documentElement.className.replace('fonts-loading', 'fonts-loaded');
+        });
+      }
+      
+      // Early connection quality detection
+      if ('connection' in navigator) {
+        var conn = navigator.connection;
+        if (conn.saveData || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') {
+          document.documentElement.setAttribute('data-connection', 'slow');
+        }
+      }
+    </script>
   </head>
   <body>
     <noscript>Bạn cần bật JavaScript để chạy ứng dụng này.</noscript>

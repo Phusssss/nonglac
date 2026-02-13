@@ -19,6 +19,7 @@ import DailyBotScheduler from './components/DailyBotScheduler';
 import versionService from './services/versionService';
 import { ProtectionProvider } from './contexts/ProtectionContext';
 import protectionConfig from './config/protectionConfig';
+import { initPerformanceOptimizer, scheduleIdleTask } from './utils/performanceOptimizer';
 
 // Lazy load components
 const Home = React.lazy(() => import('./features/home'));
@@ -60,20 +61,17 @@ const LoadingSpinner = () => (
 
 function App() {
   useEffect(() => {
-    // Initialize Sentry first
+    // Initialize critical services immediately
     initSentry();
+    initPerformanceOptimizer();
     
-    // Initialize performance optimizations
-    initPerformanceOptimizations();
-    
-    // Initialize performance monitoring
-    initPerformanceMonitoring();
-    
-    // Initialize health monitoring
-    initHealthMonitoring();
-    
-    // Initialize version service for automatic cache management
-    versionService.init();
+    // Defer non-critical initializations
+    scheduleIdleTask(() => {
+      initPerformanceOptimizations();
+      initPerformanceMonitoring();
+      initHealthMonitoring();
+      versionService.init();
+    });
     
     return () => {
       // Cleanup if needed
