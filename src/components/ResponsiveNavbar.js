@@ -76,6 +76,7 @@ const ResponsiveNavbar = () => {
     { text: 'ChatBot AI', action: 'chatbot', icon: <ChatRounded fontSize="small" />, color: 'bg-blue-500' },
     { text: 'Bác sĩ cây trồng', path: '/plant-doctor', icon: <MedicalServicesRounded fontSize="small" />, color: 'bg-green-500' },
     { text: 'Thị trường', path: '/market-insights', icon: <TrendingUpRounded fontSize="small" />, color: 'bg-orange-500' },
+    { text: 'Giá nông sản', path: '/gia-ca-phe-hom-nay', icon: <TrendingUpRounded fontSize="small" />, color: 'bg-yellow-500' },
     { text: 'Bản đồ nông vụ', path: '/agri-map', icon: <MapRounded fontSize="small" />, color: 'bg-purple-500' },
   ], []);
 

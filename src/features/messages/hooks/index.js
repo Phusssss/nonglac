@@ -111,6 +111,28 @@ export const useMessages = () => {
   }, [activeConversation, user?.uid]);
 
   /**
+   * Gui tin nhan den mot cuoc tro chuyen cu the
+   */
+  const sendMessageToConversation = useCallback(async (conversationId, content, type = 'text') => {
+    if (!conversationId || !user?.uid || !content.trim()) {
+      return { success: false, error: 'Thieu thong tin can thiet' };
+    }
+
+    setSending(true);
+    try {
+      const result = await messagesService.sendMessage(
+        conversationId,
+        user.uid,
+        content.trim(),
+        type
+      );
+      return result;
+    } finally {
+      setSending(false);
+    }
+  }, [user?.uid]);
+
+  /**
    * Tạo cuộc trò chuyện mới
    */
   const createConversation = useCallback(async (otherUserId) => {
@@ -153,6 +175,7 @@ export const useMessages = () => {
     // Actions
     setActiveConversation,
     sendMessage,
+    sendMessageToConversation,
     createConversation,
     markAsRead,
     getUserInfo

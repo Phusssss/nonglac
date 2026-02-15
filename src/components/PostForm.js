@@ -247,6 +247,7 @@ const PostForm = ({ onPostCreated }) => {
             <GitHubImageUpload 
               onUploadComplete={handleMediaUpload}
               onBatchUploadComplete={handleBatchMediaUpload}
+              autoUpload={true}
               supportVideo={true}
               maxSize={5} // 5MB for images
               maxVideoSize={100} // 100MB for videos

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, Button, Carousel } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
@@ -20,8 +20,8 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
             {images.map((image, index) => (
               <div key={index}>
                 <div 
+                  className="product-detail-image-frame"
                   style={{ 
-                    height: 400, 
                     background: '#f0f0f0',
                     cursor: 'pointer',
                     position: 'relative'
@@ -31,6 +31,9 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
                   <img
                     src={image}
                     alt={`${productName} ${index + 1}`}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={index === 0 ? 'high' : 'low'}
                     style={{ 
                       width: '100%', 
                       height: '100%', 
@@ -101,7 +104,7 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
         </div>
       ) : (
         <div style={{ 
-          height: 400, 
+          minHeight: 280, 
           background: 'linear-gradient(135deg, #f6ffed, #d9f7be)',
           display: 'flex', 
           alignItems: 'center', 
@@ -136,4 +139,4 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
   );
 };
 
-export default ProductImageCarousel;
+export default memo(ProductImageCarousel);

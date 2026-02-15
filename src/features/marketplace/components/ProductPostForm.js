@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
+import {
+  Card,
   Form,
-  Input, 
-  Select, 
-  Button, 
-  Row, 
-  Col, 
+  Input,
+  Select,
+  Button,
+  Row,
+  Col,
   InputNumber,
   Upload,
   message,
   Space,
   Typography
 } from 'antd';
-import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import { githubStorage } from '../../../services/githubStorage';
+import { UploadOutlined } from '@ant-design/icons';
+import { firebaseStorageService } from '../../../services/firebaseStorageService';
+import { MARKETPLACE_CONSTANTS } from '../constants';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -25,35 +26,102 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [imageUrls, setImageUrls] = useState([]);
 
-  const categories = [
-    { value: 'flowers', label: 'Hoa cắt cành' },
-    { value: 'fruits', label: 'Trái cây' },
-    { value: 'meat_seafood', label: 'Thịt & Hải sản' },
-    { value: 'vegetables', label: 'Rau củ & Nấm' }
-  ];
+  const getCurrentCoordinates = () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: Number(position.coords.latitude.toFixed(6)),
+            lng: Number(position.coords.longitude.toFixed(6)),
+            accuracy: position.coords.accuracy || null,
+            capturedAt: new Date().toISOString()
+          });
+        },
+        () => {
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 120000
+        }
+      );
+    });
+  };
+
+  const reverseGeocodeCoordinates = async (lat, lng) => {
+    try {
+      const endpoint = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`;
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json'
+        }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const address = data?.address || {};
+
+      const ward = address.suburb || address.quarter || address.village || address.hamlet || '';
+      const district = address.city_district || address.district || address.county || '';
+      const province = address.state || address.province || address.city || '';
+
+      const compactParts = [ward, district, province].filter(Boolean);
+
+      return {
+        ward,
+        district,
+        province,
+        country: address.country || '',
+        displayName: compactParts.length > 0 ? compactParts.join(', ') : (data?.display_name || ''),
+        fullAddress: data?.display_name || ''
+      };
+    } catch (error) {
+      console.warn('Reverse geocode failed:', error);
+      return null;
+    }
+  };
+
+  const categories = (MARKETPLACE_CONSTANTS.PRODUCT_CATEGORIES || []).map((item) => ({
+    value: item,
+    label: item
+  }));
 
   const units = [
     'kg', 'tấn', 'cây', 'cành', 'bó', 'thùng', 'bao', 'lít', 'chai', 'hộp'
   ];
 
   const handleImageUpload = async (file) => {
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      message.error('Kích thước ảnh không được vượt quá 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      message.error('Kích thước ảnh không được vượt quá 15MB');
       return false;
     }
-    
-    // Validate file type
+
     if (!file.type.startsWith('image/')) {
       message.error('Chỉ chấp nhận file ảnh (JPG, PNG, GIF)');
       return false;
     }
-    
+
     try {
-      const imageUrl = await githubStorage.uploadImage(file, 'marketplace-products');
-      setImageUrls(prev => [...prev, imageUrl]);
+      const uploadResult = await firebaseStorageService.uploadImage(file, {
+        folder: 'marketplace-products',
+        maxSizeMB: 10,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+        outputType: 'image/jpeg'
+      });
+      const imageUrl = uploadResult.url;
+      setImageUrls((prev) => [...prev, imageUrl]);
       message.success(`Upload ảnh ${file.name} thành công`);
-      return false; // Prevent default upload behavior
+      return false;
     } catch (error) {
       console.error('Image upload error:', error);
       if (error.code === 'storage/unauthorized') {
@@ -77,13 +145,25 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
 
     setLoading(true);
     try {
+      const locationCoords = await getCurrentCoordinates();
+      let locationResolved = null;
+
+      if (locationCoords) {
+        locationResolved = await reverseGeocodeCoordinates(locationCoords.lat, locationCoords.lng);
+      } else {
+        message.warning('Không lấy được vị trí hiện tại. Sản phẩm vẫn được đăng bình thường.');
+      }
+
       const productData = {
         ...values,
         images: imageUrls,
+        locationCoords,
+        locationResolved,
+        locationLabel: locationResolved?.displayName || values.address || null,
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
+
       await onSubmit(productData);
       form.resetFields();
       setImageUrls([]);
@@ -112,8 +192,8 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
-      <Card>
+    <div style={{ width: '100%', padding: '8px 0' }}>
+      <Card style={{ width: '100%' }}>
         <Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
           🌾 Đăng bán sản phẩm
         </Title>
@@ -124,41 +204,39 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
           onFinish={handleSubmit}
           requiredMark={false}
         >
-          {/* Tên sản phẩm */}
           <Form.Item
             name="name"
             label="Tên sản phẩm"
             rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
           >
-            <Input 
+            <Input
               placeholder="VD: Cà chua bi sạch Đà Lạt"
               size="large"
             />
           </Form.Item>
 
-          {/* Danh mục & Đơn vị */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="category"
                 label="Danh mục"
                 rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
               >
                 <Select placeholder="Chọn danh mục" size="large">
-                  {categories.map(cat => (
+                  {categories.map((cat) => (
                     <Option key={cat.value} value={cat.value}>{cat.label}</Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="unit"
                 label="Đơn vị"
                 rules={[{ required: true, message: 'Vui lòng chọn đơn vị' }]}
               >
                 <Select placeholder="Chọn đơn vị" size="large">
-                  {units.map(unit => (
+                  {units.map((unit) => (
                     <Option key={unit} value={unit}>{unit}</Option>
                   ))}
                 </Select>
@@ -166,9 +244,8 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
-          {/* Giá & Số lượng */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="price"
                 label="Giá bán"
@@ -178,13 +255,13 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                   placeholder="0"
                   size="large"
                   style={{ width: '100%' }}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/,/g, '')}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => (value || '').replace(/,/g, '')}
                   addonAfter="VNĐ"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="quantity"
                 label="Số lượng có sẵn"
@@ -199,7 +276,6 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
-          {/* Mô tả */}
           <Form.Item
             name="description"
             label="Mô tả sản phẩm"
@@ -211,9 +287,8 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             />
           </Form.Item>
 
-          {/* Thông tin liên hệ */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="supplier"
                 label="Tên người bán/Cơ sở"
@@ -222,7 +297,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 <Input placeholder="Tên của bạn hoặc tên cơ sở" size="large" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="phone"
                 label="Số điện thoại"
@@ -236,7 +311,6 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
-          {/* Địa chỉ */}
           <Form.Item
             name="address"
             label="Địa chỉ"
@@ -245,14 +319,13 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             <Input placeholder="Địa chỉ cụ thể (xã, huyện, tỉnh)" size="large" />
           </Form.Item>
 
-          {/* Upload ảnh */}
           <Form.Item label="Hình ảnh sản phẩm" required>
             <Upload {...uploadProps}>
               <Button icon={<UploadOutlined />} size="large" block>
                 Chọn ảnh ({imageUrls.length} ảnh đã chọn)
               </Button>
             </Upload>
-            
+
             {imageUrls.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <Row gutter={[8, 8]}>
@@ -284,7 +357,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                             minWidth: 20
                           }}
                           onClick={() => {
-                            setImageUrls(prev => prev.filter((_, i) => i !== index));
+                            setImageUrls((prev) => prev.filter((_, i) => i !== index));
                           }}
                         >
                           ×
@@ -297,15 +370,14 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             )}
           </Form.Item>
 
-          {/* Buttons */}
           <Form.Item style={{ marginTop: 32, marginBottom: 0 }}>
             <Space style={{ width: '100%', justifyContent: 'center' }}>
               <Button size="large" onClick={onCancel}>
                 Hủy
               </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 size="large"
                 style={{

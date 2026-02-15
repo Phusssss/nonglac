@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Tabs, Typography, Row, Col } from 'antd';
 
 const { Title, Text, Paragraph } = Typography;
-const { TabPane } = Tabs;
 
 const ProductTabs = ({ product }) => {
+  const [resolvedLocation, setResolvedLocation] = useState('');
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -18,66 +19,187 @@ const ProductTabs = ({ product }) => {
     return d.toLocaleDateString('vi-VN');
   };
 
+  const lat = Number(product?.locationCoords?.lat);
+  const lng = Number(product?.locationCoords?.lng);
+  const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
+
+  const mapEmbedUrl = hasCoordinates
+    ? `https://maps.google.com/maps?q=${lat},${lng}&z=15&ie=UTF8&iwloc=&output=embed`
+    : '';
+
+  const mapOpenUrl = hasCoordinates ? `https://www.google.com/maps?q=${lat},${lng}` : '';
+
+  const storedLocationText = useMemo(() => {
+    return (
+      product?.locationResolved?.displayName
+      || product?.locationLabel
+      || product?.address
+      || product?.location
+      || ''
+    );
+  }, [product]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (storedLocationText) {
+      setResolvedLocation(storedLocationText);
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!hasCoordinates) {
+      setResolvedLocation('');
+      return () => {
+        active = false;
+      };
+    }
+
+    const fetchReverse = async () => {
+      try {
+        const endpoint = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`;
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const address = data?.address || {};
+
+        const ward = address.suburb || address.quarter || address.village || address.hamlet || '';
+        const district = address.city_district || address.district || address.county || '';
+        const province = address.state || address.province || address.city || '';
+
+        const compact = [ward, district, province].filter(Boolean).join(', ');
+
+        if (active) {
+          setResolvedLocation(compact || data?.display_name || '');
+        }
+      } catch (error) {
+        if (active) {
+          setResolvedLocation('');
+        }
+      }
+    };
+
+    fetchReverse();
+
+    return () => {
+      active = false;
+    };
+  }, [hasCoordinates, lat, lng, storedLocationText]);
+
+  const tabItems = [
+    {
+      key: 'description',
+      label: 'Mô tả sản phẩm',
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <Paragraph>{product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}</Paragraph>
+
+          <Title level={5}>Thông tin chi tiết:</Title>
+          <ul style={{ paddingLeft: 20 }}>
+            <li>Danh mục: {product.category}</li>
+            {product.quantity && <li>Số lượng: {product.quantity} {product.unit}</li>}
+            {!!resolvedLocation && <li>Khu vực: {resolvedLocation}</li>}
+            {!resolvedLocation && product.location && <li>Khu vực: {product.location}</li>}
+            {product.transactionIntent && (
+              <li>
+                Loại giao dịch:{' '}
+                {product.transactionIntent === 'b2b'
+                  ? 'Bán buôn'
+                  : product.transactionIntent === 'export'
+                    ? 'Xuất khẩu'
+                    : 'Bán lẻ'}
+              </li>
+            )}
+          </ul>
+
+          {hasCoordinates && (
+            <div style={{ marginTop: 20 }}>
+              <Title level={5}>Vị trí trên bản đồ:</Title>
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+                <iframe
+                  title="product-location-map"
+                  src={mapEmbedUrl}
+                  width="100%"
+                  height="280"
+                  style={{ border: 0, display: 'block' }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <a
+                href={mapOpenUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-block', marginTop: 8 }}
+              >
+                Mở trên Google Maps
+              </a>
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'specifications',
+      label: 'Thông số kỹ thuật',
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={8}><Text strong>Tên sản phẩm:</Text></Col>
+            <Col xs={24} sm={16}><Text>{product.name}</Text></Col>
+
+            <Col xs={24} sm={8}><Text strong>Danh mục:</Text></Col>
+            <Col xs={24} sm={16}><Text>{product.category}</Text></Col>
+
+            <Col xs={24} sm={8}><Text strong>Giá:</Text></Col>
+            <Col xs={24} sm={16}><Text>{formatPrice(product.price)}/{product.unit}</Text></Col>
+
+            {product.quantity && (
+              <>
+                <Col xs={24} sm={8}><Text strong>Số lượng:</Text></Col>
+                <Col xs={24} sm={16}><Text>{product.quantity} {product.unit}</Text></Col>
+              </>
+            )}
+
+            {!!resolvedLocation && (
+              <>
+                <Col xs={24} sm={8}><Text strong>Khu vực:</Text></Col>
+                <Col xs={24} sm={16}><Text>{resolvedLocation}</Text></Col>
+              </>
+            )}
+
+            {!resolvedLocation && product.location && (
+              <>
+                <Col xs={24} sm={8}><Text strong>Khu vực:</Text></Col>
+                <Col xs={24} sm={16}><Text>{product.location}</Text></Col>
+              </>
+            )}
+
+            <Col xs={24} sm={8}><Text strong>Ngày đăng:</Text></Col>
+            <Col xs={24} sm={16}><Text>{formatDate(product.createdAt)}</Text></Col>
+          </Row>
+        </div>
+      )
+    },
+    {
+      key: 'reviews',
+      label: 'Đánh giá',
+      children: (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          Chưa có đánh giá nào
+        </div>
+      )
+    }
+  ];
+
   return (
     <Card style={{ marginTop: 24 }}>
-      <Tabs defaultActiveKey="description">
-        <TabPane tab="Mô tả sản phẩm" key="description">
-          <div style={{ padding: '16px 0' }}>
-            <Paragraph>{product.description}</Paragraph>
-            
-            <Title level={5}>Thông tin chi tiết:</Title>
-            <ul style={{ paddingLeft: 20 }}>
-              <li>Danh mục: {product.category}</li>
-              {product.quantity && <li>Số lượng: {product.quantity} {product.unit}</li>}
-              {product.location && <li>Xuất xứ: {product.location}</li>}
-              {product.transactionIntent && (
-                <li>Loại giao dịch: {
-                  product.transactionIntent === 'b2b' ? 'Bán buôn' :
-                  product.transactionIntent === 'export' ? 'Xuất khẩu' : 'Bán lẻ'
-                }</li>
-              )}
-            </ul>
-          </div>
-        </TabPane>
-        
-        <TabPane tab="Thông số kỹ thuật" key="specifications">
-          <div style={{ padding: '16px 0' }}>
-            <Row gutter={[16, 16]}>
-              <Col span={8}><Text strong>Tên sản phẩm:</Text></Col>
-              <Col span={16}><Text>{product.name}</Text></Col>
-              
-              <Col span={8}><Text strong>Danh mục:</Text></Col>
-              <Col span={16}><Text>{product.category}</Text></Col>
-              
-              <Col span={8}><Text strong>Giá:</Text></Col>
-              <Col span={16}><Text>{formatPrice(product.price)}/{product.unit}</Text></Col>
-              
-              {product.quantity && (
-                <>
-                  <Col span={8}><Text strong>Số lượng:</Text></Col>
-                  <Col span={16}><Text>{product.quantity} {product.unit}</Text></Col>
-                </>
-              )}
-              
-              {product.location && (
-                <>
-                  <Col span={8}><Text strong>Vị trí:</Text></Col>
-                  <Col span={16}><Text>{product.location}</Text></Col>
-                </>
-              )}
-              
-              <Col span={8}><Text strong>Ngày đăng:</Text></Col>
-              <Col span={16}><Text>{formatDate(product.createdAt)}</Text></Col>
-            </Row>
-          </div>
-        </TabPane>
-        
-        <TabPane tab="Đánh giá" key="reviews">
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-            Chưa có đánh giá nào
-          </div>
-        </TabPane>
-      </Tabs>
+      <Tabs defaultActiveKey="description" items={tabItems} />
     </Card>
   );
 };

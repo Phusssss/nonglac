@@ -7,7 +7,8 @@ import {
   BarChart3, 
   Settings, 
   Edit, 
-  RefreshCw 
+  RefreshCw,
+  Database
 } from 'lucide-react';
 
 export const ADMIN_CONSTANTS = {
@@ -19,6 +20,7 @@ export const ADMIN_CONSTANTS = {
     { id: 'posts', label: 'Bài viết', icon: FileText, path: '/admin?tab=posts' },
     { id: 'products', label: 'Sản phẩm', icon: ShoppingBag, path: '/admin?tab=products' },
     { id: 'prices', label: 'Giá nông sản', icon: DollarSign, path: '/admin?tab=prices' },
+    { id: 'crawler-data', label: 'Dữ liệu Crawler', icon: Database, path: '/admin?tab=crawler-data' },
     { id: 'post-creator', label: 'Tạo bài thử', icon: Edit, path: '/admin?tab=post-creator' },
     { id: 'analytics', label: 'Thống kê', icon: BarChart3, path: '/admin?tab=analytics' },
     { id: 'version', label: 'Version & Cache', icon: RefreshCw, path: '/admin?tab=version' },

@@ -15,20 +15,26 @@ async function getLatestPrices(req, res) {
     try {
       const db = admin.firestore();
       
-      // Get from cache first
-      const cacheDoc = await db.collection('coffee_latest').doc('current').get();
+      // Get latest full prices document
+      const cacheDoc = await db.collection('full_prices').doc('current').get();
       
       if (cacheDoc.exists) {
         const data = cacheDoc.data();
         return res.json({
           success: true,
           data: {
+            pageTitle: data.pageTitle || null,
+            pageUpdatedAt: data.pageUpdatedAt || null,
             prices: data.prices,
             changes: data.changes,
+            allTables: data.allTables || [],
+            priceSections: data.priceSections || [],
+            coffeeSourceTable: data.coffeeSourceTable || null,
             timestamp: data.timestamp,
             date: data.date,
             unit: data.unit,
-            source: data.source
+            source: data.source,
+            url: data.url || null
           },
           cached: true
         });
@@ -52,12 +58,18 @@ async function getLatestPrices(req, res) {
       res.json({
         success: true,
         data: {
+          pageTitle: latestPrice.pageTitle || null,
+          pageUpdatedAt: latestPrice.pageUpdatedAt || null,
           prices: latestPrice.prices,
           changes: latestPrice.changes,
+          allTables: latestPrice.allTables || [],
+          priceSections: latestPrice.priceSections || [],
+          coffeeSourceTable: latestPrice.coffeeSourceTable || null,
           timestamp: latestPrice.timestamp,
           date: latestPrice.date,
           unit: latestPrice.unit,
-          source: latestPrice.source
+          source: latestPrice.source,
+          url: latestPrice.url || null
         },
         cached: false
       });
@@ -74,7 +86,7 @@ async function getLatestPrices(req, res) {
 
 /**
  * Get coffee price history
- * GET /api/coffee/history?days=7&region=Đắk Lắk
+ * GET /api/coffee/history?days=7&region=Äáº¯k Láº¯k
  */
 async function getPriceHistory(req, res) {
   return cors(req, res, async () => {
@@ -180,7 +192,7 @@ function calculateStats(history, region) {
     }
   } else {
     // All regions stats
-    const regions = ['Đắk Lắk', 'Lâm Đồng', 'Gia Lai', 'Đắk Nông'];
+    const regions = ['Äáº¯k Láº¯k', 'LÃ¢m Äá»“ng', 'Gia Lai', 'Äáº¯k NÃ´ng'];
     
     regions.forEach(reg => {
       const prices = history

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { Layout, Card, Button, Row, Col, Skeleton, Empty } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
-import { Layout, Card, Button, Row, Col, Typography } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import ContactModal from '../components/ContactModal';
 import ProductImageGallery from '../components/ProductImageGallery';
 import ProductImageCarousel from '../components/ProductImageCarousel';
@@ -17,54 +17,79 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [relatedLoading, setRelatedLoading] = useState(true);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
 
-  useEffect(() => {
-    loadProduct();
-  }, [id]);
+  const requestRef = useRef(0);
 
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
+    const requestId = Date.now();
+    requestRef.current = requestId;
+
+    setLoading(true);
+    setRelatedLoading(true);
+    setProduct(null);
+    setSeller(null);
+    setRelatedProducts([]);
+
     try {
-      setLoading(true);
       const productDoc = await getDoc(doc(db, 'marketplace_products', id));
-      
-      if (productDoc.exists()) {
-        const productData = { id: productDoc.id, ...productDoc.data() };
-        setProduct(productData);
-        
-        // Load seller info
-        if (productData.userId) {
-          const sellerDoc = await getDoc(doc(db, 'users', productData.userId));
-          if (sellerDoc.exists()) {
-            setSeller({ id: sellerDoc.id, ...sellerDoc.data() });
-          }
-        }
-        
-        // Load related products
-        const relatedQuery = query(
-          collection(db, 'marketplace_products'),
-          where('category', '==', productData.category),
-          limit(4)
-        );
-        const relatedSnapshot = await getDocs(relatedQuery);
-        const related = relatedSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(p => p.id !== id);
-        setRelatedProducts(related);
-      } else {
-        navigate('/marketplace');
+
+      if (requestRef.current !== requestId) return;
+
+      if (!productDoc.exists()) {
+        navigate('/marketplace', { replace: true });
+        return;
       }
-    } catch (error) {
-      console.error('Error loading product:', error);
-    } finally {
+
+      const productData = { id: productDoc.id, ...productDoc.data() };
+      setProduct(productData);
       setLoading(false);
+
+      const sellerPromise = productData.userId
+        ? getDoc(doc(db, 'users', productData.userId))
+        : Promise.resolve(null);
+
+      const relatedQuery = query(
+        collection(db, 'marketplace_products'),
+        where('category', '==', productData.category),
+        limit(4)
+      );
+      const relatedPromise = getDocs(relatedQuery);
+
+      const [sellerDoc, relatedSnapshot] = await Promise.all([sellerPromise, relatedPromise]);
+      if (requestRef.current !== requestId) return;
+
+      if (sellerDoc?.exists()) {
+        setSeller({ id: sellerDoc.id, ...sellerDoc.data() });
+      }
+
+      const related = relatedSnapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }))
+        .filter((item) => item.id !== id);
+      setRelatedProducts(related);
+    } catch (error) {
+      console.error('Error loading product detail:', error);
+      if (requestRef.current === requestId) {
+        setLoading(false);
+      }
+    } finally {
+      if (requestRef.current === requestId) {
+        setRelatedLoading(false);
+      }
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    loadProduct();
+  }, [loadProduct]);
 
   const handleContactClick = () => {
     if (!user) {
@@ -75,6 +100,7 @@ const ProductDetail = () => {
   };
 
   const handleShare = () => {
+    if (!product) return;
     if (navigator.share) {
       navigator.share({
         title: product.name,
@@ -86,33 +112,49 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
-          <Card loading style={{ marginBottom: 24 }}>
-            <Card.Meta />
-          </Card>
+      <Layout className="product-detail-layout">
+        <div className="product-detail-page">
+          <Skeleton.Button active block style={{ height: 36, maxWidth: 140, marginBottom: 16 }} />
+          <Row gutter={[20, 20]}>
+            <Col xs={24} lg={12}>
+              <Card>
+                <Skeleton.Image active style={{ width: '100%', height: 320 }} />
+              </Card>
+            </Col>
+            <Col xs={24} lg={12}>
+              <Card>
+                <Skeleton active paragraph={{ rows: 9 }} />
+              </Card>
+            </Col>
+          </Row>
         </div>
       </Layout>
     );
   }
 
-  if (!product) return null;
+  if (!product) {
+    return (
+      <Layout className="product-detail-layout">
+        <div className="product-detail-page">
+          <Empty description="Không tìm thấy sản phẩm" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <Layout className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Back Button */}
-        <Button 
-          icon={<ArrowLeftOutlined />} 
+    <Layout className="product-detail-layout">
+      <div className="product-detail-page">
+        <Button
+          icon={<ArrowLeftOutlined />}
           onClick={() => navigate('/marketplace')}
-          style={{ marginBottom: 24 }}
+          className="product-detail-back-btn"
         >
           Quay lại chợ
         </Button>
 
-        <Row gutter={[24, 24]}>
-          {/* Product Images */}
-          <Col xs={24} lg={12}>
+        <Row gutter={[20, 20]} align="top">
+          <Col xs={24} xl={13}>
             <ProductImageCarousel
               images={product.images}
               productName={product.name}
@@ -120,8 +162,7 @@ const ProductDetail = () => {
             />
           </Col>
 
-          {/* Product Info */}
-          <Col xs={24} lg={12}>
+          <Col xs={24} xl={11}>
             <ProductInfo
               product={product}
               seller={seller}
@@ -131,17 +172,15 @@ const ProductDetail = () => {
           </Col>
         </Row>
 
-        {/* Product Details Tabs */}
         <ProductTabs product={product} />
 
-        {/* Related Products */}
-        <RelatedProducts 
+        <RelatedProducts
           products={relatedProducts}
+          loading={relatedLoading}
           onProductClick={(productId) => navigate(`/product/${productId}`)}
         />
       </div>
 
-      {/* Contact Modal */}
       <ContactModal
         visible={contactModalOpen}
         onClose={() => setContactModalOpen(false)}
@@ -155,7 +194,6 @@ const ProductDetail = () => {
         }}
       />
 
-      {/* Image Gallery Modal */}
       <ProductImageGallery
         images={product?.images || []}
         visible={imageGalleryOpen}

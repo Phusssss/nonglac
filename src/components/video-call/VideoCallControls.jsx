@@ -1,31 +1,20 @@
 import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Button } from 'antd';
+import { Button, Tooltip } from 'antd';
 import {
-  VideoCameraOutlined,
-  VideoCameraAddOutlined,
-  CameraOutlined,
+  CameraFilled,
   PhoneOutlined,
   PictureOutlined,
+  ReloadOutlined,
+  VideoCameraAddOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 
 /**
  * VideoCallControls Component
- * 
+ *
  * Bottom control panel for video call interface
- * Provides buttons for camera, capture, upload, and call management
- * Note: Microphone/voice input removed - TTS output only
- * 
- * @component
- * @param {Object} props
- * @param {boolean} props.isCameraOn - Whether camera is active
- * @param {boolean} props.canCapture - Whether image capture is available
- * @param {Function} props.onToggleCamera - Handler for camera toggle
- * @param {Function} props.onSwitchCamera - Handler for camera switch (front/back)
- * @param {Function} props.onCapture - Handler for image capture
- * @param {Function} props.onUploadImage - Handler for image upload
- * @param {Function} props.onEndCall - Handler for ending call
  */
 const VideoCallControls = ({
   isCameraOn,
@@ -36,136 +25,125 @@ const VideoCallControls = ({
   onUploadImage,
   onEndCall,
 }) => {
-  // File input ref for image upload
   const fileInputRef = useRef(null);
 
-  // Handle file selection
   const handleFileSelect = (event) => {
     const file = event.target.files?.[0];
     if (file && onUploadImage) {
       onUploadImage(file);
     }
-    // Reset input to allow selecting the same file again
     event.target.value = '';
   };
 
-  // Trigger file input click
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
+  const utilityBtnClass =
+    'w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/35 transition-all duration-200';
+
   return (
-    <div className="h-32 bg-white/5 backdrop-blur-lg flex items-center justify-center space-x-8 pb-6 pt-4 z-20 rounded-t-[2rem] border-t border-white/5">
-      {/* Hidden file input */}
+    <div className="relative z-20 px-3 pb-3 sm:px-5 sm:pb-5">
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleFileSelect}
         className="hidden"
-        aria-label="Chọn ảnh để upload"
-      />
-      {/* Camera Toggle Button */}
-      <Button
-        type="text"
-        shape="circle"
-        size="large"
-        icon={isCameraOn ? <VideoCameraOutlined /> : <VideoCameraAddOutlined />}
-        onClick={onToggleCamera}
-        className={`
-          w-14 h-14 flex items-center justify-center
-          transition-all duration-200
-          ${isCameraOn 
-            ? 'bg-white/20 text-white hover:bg-white/30' 
-            : 'bg-white/10 text-white/50 hover:bg-white/20'
-          }
-        `}
-        aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
+        aria-label="Chọn ảnh để tải lên"
       />
 
-      {/* Note: Microphone button removed - no voice input support */}
-
-      {/* Capture Button */}
-      <motion.div
-        whileTap={canCapture ? { scale: 0.9 } : {}}
-        transition={{ duration: 0.1 }}
-      >
-        <Button
-          type="primary"
-          shape="circle"
-          size="large"
-          icon={<CameraOutlined />}
-          onClick={onCapture}
-          disabled={!canCapture}
-          className={`
-            w-20 h-20 flex items-center justify-center
-            text-2xl
-            ${canCapture 
-              ? 'bg-[#1CBECF] hover:bg-[#17a8b8] border-4 border-white/30' 
-              : 'bg-gray-500/50 cursor-not-allowed'
-            }
-          `}
-          aria-label="Chụp ảnh"
-        />
-      </motion.div>
-
-      {/* Upload Image Button */}
-      <Button
-        type="text"
-        shape="circle"
-        size="large"
-        icon={<PictureOutlined />}
-        onClick={handleUploadClick}
-        className="w-14 h-14 flex items-center justify-center bg-white/20 text-white hover:bg-white/30 transition-all duration-200"
-        aria-label="Upload ảnh"
-      />
-
-      {/* Camera Switch Button */}
-      {isCameraOn && (
-        <Button
-          type="text"
-          shape="circle"
-          size="large"
-          icon={
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      <div className="mx-auto w-full max-w-4xl rounded-[1.75rem] border border-white/15 bg-[#0d1723]/80 backdrop-blur-2xl px-3 py-3 sm:px-5 sm:py-4 shadow-[0_16px_42px_rgba(0,0,0,0.45)]">
+        <div className="grid grid-cols-5 items-center">
+          <div className="flex justify-center">
+            <Tooltip title={isCameraOn ? 'Tắt camera' : 'Bật camera'}>
+              <Button
+                type="text"
+                shape="circle"
+                size="large"
+                icon={isCameraOn ? <VideoCameraOutlined /> : <VideoCameraAddOutlined />}
+                onClick={onToggleCamera}
+                className={`${utilityBtnClass} ${isCameraOn ? '' : 'text-white/65 bg-white/5'}`}
+                aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
               />
-            </svg>
-          }
-          onClick={onSwitchCamera}
-          className="w-14 h-14 flex items-center justify-center bg-white/20 text-white hover:bg-white/30 transition-all duration-200"
-          aria-label="Đổi camera"
-        />
-      )}
+            </Tooltip>
+          </div>
 
-      {/* End Call Button */}
-      <Button
-        type="primary"
-        shape="circle"
-        size="large"
-        danger
-        icon={
-          <PhoneOutlined 
-            style={{ 
-              transform: 'rotate(135deg)',
-              fontSize: '20px'
-            }} 
-          />
-        }
-        onClick={onEndCall}
-        className="w-14 h-14 flex items-center justify-center bg-red-500 hover:bg-red-600"
-        aria-label="Kết thúc cuộc gọi"
-      />
+          <div className="flex justify-center">
+            {isCameraOn ? (
+              <Tooltip title="Đổi camera">
+                <Button
+                  type="text"
+                  shape="circle"
+                  size="large"
+                  icon={<ReloadOutlined />}
+                  onClick={onSwitchCamera}
+                  className={utilityBtnClass}
+                  aria-label="Đổi camera"
+                />
+              </Tooltip>
+            ) : (
+              <div className="w-11 h-11 sm:w-12 sm:h-12 opacity-0 pointer-events-none" />
+            )}
+          </div>
+
+          <div className="flex justify-center">
+            <motion.div whileTap={canCapture ? { scale: 0.94 } : {}} transition={{ duration: 0.12 }}>
+              <Tooltip title={canCapture ? 'Chụp ảnh để phân tích' : 'Bật camera để chụp'}>
+                <div
+                  className={`rounded-full p-1.5 sm:p-2 ${
+                    canCapture ? 'bg-cyan-300/30 shadow-[0_0_34px_rgba(120,255,245,0.45)]' : 'bg-slate-400/20'
+                  }`}
+                >
+                  <Button
+                    type="text"
+                    shape="circle"
+                    size="large"
+                    icon={<CameraFilled style={{ fontSize: '24px' }} />}
+                    onClick={onCapture}
+                    disabled={!canCapture}
+                    className={`w-[68px] h-[68px] sm:w-[82px] sm:h-[82px] flex items-center justify-center text-2xl border-4 ${
+                      canCapture
+                        ? '!bg-white hover:!bg-white !text-slate-900 border-white shadow-[0_10px_30px_rgba(255,255,255,0.45)]'
+                        : 'bg-slate-500/60 border-slate-300/20 text-white/70 cursor-not-allowed'
+                    }`}
+                    aria-label="Chụp ảnh"
+                  />
+                </div>
+              </Tooltip>
+            </motion.div>
+          </div>
+
+          <div className="flex justify-center">
+            <Tooltip title="Tải ảnh lên">
+              <Button
+                type="text"
+                shape="circle"
+                size="large"
+                icon={<PictureOutlined />}
+                onClick={handleUploadClick}
+                className={utilityBtnClass}
+                aria-label="Tải ảnh lên"
+              />
+            </Tooltip>
+          </div>
+
+          <div className="flex justify-center">
+            <Tooltip title="Kết thúc cuộc gọi">
+              <Button
+                type="primary"
+                shape="circle"
+                size="large"
+                danger
+                icon={<PhoneOutlined style={{ transform: 'rotate(135deg)', fontSize: '18px' }} />}
+                onClick={onEndCall}
+                className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 border-0"
+                aria-label="Kết thúc cuộc gọi"
+              />
+            </Tooltip>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

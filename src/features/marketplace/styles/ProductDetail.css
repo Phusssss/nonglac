@@ -60,3 +60,48 @@
   background: #e6f7ff !important;
   transform: translateY(-2px);
 }
+
+/* Product detail page layout */
+.product-detail-layout {
+  min-height: 100vh;
+  background: #f5f7f9;
+  padding-bottom: 32px;
+}
+
+.product-detail-page {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.product-detail-back-btn {
+  margin-bottom: 16px;
+}
+
+.product-detail-image-frame {
+  height: clamp(260px, 46vw, 460px);
+}
+
+/* Make tabs easier to read on phones */
+.product-detail-page .ant-tabs-tab {
+  padding: 10px 12px;
+}
+
+@media (max-width: 768px) {
+  .product-detail-layout {
+    padding-bottom: 18px;
+  }
+
+  .product-detail-page {
+    padding: 10px;
+  }
+
+  .product-detail-back-btn {
+    margin-bottom: 12px;
+  }
+
+  .product-detail-page .ant-card-body {
+    padding: 14px;
+  }
+}

@@ -5,6 +5,7 @@
 
 const { crawlCoffeePricesSimple } = require('../crawler/simpleCrawler');
 const admin = require('firebase-admin');
+const VN_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
 /**
  * Scheduled crawl job - runs every 30 minutes
@@ -13,10 +14,28 @@ async function scheduledCrawl(context) {
   console.log('⏰ Scheduled crawl triggered at:', new Date().toISOString());
   
   try {
-    // Check if it's within business hours (6 AM - 10 PM)
-    const hour = new Date().getHours();
-    if (hour < 6 || hour >= 22) {
-      console.log('⏸️  Outside business hours, skipping crawl');
+    // Check business hour in Vietnam timezone (6 AM - 10 PM)
+    const now = new Date();
+    const vnHour = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: VN_TIMEZONE,
+        hour: '2-digit',
+        hour12: false
+      }).format(now)
+    );
+
+    if (vnHour < 6 || vnHour >= 22) {
+      console.log(`⏸️ Outside business hours in ${VN_TIMEZONE}, skipping crawl (hour=${vnHour})`);
+
+      await admin.firestore().collection('crawler_logs').add({
+        type: 'scheduled',
+        status: 'skipped',
+        reason: 'outside_business_hours',
+        timestamp: Date.now(),
+        timezone: VN_TIMEZONE,
+        hour: vnHour
+      });
+
       return null;
     }
     
@@ -29,6 +48,8 @@ async function scheduledCrawl(context) {
       status: 'success',
       timestamp: Date.now(),
       duration: result.crawlDuration,
+      timezone: VN_TIMEZONE,
+      hour: vnHour,
       data: result
     });
     

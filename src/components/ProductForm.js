@@ -216,7 +216,7 @@ const ProductForm = ({ visible, onClose, onSuccess }) => {
 
         <Form.Item label="Hình ảnh sản phẩm" required>
           <div style={{ marginBottom: 16 }}>
-            <GitHubImageUpload onUploadComplete={handleImageUpload} />
+            <GitHubImageUpload onUploadComplete={handleImageUpload} autoUpload={true} />
             {images.length < 10 && (
               <Button 
                 type="dashed" 

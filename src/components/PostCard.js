@@ -184,7 +184,7 @@ const PostCard = ({ post, isDetailView = false }) => {
                           src={mediaItem.url}
                           poster={mediaItem.thumbnailUrl}
                           controls={true}
-                          lazy={false}
+                          lazy={true}
                           style={{ borderRadius: 8 }}
                         />
                       </div>
@@ -205,7 +205,7 @@ const PostCard = ({ post, isDetailView = false }) => {
                         <VideoPlayer
                           src={imageUrl}
                           controls={true}
-                          lazy={false}
+                          lazy={true}
                           style={{ borderRadius: 8 }}
                         />
                       ) : (

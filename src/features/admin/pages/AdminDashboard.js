@@ -12,6 +12,7 @@ import ProductManagement from '../components/ProductManagement';
 import SystemAnalytics from '../components/SystemAnalytics';
 import AdminPostCreator from '../components/AdminPostCreator';
 import VersionManager from '../components/VersionManager';
+import CrawlerDataManagement from '../components/CrawlerDataManagement';
 
 import { useAdminData } from '../hooks/useAdminData';
 import { adminService } from '../services/adminService';
@@ -124,6 +125,7 @@ const AdminDashboard = () => {
       
       case 'post-creator': return <AdminPostCreator />;
       case 'version': return <VersionManager />;
+      case 'crawler-data': return <CrawlerDataManagement />;
       case 'settings': return <Card>Cài đặt hệ thống đang phát triển...</Card>;
       default: return null;
     }

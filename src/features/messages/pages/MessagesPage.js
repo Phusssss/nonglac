@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout, notification } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { useMessages } from '../hooks';
@@ -10,6 +11,8 @@ import '../components/messages.css';
 
 const MessagesPage = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { requireAuth, showLoginModal, setShowLoginModal } = useAuthGuard();
   const {
     conversations,
@@ -19,11 +22,14 @@ const MessagesPage = () => {
     sending,
     setActiveConversation,
     sendMessage,
+    sendMessageToConversation,
+    createConversation,
     markAsRead
   } = useMessages();
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChat, setShowChat] = useState(false);
+  const initializedFromQueryRef = useRef(new Set());
 
   useEffect(() => {
     const handleResize = () => {
@@ -33,6 +39,65 @@ const MessagesPage = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const targetUserId = params.get('userId');
+    const initMessage = params.get('initMessage');
+
+    if (!targetUserId || !user?.uid || targetUserId === user.uid) {
+      return;
+    }
+
+    const initKey = `${targetUserId}:${initMessage || ''}`;
+    if (initializedFromQueryRef.current.has(initKey)) {
+      return;
+    }
+    initializedFromQueryRef.current.add(initKey);
+
+    let cancelled = false;
+    requireAuth(async () => {
+      const conversationResult = await createConversation(targetUserId);
+      if (!conversationResult.success || cancelled) {
+        notification.error({
+          message: 'Loi',
+          description: 'Khong the tao cuoc tro chuyen moi'
+        });
+        return;
+      }
+
+      if (isMobile) {
+        setShowChat(true);
+      }
+
+      await markAsRead(conversationResult.id);
+
+      if (initMessage && initMessage.trim()) {
+        const sendResult = await sendMessageToConversation(conversationResult.id, initMessage.trim());
+        if (!sendResult.success) {
+          notification.error({
+            message: 'Loi',
+            description: MESSAGES_CONSTANTS.MESSAGES.ERROR.SEND_FAILED
+          });
+        }
+      }
+
+      navigate('/messages', { replace: true });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    location.search,
+    user?.uid,
+    isMobile,
+    requireAuth,
+    createConversation,
+    markAsRead,
+    sendMessageToConversation,
+    navigate
+  ]);
 
   const activeConversationInfo = conversations.find(conv => conv.id === activeConversation);
 

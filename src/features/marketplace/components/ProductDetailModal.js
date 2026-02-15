@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Typography, Button, Space, Tag } from 'antd';
+import { Modal, Typography, Button, Tag } from 'antd';
 import { PhoneOutlined, UserOutlined, EnvironmentOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
-const ProductDetailModal = ({ 
-  product, 
-  open, 
-  onClose, 
-  user, 
+const ProductDetailModal = ({
+  product,
+  open,
+  onClose,
+  user,
   onContactClick,
-  formatPrice 
+  formatPrice
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -22,12 +22,19 @@ const ProductDetailModal = ({
 
   if (!product) return null;
 
+  const lat = Number(product?.locationCoords?.lat);
+  const lng = Number(product?.locationCoords?.lng);
+  const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
+  const mapEmbedUrl = hasCoordinates
+    ? `https://maps.google.com/maps?q=${lat},${lng}&z=14&ie=UTF8&iwloc=&output=embed`
+    : '';
+
   return (
     <Modal
       title={null}
       open={open}
       onCancel={onClose}
-      footer={
+      footer={(
         <Button
           type="primary"
           size="large"
@@ -37,13 +44,12 @@ const ProductDetailModal = ({
         >
           {user ? 'Liên hệ người bán' : 'Đăng nhập để liên hệ'}
         </Button>
-      }
+      )}
       width={700}
       centered
       className="product-detail-modal"
     >
       <div className="flex flex-col md:flex-row gap-6 mt-4">
-        {/* Gallery Section */}
         <div className="w-full md:w-1/2">
           <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
             {product.images && product.images.length > 0 ? (
@@ -58,7 +64,7 @@ const ProductDetailModal = ({
               </div>
             )}
           </div>
-          
+
           {product.images && product.images.length > 1 && (
             <div className="flex gap-2 mt-3 overflow-x-auto pb-2 hide-scrollbar">
               {product.images.map((img, index) => (
@@ -68,7 +74,9 @@ const ProductDetailModal = ({
                   alt={`${product.name} ${index + 1}`}
                   onClick={() => setSelectedImageIndex(index)}
                   className={`w-16 h-16 object-cover rounded-lg cursor-pointer transition-all ${
-                    selectedImageIndex === index ? 'ring-2 ring-[#52c41a] border-white' : 'border border-gray-200 opacity-70 hover:opacity-100'
+                    selectedImageIndex === index
+                      ? 'ring-2 ring-[#52c41a] border-white'
+                      : 'border border-gray-200 opacity-70 hover:opacity-100'
                   }`}
                 />
               ))}
@@ -76,13 +84,12 @@ const ProductDetailModal = ({
           )}
         </div>
 
-        {/* Info Section */}
         <div className="w-full md:w-1/2 flex flex-col">
           <Tag color="green" className="w-fit mb-2">{product.category || 'Nông sản'}</Tag>
           <Title level={3} className="!mb-2 !text-gray-800 leading-tight">
             {product.name}
           </Title>
-          
+
           <div className="flex items-baseline gap-2 mb-4">
             <span className="text-2xl font-bold text-red-600">
               {formatPrice ? formatPrice(product.price) : `${product.price?.toLocaleString()} đ`}
@@ -98,7 +105,7 @@ const ProductDetailModal = ({
                 <div className="text-sm text-gray-700">{product.address || 'Việt Nam'}</div>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-2">
               <UserOutlined className="mt-1 text-gray-400" />
               <div>
@@ -124,6 +131,23 @@ const ProductDetailModal = ({
               {product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
             </p>
           </div>
+
+          {hasCoordinates && (
+            <div className="mt-4">
+              <div className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-2">Bản đồ</div>
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <iframe
+                  title="product-location-modal-map"
+                  src={mapEmbedUrl}
+                  width="100%"
+                  height="180"
+                  style={{ border: 0, display: 'block' }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

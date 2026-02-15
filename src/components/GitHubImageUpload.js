@@ -1,30 +1,35 @@
-import React, { useState, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button, Typography, Progress, Alert, Row, Col, Space, Card, Tag } from 'antd';
 import { CloudUploadOutlined, DeleteOutlined, PictureOutlined, VideoCameraOutlined, PlayCircleOutlined } from '@ant-design/icons';
-import { githubStorage } from '../services/githubStorageExtended';
+import { firebaseStorageService } from '../services/firebaseStorageService';
 import { validateVideoFileOnly } from '../components/common/VideoFileValidator';
 import { generateVideoThumbnail } from '../utils/videoValidation';
 
 const { Text } = Typography;
 
-const GitHubImageUpload = ({ 
-  onUploadComplete, 
-  onBatchUploadComplete, // Callback mới cho upload nhiều ảnh
-  maxSize = 5, 
+const GitHubImageUpload = forwardRef(({
+  onUploadComplete,
+  onBatchUploadComplete,
+  maxSize = 5,
   allowedTypes = ['image/jpeg', 'image/png', 'image/webp'],
-  supportVideo = true, // New prop to enable video support
-  maxVideoSize = 100, // Max video size in MB
-  allowedVideoTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv', 'video/x-matroska']
-}) => {
+  folder = 'nonglac-images',
+  supportVideo = true,
+  maxVideoSize = 100,
+  allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv', 'video/x-matroska'],
+  autoUpload = false
+}, ref) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previews, setPreviews] = useState([]);
-  const [uploadedUrls, setUploadedUrls] = useState([]);
   const [error, setError] = useState('');
   const [validatingVideo, setValidatingVideo] = useState(false);
-  const fileInputRef = useRef();
+  const fileInputRef = useRef(null);
+  const previewsRef = useRef([]);
 
-  // Combine allowed types for both images and videos
+  useEffect(() => {
+    previewsRef.current = previews;
+  }, [previews]);
+
   const getAllowedTypes = () => {
     const types = [...allowedTypes];
     if (supportVideo) {
@@ -33,74 +38,173 @@ const GitHubImageUpload = ({
     return types;
   };
 
-  // Check if file is a video
-  const isVideoFile = (file) => {
-    return supportVideo && allowedVideoTypes.includes(file.type);
-  };
-
-  // Check if file is an image
-  const isImageFile = (file) => {
-    return allowedTypes.includes(file.type);
-  };
-
-  const compressImage = (file, maxWidth = 800, quality = 0.8) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-
-      img.onload = () => {
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          // Preserve original file name
-          blob.name = file.name;
-          resolve(blob);
-        }, file.type, quality);
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
-  };
+  const isVideoFile = (file) => supportVideo && allowedVideoTypes.includes(file.type);
+  const isImageFile = (file) => allowedTypes.includes(file.type);
 
   const validateFile = (file) => {
     const isVideo = isVideoFile(file);
     const isImage = isImageFile(file);
-    
+
     if (!isVideo && !isImage) {
-      const supportedFormats = supportVideo 
+      const supportedFormats = supportVideo
         ? [...allowedTypes, ...allowedVideoTypes].join(', ')
         : allowedTypes.join(', ');
       return `Định dạng file không được hỗ trợ. Chỉ chấp nhận: ${supportedFormats}`;
     }
-    
+
     const maxFileSize = isVideo ? maxVideoSize : maxSize;
-    if (file.size > maxFileSize * 1024 * 1024) {
+    if (!isVideo && file.size > maxFileSize * 1024 * 1024) {
       return `File quá lớn. Tối đa ${maxFileSize}MB cho ${isVideo ? 'video' : 'ảnh'}`;
     }
-    
+
     return null;
   };
 
-  // Generate video thumbnail
   const generateVideoPreview = async (file) => {
     try {
-      const thumbnailBase64 = await generateVideoThumbnail(file, 1);
-      return thumbnailBase64;
-    } catch (error) {
-      console.warn('Failed to generate video thumbnail:', error);
+      return await generateVideoThumbnail(file, 1);
+    } catch (thumbnailError) {
+      console.warn('Failed to generate video thumbnail:', thumbnailError);
       return null;
     }
   };
 
+  const dataUrlToFile = (dataUrl, fileName) => {
+    const [meta, base64Data] = dataUrl.split(',');
+    const mimeMatch = meta.match(/data:(.*?);base64/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const binary = atob(base64Data);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new File([bytes], fileName, { type: mimeType });
+  };
+
+  const uploadPreviewItems = async (items) => {
+    if (!items || items.length === 0) {
+      return [];
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const uploadedMedia = [];
+
+      for (let i = 0; i < items.length; i++) {
+        const preview = items[i];
+        if (preview.uploadedMedia) {
+          uploadedMedia.push(preview.uploadedMedia);
+          continue;
+        }
+
+        const file = preview.file;
+        const isVideo = preview.isVideo;
+
+        setProgress(((i + 0.2) / items.length) * 100);
+
+        let uploaded;
+        if (isVideo) {
+          uploaded = await firebaseStorageService.uploadVideo(file, {
+            folder: 'posts-videos',
+            maxSizeMB: maxVideoSize,
+            autoCompress: true,
+            alwaysCompress: true,
+            targetWidth: 854,
+            targetHeight: 480,
+            targetBitrate: 620000
+          });
+        } else {
+          setProgress(((i + 0.5) / items.length) * 100);
+          uploaded = await firebaseStorageService.uploadImage(file, {
+            folder,
+            maxSizeMB: maxSize,
+            maxWidth: 1280,
+            maxHeight: 1280,
+            quality: 0.7,
+            outputType: 'image/webp'
+          });
+        }
+
+        let thumbnailUrl;
+        if (isVideo && preview.thumbnailUrl && preview.thumbnailUrl.startsWith('data:')) {
+          try {
+            const thumbnailFile = dataUrlToFile(preview.thumbnailUrl, `${Date.now()}_${file.name}_thumb.jpg`);
+            const uploadedThumb = await firebaseStorageService.uploadImage(thumbnailFile, {
+              folder: 'posts-thumbnails',
+              maxSizeMB: 2,
+              maxWidth: 640,
+              maxHeight: 360,
+              quality: 0.72,
+              outputType: 'image/webp'
+            });
+            thumbnailUrl = uploadedThumb.url;
+          } catch (thumbError) {
+            console.warn('Thumbnail upload failed:', thumbError);
+          }
+        }
+
+        const mediaItem = {
+          url: uploaded.url,
+          type: isVideo ? 'video' : 'image',
+          fileName: file.name,
+          fileSize: uploaded.uploadedSize || file.size,
+          originalFileSize: file.size,
+          wasCompressed: Boolean(uploaded.wasCompressed),
+          thumbnailUrl
+        };
+
+        uploadedMedia.push(mediaItem);
+
+        setPreviews((prev) => prev.map((p) => (
+          p.id === preview.id
+            ? { ...p, uploadedMedia: mediaItem }
+            : p
+        )));
+
+        setProgress(((i + 1) / items.length) * 100);
+
+        if (typeof onUploadComplete === 'function') {
+          onUploadComplete(uploaded.url);
+        }
+      }
+
+      if (typeof onBatchUploadComplete === 'function') {
+        onBatchUploadComplete(uploadedMedia);
+      }
+
+      return uploadedMedia;
+    } catch (uploadError) {
+      setError('Lỗi upload: ' + uploadError.message);
+      throw uploadError;
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    uploadSelectedFiles: async () => {
+      const pending = previewsRef.current.filter((item) => !item.uploadedMedia);
+      return uploadPreviewItems(pending);
+    },
+    clearAll: () => {
+      previewsRef.current.forEach((item) => {
+        if (item.url) URL.revokeObjectURL(item.url);
+      });
+      previewsRef.current = [];
+      setPreviews([]);
+      setError('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }));
+
   const handleFileSelect = async (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    // Validate all files
     for (const file of files) {
       const validationError = validateFile(file);
       if (validationError) {
@@ -111,117 +215,77 @@ const GitHubImageUpload = ({
 
     setError('');
     setValidatingVideo(true);
-    
+
     try {
-      // Create previews for all files
       const newPreviews = [];
-      
+
       for (const file of files) {
         const isVideo = isVideoFile(file);
-        let previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.createObjectURL(file);
         let thumbnailUrl = null;
         let validationResult = null;
-        
+
         if (isVideo) {
-          // Validate video file
-          validationResult = await validateVideoFileOnly(file);
+          validationResult = await validateVideoFileOnly(file, {
+            maxSize: Math.max(maxVideoSize * 1024 * 1024, file.size + 1),
+            maxResolution: null,
+            maxDuration: null,
+            minDuration: null
+          });
           if (!validationResult?.isValid) {
             setError(`${file.name}: Video validation failed - ${validationResult?.errors?.[0]?.message || 'Unknown error'}`);
+            URL.revokeObjectURL(previewUrl);
             setValidatingVideo(false);
             return;
           }
-          
-          // Generate thumbnail for video
           thumbnailUrl = await generateVideoPreview(file);
         }
-        
+
         newPreviews.push({
           file,
           url: previewUrl,
           thumbnailUrl,
           isVideo,
           validationResult,
+          uploadedMedia: null,
           id: Date.now() + Math.random()
         });
       }
-      
-      setPreviews(prev => [...prev, ...newPreviews]);
-    } catch (error) {
-      setError(`Lỗi xử lý file: ${error.message}`);
+
+      setPreviews((prev) => [...prev, ...newPreviews]);
+
+      if (autoUpload === true) {
+        await uploadPreviewItems(newPreviews);
+      }
+    } catch (processError) {
+      setError(`Lỗi xử lý file: ${processError.message}`);
     } finally {
       setValidatingVideo(false);
-    }
-
-    try {
-      setUploading(true);
-      const totalFiles = files.length;
-      const uploadedMedia = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isVideo = isVideoFile(file);
-        
-        setProgress(((i + 0.2) / totalFiles) * 100);
-
-        let downloadURL;
-        
-        if (isVideo) {
-          // Upload video using video service
-          const uniquePath = `videos/user-${Date.now()}/${Date.now()}_${file.name}`;
-          downloadURL = await githubStorage.uploadVideo(file, uniquePath);
-        } else {
-          // Upload image using existing logic
-          const compressedFile = await compressImage(file);
-          setProgress(((i + 0.5) / totalFiles) * 100);
-          downloadURL = await githubStorage.uploadImage(compressedFile, 'nonglac-images');
-        }
-        
-        uploadedMedia.push({
-          url: downloadURL,
-          type: isVideo ? 'video' : 'image',
-          fileName: file.name,
-          fileSize: file.size
-        });
-        
-        setProgress(((i + 1) / totalFiles) * 100);
-        
-        // Gọi callback cho từng file
-        if (typeof onUploadComplete === 'function') {
-          onUploadComplete(downloadURL);
-        }
-      }
-      
-      // Gọi callback cho toàn bộ batch
-      if (typeof onBatchUploadComplete === 'function') {
-        onBatchUploadComplete(uploadedMedia);
-      }
-      
-      setUploadedUrls(prev => [...prev, ...uploadedMedia.map(m => m.url)]);
-    } catch (error) {
-      setError('Lỗi upload: ' + error.message);
-    } finally {
-      setUploading(false);
-      setProgress(0);
     }
   };
 
   const removeImage = (id) => {
-    setPreviews(prev => prev.filter(p => p.id !== id));
+    setPreviews((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target?.url) URL.revokeObjectURL(target.url);
+      return prev.filter((p) => p.id !== id);
+    });
   };
 
   const clearAll = () => {
+    previewsRef.current.forEach((item) => {
+      if (item.url) URL.revokeObjectURL(item.url);
+    });
     setPreviews([]);
-    setUploadedUrls([]);
     setError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Render preview for individual file
   const renderFilePreview = (preview) => {
     const { file, url, thumbnailUrl, isVideo, validationResult, id } = preview;
-    
+
     if (isVideo) {
       return (
         <Card
@@ -311,39 +375,38 @@ const GitHubImageUpload = ({
           />
         </Card>
       );
-    } else {
-      // Existing image preview
-      return (
-        <div style={{ position: 'relative' }}>
-          <img
-            src={url}
-            alt="Preview"
-            style={{
-              width: '100%',
-              height: '80px',
-              objectFit: 'cover',
-              borderRadius: '8px'
-            }}
-          />
-          <Button
-            type="primary"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => removeImage(id)}
-            style={{
-              position: 'absolute',
-              top: 4,
-              right: 4,
-              width: 24,
-              height: 24,
-              padding: 0,
-              minWidth: 24
-            }}
-          />
-        </div>
-      );
     }
+
+    return (
+      <div style={{ position: 'relative' }}>
+        <img
+          src={url}
+          alt="Preview"
+          style={{
+            width: '100%',
+            height: '80px',
+            objectFit: 'cover',
+            borderRadius: '8px'
+          }}
+        />
+        <Button
+          type="primary"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => removeImage(id)}
+          style={{
+            position: 'absolute',
+            top: 4,
+            right: 4,
+            width: 24,
+            height: 24,
+            padding: 0,
+            minWidth: 24
+          }}
+        />
+      </div>
+    );
   };
 
   return (
@@ -365,23 +428,29 @@ const GitHubImageUpload = ({
         style={{ marginBottom: 16 }}
         type="dashed"
       >
-        {uploading 
-          ? 'Đang upload...' 
-          : validatingVideo 
+        {uploading
+          ? 'Đang upload...'
+          : validatingVideo
             ? 'Đang xác thực...'
-            : supportVideo 
+            : supportVideo
               ? `Chọn ảnh/video (${previews.length} file đã chọn)`
               : `Chọn ảnh (${previews.length} ảnh đã chọn)`
         }
       </Button>
 
+      {!autoUpload && previews.length > 0 && (
+        <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+          File sẽ được upload khi bạn bấm Đăng bài.
+        </Text>
+      )}
+
       {previews.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 8 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8
           }}>
             <Text type="secondary">
               {previews.length} {supportVideo ? 'file' : 'ảnh'} đã chọn
@@ -390,7 +459,7 @@ const GitHubImageUpload = ({
               Xóa tất cả
             </Button>
           </div>
-          
+
           <Row gutter={[8, 8]}>
             {previews.map((preview) => (
               <Col xs={12} sm={8} key={preview.id}>
@@ -403,13 +472,13 @@ const GitHubImageUpload = ({
 
       {(uploading || validatingVideo) && (
         <div style={{ marginTop: 16 }}>
-          <Progress 
-            percent={Math.round(progress)} 
-            status={validatingVideo ? "active" : "normal"}
-            strokeColor={validatingVideo ? "#1890ff" : undefined}
+          <Progress
+            percent={Math.round(progress)}
+            status={validatingVideo ? 'active' : 'normal'}
+            strokeColor={validatingVideo ? '#1890ff' : undefined}
           />
           <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-            {validatingVideo 
+            {validatingVideo
               ? 'Đang xác thực video...'
               : `Đang upload ${supportVideo ? 'file' : 'ảnh'}... ${Math.round(progress)}%`
             }
@@ -418,14 +487,14 @@ const GitHubImageUpload = ({
       )}
 
       {error && (
-        <Alert 
+        <Alert
           message={error}
-          type="error" 
+          type="error"
           style={{ marginTop: 16 }}
         />
       )}
     </div>
   );
-};
+});
 
 export default GitHubImageUpload;

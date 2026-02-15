@@ -38,8 +38,18 @@ const ContactModal = ({ visible, onClose, product, seller }) => {
   };
 
   const openChat = () => {
-    // Redirect to chat page with seller ID
-    window.location.href = `/messages?userId=${seller?.id}`;
+    if (!seller?.id) {
+      message.error('Khong tim thay thong tin nguoi ban');
+      return;
+    }
+
+    const initMessage = `Tôi quan tâm đến @${product?.name || 'sản phẩm'}`;
+    const params = new URLSearchParams({
+      userId: seller.id,
+      productName: product?.name || '',
+      initMessage
+    });
+    window.location.href = `/messages?${params.toString()}`;
   };
 
   const callPhone = (phone) => {

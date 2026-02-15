@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, Button, Input, Select, message } from 'antd';
 import { PictureOutlined, VideoCameraOutlined, SmileOutlined, SendOutlined } from '@ant-design/icons';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -15,16 +15,16 @@ const { Option } = Select;
 const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
   const { user, userProfile } = useAuth();
   const { requireAuthForPost } = useAuthGuard();
+  const uploaderRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [newPost, setNewPost] = useState({ 
-    title: '', 
-    content: '', 
-    category: '', 
-    images: [] 
+  const [newPost, setNewPost] = useState({
+    title: '',
+    content: '',
+    category: ''
   });
 
-  const categories = POST_CATEGORIES.filter(cat => cat.key !== 'all'); // Exclude 'all' for post creation
+  const categories = POST_CATEGORIES.filter((cat) => cat.key !== 'all');
 
   const handleSubmit = async () => {
     if (!requireAuthForPost()) return;
@@ -36,11 +36,17 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
 
     setSubmitting(true);
     try {
+      let uploadedMedia = [];
+      if (uploaderRef.current?.uploadSelectedFiles) {
+        uploadedMedia = await uploaderRef.current.uploadSelectedFiles();
+      }
+
       const postData = {
         title: newPost.title.trim(),
         content: newPost.content.trim(),
         category: newPost.category || 'Khác',
-        images: newPost.images || [],
+        media: uploadedMedia,
+        images: uploadedMedia.map((item) => item.url).filter(Boolean),
         authorId: user.uid,
         authorName: userProfile?.displayName || user.displayName || 'Người dùng',
         authorAvatar: userProfile?.photoURL || user.photoURL || '',
@@ -53,17 +59,16 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
       };
 
       await addDoc(collection(db, 'posts'), postData);
-      
-      // Reset form
-      setNewPost({ title: '', content: '', category: '', images: [] });
+
+      setNewPost({ title: '', content: '', category: '' });
+      if (uploaderRef.current?.clearAll) {
+        uploaderRef.current.clearAll();
+      }
       setOpen(false);
-      
-      // Log analytics
+
       logUserAction(ACTIONS.CREATE_POST, { category: postData.category });
-      
       message.success('Đã đăng bài viết thành công!');
-      
-      // Callback to refresh posts
+
       if (onPostCreated) {
         onPostCreated();
       }
@@ -75,13 +80,6 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
     }
   };
 
-  const handleImageUpload = (urls) => {
-    setNewPost(prev => ({
-      ...prev,
-      images: [...(prev.images || []), ...urls]
-    }));
-  };
-
   if (!open) {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
@@ -90,9 +88,9 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
             {user ? (userProfile?.displayName?.charAt(0) || 'U') : 'G'}
           </div>
           <div className="flex-1">
-            <input 
-              className="w-full bg-gray-50 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-[#4CAF50]/50 transition-shadow mb-3 cursor-pointer" 
-              placeholder="Chia sẻ kinh nghiệm nông nghiệp của bạn..." 
+            <input
+              className="w-full bg-gray-50 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-[#4CAF50]/50 transition-shadow mb-3 cursor-pointer"
+              placeholder="Chia sẻ kinh nghiệm nông nghiệp của bạn..."
               type="text"
               onClick={() => {
                 if (user) {
@@ -105,8 +103,8 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
             />
             <div className="flex justify-between items-center border-t border-gray-100 pt-3">
               <div className="flex gap-2">
-                <button 
-                  className="p-2 rounded-full hover:bg-green-50 text-green-600 transition-all duration-200 hover:scale-105 active:scale-95" 
+                <button
+                  className="p-2 rounded-full hover:bg-green-50 text-green-600 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Thêm ảnh"
                   onClick={() => {
                     if (user) {
@@ -118,8 +116,8 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                 >
                   <PictureOutlined className="text-xl" />
                 </button>
-                <button 
-                  className="p-2 rounded-full hover:bg-blue-50 text-blue-500 transition-all duration-200 hover:scale-105 active:scale-95" 
+                <button
+                  className="p-2 rounded-full hover:bg-blue-50 text-blue-500 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Thêm video"
                   onClick={() => {
                     if (user) {
@@ -131,8 +129,8 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                 >
                   <VideoCameraOutlined className="text-xl" />
                 </button>
-                <button 
-                  className="p-2 rounded-full hover:bg-orange-50 text-orange-500 transition-all duration-200 hover:scale-105 active:scale-95" 
+                <button
+                  className="p-2 rounded-full hover:bg-orange-50 text-orange-500 transition-all duration-200 hover:scale-105 active:scale-95"
                   title="Thêm cảm xúc"
                   onClick={() => {
                     if (user) {
@@ -171,7 +169,7 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
         <Input
           placeholder="Tiêu đề bài viết..."
           value={newPost.title}
-          onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+          onChange={(e) => setNewPost((prev) => ({ ...prev, title: e.target.value }))}
           className="text-lg font-medium"
           maxLength={200}
         />
@@ -179,13 +177,13 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
         <Select
           placeholder="Chọn danh mục"
           value={newPost.category}
-          onChange={(value) => setNewPost(prev => ({ ...prev, category: value }))}
+          onChange={(value) => setNewPost((prev) => ({ ...prev, category: value }))}
           className="w-full"
         >
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <Option key={cat.key} value={cat.label}>
               <span className="flex items-center gap-2">
-                {React.createElement(cat.icon, { 
+                {React.createElement(cat.icon, {
                   size: cat.icon.name?.includes('Outlined') ? undefined : 14,
                   className: cat.icon.name?.includes('Outlined') ? 'text-sm' : undefined
                 })}
@@ -198,14 +196,17 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
         <TextArea
           placeholder="Chia sẻ kinh nghiệm, kỹ thuật, hoặc câu hỏi về nông nghiệp..."
           value={newPost.content}
-          onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
+          onChange={(e) => setNewPost((prev) => ({ ...prev, content: e.target.value }))}
           rows={4}
           maxLength={2000}
           showCount
         />
 
         <GitHubImageUpload
-          onUploadSuccess={handleImageUpload}
+          ref={uploaderRef}
+          autoUpload={false}
+          maxSize={8}
+          maxVideoSize={25}
           maxFiles={5}
           folder="posts"
         />
@@ -214,12 +215,15 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
           <Button
             onClick={() => {
               setOpen(false);
-              setNewPost({ title: '', content: '', category: '', images: [] });
+              setNewPost({ title: '', content: '', category: '' });
+              if (uploaderRef.current?.clearAll) {
+                uploaderRef.current.clearAll();
+              }
             }}
           >
             Hủy
           </Button>
-          
+
           <Button
             type="primary"
             icon={<SendOutlined />}
