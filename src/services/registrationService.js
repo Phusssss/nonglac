@@ -1,10 +1,10 @@
 import { auth, db } from '../firebase/config';
-import { 
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import phoneAuthService from './phoneAuthService';
 import { getErrorMessage } from '../constants/errorMessages';
 
@@ -19,16 +19,15 @@ class RegistrationService {
     };
   }
 
-  // BÃ†Â°Ã¡Â»â€ºc 1: LÃ†Â°u sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i (tÃ¡ÂºÂ¡m thÃ¡Â»Âi bÃ¡Â»Â qua OTP)
+  // Bước 1: Lưu số điện thoại (tạm thời bỏ qua OTP)
   async sendPhoneOTP(phoneNumber) {
     try {
-      // TÃ¡ÂºÂ¡m thÃ¡Â»Âi bÃ¡Â»Â qua viÃ¡Â»â€¡c gÃ¡Â»Â­i OTP thÃ¡Â»Â±c tÃ¡ÂºÂ¿
       this.registrationData.phoneNumber = phoneNumber;
-      this.registrationData.isPhoneVerified = true; // GiÃ¡ÂºÂ£ lÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ verify Ã„â€˜Ã¡Â»Æ’ qua bÃ†Â°Ã¡Â»â€ºc tiÃ¡ÂºÂ¿p theo
-      
+      this.registrationData.isPhoneVerified = true; // Giả lập đã verify cho luồng hiện tại
+
       return {
         success: true,
-        message: 'SÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i hÃ¡Â»Â£p lÃ¡Â»â€¡'
+        message: 'Số điện thoại hợp lệ'
       };
     } catch (error) {
       return {
@@ -38,13 +37,13 @@ class RegistrationService {
     }
   }
 
-  // BÃ†Â°Ã¡Â»â€ºc 2: XÃƒÂ¡c thÃ¡Â»Â±c OTP
+  // Bước 2: Xác thực OTP
   async verifyPhoneOTP(otpCode) {
     try {
       const result = await phoneAuthService.verifyOTP(otpCode);
       if (result.success) {
         this.registrationData.isPhoneVerified = true;
-        // Ã„ÂÃ„Æ’ng xuÃ¡ÂºÂ¥t ngay sau khi verify Ã„â€˜Ã¡Â»Æ’ khÃƒÂ´ng tÃ¡ÂºÂ¡o user Firebase Auth
+        // Đăng xuất ngay sau khi verify để không giữ user Auth tạm
         await auth.signOut();
       }
       return result;
@@ -56,19 +55,19 @@ class RegistrationService {
     }
   }
 
-  // BÃ†Â°Ã¡Â»â€ºc 3: LÃ†Â°u thÃƒÂ´ng tin cÃƒÂ¡ nhÃƒÂ¢n
+  // Bước 3: Lưu thông tin cá nhân
   savePersonalInfo(personalInfo) {
     if (!this.registrationData.isPhoneVerified) {
       return {
         success: false,
-        message: 'Vui lÃ²ng xÃ¡c thá»±c sá»‘ Ä‘iá»‡n thoáº¡i trÆ°á»›c'
+        message: 'Vui lòng xác thực số điện thoại trước'
       };
     }
 
     if (!personalInfo?.displayName || !personalInfo?.gender || !personalInfo?.age) {
       return {
         success: false,
-        message: 'Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ tÃªn ngÆ°á»i dÃ¹ng, giá»›i tÃ­nh vÃ  tuá»•i'
+        message: 'Vui lòng nhập đầy đủ tên người dùng, giới tính và tuổi'
       };
     }
 
@@ -80,16 +79,16 @@ class RegistrationService {
 
     return {
       success: true,
-      message: 'ThÃ´ng tin cÆ¡ báº£n Ä‘Ã£ Ä‘Æ°á»£c lÆ°u'
+      message: 'Thông tin cơ bản đã được lưu'
     };
   }
 
-  // BÆ°á»›c 4: LÆ°u thÃ´ng tin Ä‘á»‹a Ä‘iá»ƒm
+  // Bước 4: Lưu thông tin địa điểm
   saveLocationInfo(locationInfo) {
     if (!this.registrationData.personalInfo) {
       return {
         success: false,
-        message: 'Vui lÃƒÂ²ng nhÃ¡ÂºÂ­p thÃƒÂ´ng tin cÃƒÂ¡ nhÃƒÂ¢n trÃ†Â°Ã¡Â»â€ºc'
+        message: 'Vui lòng nhập thông tin cá nhân trước'
       };
     }
 
@@ -102,14 +101,13 @@ class RegistrationService {
 
     return {
       success: true,
-      message: 'ThÃƒÂ´ng tin Ã„â€˜Ã¡Â»â€¹a Ã„â€˜iÃ¡Â»Æ’m Ã„â€˜ÃƒÂ£ Ã„â€˜Ã†Â°Ã¡Â»Â£c lÃ†Â°u'
+      message: 'Thông tin địa điểm đã được lưu'
     };
   }
 
-  // GÃ¡Â»Â­i thÃƒÂ´ng bÃƒÂ¡o cho Admin khi cÃƒÂ³ user mÃ¡Â»â€ºi
+  // Gửi thông báo cho Admin khi có user mới
   async notifyAdminNewRegistration(userData) {
     try {
-      // LÃ†Â°u thÃƒÂ´ng bÃƒÂ¡o vÃƒÂ o collection admin_notifications
       await addDoc(collection(db, 'admin_notifications'), {
         type: 'NEW_REGISTRATION',
         userId: userData.uid,
@@ -117,9 +115,9 @@ class RegistrationService {
         phoneNumber: userData.phoneNumber,
         timestamp: new Date(),
         status: 'unread',
-        message: `NgÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng mÃ¡Â»â€ºi Ã„â€˜Ã„Æ’ng kÃƒÂ½: ${userData.displayName} (${userData.phoneNumber})`
+        message: `Người dùng mới đăng ký: ${userData.displayName} (${userData.phoneNumber})`
       });
-      
+
       return true;
     } catch (error) {
       console.error('Error notifying admin:', error);
@@ -127,20 +125,22 @@ class RegistrationService {
     }
   }
 
-  // TÃ¡ÂºÂ¡o tÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜Ã†Â¡n giÃ¡ÂºÂ£n chÃ¡Â»â€° vÃ¡Â»â€ºi phone vÃƒÂ  password
+  // Tạo tài khoản đơn giản với phone + password
   async createSimpleAccount(password) {
     try {
-      // Ã„ÂÃƒÂ£ bÃ¡Â»Â xÃƒÂ¡c thÃ¡Â»Â±c OTP nÃƒÂªn khÃƒÂ´ng cÃ¡ÂºÂ§n check isPhoneVerified chÃ¡ÂºÂ·t chÃ¡ÂºÂ½
       const { phoneNumber, personalInfo } = this.registrationData;
-      if (!phoneNumber) throw new Error('Vui lÃ²ng nháº­p sá»‘ Ä‘iá»‡n thoáº¡i');
-      if (!personalInfo?.displayName || !personalInfo?.gender || !personalInfo?.age) {
-        throw new Error('Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin cÆ¡ báº£n trÆ°á»›c khi táº¡o máº­t kháº©u');
+
+      if (!phoneNumber) {
+        throw new Error('Vui lòng nhập số điện thoại');
       }
-      
-      // TÃ¡ÂºÂ¡o email tÃ¡ÂºÂ¡m thÃ¡Â»Âi tÃ¡Â»Â« sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
+
+      if (!personalInfo?.displayName || !personalInfo?.gender || !personalInfo?.age) {
+        throw new Error('Vui lòng nhập đầy đủ thông tin cơ bản trước khi tạo mật khẩu');
+      }
+
+      // Tạo email tạm từ số điện thoại
       const tempEmail = `${phoneNumber.replace('+84', '0').replace(/\D/g, '')}@nonglac.temp`;
-      
-      // TÃ¡ÂºÂ¡o tÃƒÂ i khoÃ¡ÂºÂ£n Firebase Auth
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         tempEmail,
@@ -148,22 +148,16 @@ class RegistrationService {
       );
 
       const user = userCredential.user;
-      
-      // TÃ¡ÂºÂ¡o displayName tÃ¡Â»Â« sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
       const displayName = personalInfo.displayName;
 
-      // CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t profile
-      await updateProfile(user, {
-        displayName: displayName
-      });
+      await updateProfile(user, { displayName });
 
-      // LÃ†Â°u thÃƒÂ´ng tin user vÃƒÂ o Firestore vÃ¡Â»â€ºi thÃƒÂ´ng tin tÃ¡Â»â€˜i thiÃ¡Â»Æ’u
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
-        phoneNumber: phoneNumber,
+        phoneNumber,
         email: tempEmail,
-        displayName: displayName,
-        // ThÃƒÂ´ng tin sÃ¡ÂºÂ½ Ã„â€˜Ã†Â°Ã¡Â»Â£c bÃ¡Â»â€¢ sung trong nhiÃ¡Â»â€¡m vÃ¡Â»Â¥
+        displayName,
+        // Thông tin sẽ được bổ sung dần trong các nhiệm vụ
         dateOfBirth: null,
         gender: personalInfo.gender,
         age: personalInfo.age,
@@ -171,33 +165,30 @@ class RegistrationService {
         province: null,
         coordinates: null,
         locationVerified: false,
-        profileCompleted: false, // Flag Ã„â€˜Ã¡Â»Æ’ track nhiÃ¡Â»â€¡m vÃ¡Â»Â¥
+        profileCompleted: false,
         reputation: 0,
         joinDate: new Date(),
         postsCount: 0,
         likesReceived: 0,
         isActive: true,
-        verificationStatus: 'pending', // TÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜ang chÃ¡Â»Â xÃƒÂ¡c thÃ¡Â»Â±c
+        verificationStatus: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
-      // ThÃƒÂ´ng bÃƒÂ¡o cho admin
       await this.notifyAdminNewRegistration({
         uid: user.uid,
-        displayName: displayName,
-        phoneNumber: phoneNumber
+        displayName,
+        phoneNumber
       });
 
-      // Reset registration data
       this.resetRegistrationData();
 
       return {
         success: true,
-        user: user,
-        message: 'Ã„ÂÃ„Æ’ng kÃƒÂ½ thÃƒÂ nh cÃƒÂ´ng. TÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜ang chÃ¡Â»Â xÃƒÂ¡c thÃ¡Â»Â±c bÃ¡Â»Å¸i Admin.'
+        user,
+        message: 'Đăng ký thành công. Tài khoản đang chờ xác thực bởi Admin.'
       };
-
     } catch (error) {
       console.error('Error creating simple account:', error);
       return {
@@ -207,24 +198,23 @@ class RegistrationService {
     }
   }
 
-  // BÃ†Â°Ã¡Â»â€ºc 4: TÃ¡ÂºÂ¡o tÃƒÂ i khoÃ¡ÂºÂ£n vÃ¡Â»â€ºi mÃ¡ÂºÂ­t khÃ¡ÂºÂ©u (giÃ¡Â»Â¯ lÃ¡ÂºÂ¡i cho tÃ†Â°Ã†Â¡ng lai)
+  // Bước 4 (luồng đầy đủ): Tạo tài khoản với email + mật khẩu
   async createAccount(password) {
     try {
       if (!this.registrationData.isPhoneVerified) {
-        throw new Error('SÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i chÃ†Â°a Ã„â€˜Ã†Â°Ã¡Â»Â£c xÃƒÂ¡c thÃ¡Â»Â±c');
+        throw new Error('Số điện thoại chưa được xác thực');
       }
 
       if (!this.registrationData.personalInfo) {
-        throw new Error('ThÃƒÂ´ng tin cÃƒÂ¡ nhÃƒÂ¢n chÃ†Â°a Ã„â€˜Ã†Â°Ã¡Â»Â£c nhÃ¡ÂºÂ­p');
+        throw new Error('Thông tin cá nhân chưa được nhập');
       }
 
       if (!this.registrationData.locationInfo) {
-        throw new Error('ThÃƒÂ´ng tin Ã„â€˜Ã¡Â»â€¹a Ã„â€˜iÃ¡Â»Æ’m chÃ†Â°a Ã„â€˜Ã†Â°Ã¡Â»Â£c xÃƒÂ¡c thÃ¡Â»Â±c');
+        throw new Error('Thông tin địa điểm chưa được xác thực');
       }
 
       const { personalInfo, phoneNumber, locationInfo } = this.registrationData;
 
-      // TÃ¡ÂºÂ¡o tÃƒÂ i khoÃ¡ÂºÂ£n Firebase Auth vÃ¡Â»â€ºi email vÃƒÂ  password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         personalInfo.email,
@@ -233,15 +223,13 @@ class RegistrationService {
 
       const user = userCredential.user;
 
-      // CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t profile
       await updateProfile(user, {
         displayName: personalInfo.displayName
       });
 
-      // LÃ†Â°u thÃƒÂ´ng tin user vÃƒÂ o Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
-        phoneNumber: phoneNumber,
+        phoneNumber,
         email: personalInfo.email,
         displayName: personalInfo.displayName,
         dateOfBirth: personalInfo.dateOfBirth,
@@ -257,27 +245,24 @@ class RegistrationService {
         postsCount: 0,
         likesReceived: 0,
         isActive: true,
-        verificationStatus: 'pending', // TÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜ang chÃ¡Â»Â xÃƒÂ¡c thÃ¡Â»Â±c
+        verificationStatus: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
-      // ThÃƒÂ´ng bÃƒÂ¡o cho admin
       await this.notifyAdminNewRegistration({
         uid: user.uid,
         displayName: personalInfo.displayName,
-        phoneNumber: phoneNumber
+        phoneNumber
       });
 
-      // Reset registration data
       this.resetRegistrationData();
 
       return {
         success: true,
-        user: user,
-        message: 'Ã„ÂÃ„Æ’ng kÃƒÂ½ thÃƒÂ nh cÃƒÂ´ng. TÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜ang chÃ¡Â»Â xÃƒÂ¡c thÃ¡Â»Â±c bÃ¡Â»Å¸i Admin.'
+        user,
+        message: 'Đăng ký thành công. Tài khoản đang chờ xác thực bởi Admin.'
       };
-
     } catch (error) {
       console.error('Error creating account:', error);
       return {
@@ -287,20 +272,17 @@ class RegistrationService {
     }
   }
 
-  // Ã„ÂÃ„Æ’ng nhÃ¡ÂºÂ­p bÃ¡ÂºÂ±ng sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i vÃƒÂ  mÃ¡ÂºÂ­t khÃ¡ÂºÂ©u
+  // Đăng nhập bằng số điện thoại và mật khẩu
   async signInWithPhone(phoneNumber, password) {
     try {
-      // TÃƒÂ¬m user theo sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
       const userDoc = await this.findUserByPhone(phoneNumber);
-      
+
       if (!userDoc) {
-        throw new Error('SÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i chÃ†Â°a Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã„Æ’ng kÃƒÂ½');
+        throw new Error('Số điện thoại chưa được đăng ký');
       }
 
-      // TÃ¡ÂºÂ¡o email tÃ¡ÂºÂ¡m thÃ¡Â»Âi tÃ¡Â»Â« sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
       const tempEmail = `${phoneNumber.replace('+84', '0').replace(/\D/g, '')}@nonglac.temp`;
-      
-      // Ã„ÂÃ„Æ’ng nhÃ¡ÂºÂ­p bÃ¡ÂºÂ±ng email tÃ¡ÂºÂ¡m vÃƒÂ  password
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         tempEmail,
@@ -310,9 +292,8 @@ class RegistrationService {
       return {
         success: true,
         user: userCredential.user,
-        message: 'Ã„ÂÃ„Æ’ng nhÃ¡ÂºÂ­p thÃƒÂ nh cÃƒÂ´ng'
+        message: 'Đăng nhập thành công'
       };
-
     } catch (error) {
       console.error('Error signing in:', error);
       return {
@@ -322,32 +303,30 @@ class RegistrationService {
     }
   }
 
-  // TÃƒÂ¬m user theo sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
+  // Tìm user theo số điện thoại (thử nhiều format)
   async findUserByPhone(phoneNumber) {
     try {
-      // ThÃ¡Â»Â­ nhiÃ¡Â»Âu format khÃƒÂ¡c nhau
       const phoneFormats = [
         phoneAuthService.formatPhoneNumber(phoneNumber), // +84395752407
-        phoneNumber, // 0395752407 (input gÃ¡Â»â€˜c)
+        phoneNumber, // 0395752407
         phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber, // 395752407
-        phoneNumber.startsWith('+84') ? '0' + phoneNumber.substring(3) : phoneNumber // 0395752407 tÃ¡Â»Â« +84
+        phoneNumber.startsWith('+84') ? `0${phoneNumber.substring(3)}` : phoneNumber // 0395752407
       ];
-      
+
       console.log('Searching for phone formats:', phoneFormats);
-      
+
       const usersRef = collection(db, 'users');
-      
-      // ThÃ¡Â»Â­ tÃƒÂ¬m vÃ¡Â»â€ºi tÃ¡Â»Â«ng format
+
       for (const format of phoneFormats) {
         const q = query(usersRef, where('phoneNumber', '==', format));
         const querySnapshot = await getDocs(q);
-        
+
         if (!querySnapshot.empty) {
           console.log('Found user with phone format:', format);
           return querySnapshot.docs[0].data();
         }
       }
-      
+
       console.log('No user found with any phone format');
       return null;
     } catch (error) {
@@ -356,7 +335,7 @@ class RegistrationService {
     }
   }
 
-  // Reset dÃ¡Â»Â¯ liÃ¡Â»â€¡u Ã„â€˜Ã„Æ’ng kÃƒÂ½
+  // Reset dữ liệu đăng ký
   resetRegistrationData() {
     this.registrationData = {
       phoneNumber: '',
@@ -368,7 +347,7 @@ class RegistrationService {
     phoneAuthService.cleanup();
   }
 
-  // LÃ¡ÂºÂ¥y trÃ¡ÂºÂ¡ng thÃƒÂ¡i Ã„â€˜Ã„Æ’ng kÃƒÂ½ hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i
+  // Trạng thái đăng ký hiện tại
   getRegistrationStatus() {
     return {
       phoneNumber: this.registrationData.phoneNumber,
@@ -379,13 +358,12 @@ class RegistrationService {
   }
 
   getCurrentStep() {
-    if (!this.registrationData.phoneNumber) return 1; // NhÃ¡ÂºÂ­p sÃ¡Â»â€˜ Ã„â€˜iÃ¡Â»â€¡n thoÃ¡ÂºÂ¡i
-    if (!this.registrationData.isPhoneVerified) return 2; // XÃƒÂ¡c thÃ¡Â»Â±c OTP
-    if (!this.registrationData.personalInfo) return 3; // ThÃƒÂ´ng tin cÃƒÂ¡ nhÃƒÂ¢n
-    if (!this.registrationData.locationInfo) return 4; // XÃƒÂ¡c thÃ¡Â»Â±c Ã„â€˜Ã¡Â»â€¹a Ã„â€˜iÃ¡Â»Æ’m
-    return 5; // TÃ¡ÂºÂ¡o mÃ¡ÂºÂ­t khÃ¡ÂºÂ©u
+    if (!this.registrationData.phoneNumber) return 1; // Nhập số điện thoại
+    if (!this.registrationData.isPhoneVerified) return 2; // Xác thực OTP
+    if (!this.registrationData.personalInfo) return 3; // Thông tin cá nhân
+    if (!this.registrationData.locationInfo) return 4; // Thông tin địa điểm
+    return 5; // Tạo mật khẩu
   }
-
 }
 
 const registrationService = new RegistrationService();

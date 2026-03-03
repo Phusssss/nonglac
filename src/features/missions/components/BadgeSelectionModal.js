@@ -5,14 +5,19 @@ import { MISSIONS_CONSTANTS } from '../constants';
 
 const { Title, Text, Paragraph } = Typography;
 
+const isImageIcon = (icon) => (
+  typeof icon === 'string' &&
+  (icon.endsWith('.svg') || icon.endsWith('.png') || icon.startsWith('http') || icon.startsWith('data:'))
+);
+
 /**
  * Modal cho phép user chọn 1 trong 3 danh hiệu chuyên môn
  */
-const BadgeSelectionModal = ({ 
-  open, 
-  onSelect, 
+const BadgeSelectionModal = ({
+  open,
+  onSelect,
   onCancel,
-  loading = false 
+  loading = false
 }) => {
   const [selectedBadge, setSelectedBadge] = useState(null);
 
@@ -39,9 +44,7 @@ const BadgeSelectionModal = ({
       maskClosable={false}
     >
       <div className="text-center mb-6">
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>
-          🎉
-        </div>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
         <Title level={3} className="mb-2">
           Chúc mừng! Bạn đã đạt 500 điểm
         </Title>
@@ -60,8 +63,8 @@ const BadgeSelectionModal = ({
             <Card
               hoverable
               className={`text-center cursor-pointer transition-all ${
-                selectedBadge === key 
-                  ? 'border-2 border-green-500 shadow-lg' 
+                selectedBadge === key
+                  ? 'border-2 border-green-500 shadow-lg'
                   : 'border border-gray-200'
               }`}
               onClick={() => setSelectedBadge(key)}
@@ -71,28 +74,34 @@ const BadgeSelectionModal = ({
             >
               {selectedBadge === key && (
                 <div className="absolute top-2 right-2">
-                  <CheckCircleOutlined 
-                    style={{ fontSize: '24px', color: '#52c41a' }} 
+                  <CheckCircleOutlined
+                    style={{ fontSize: '24px', color: '#52c41a' }}
                   />
                 </div>
               )}
-              
+
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>
-                {badge.icon}
+                {isImageIcon(badge.icon) ? (
+                  <img
+                    src={badge.icon}
+                    alt={badge.label}
+                    style={{ width: 72, height: 72, objectFit: 'contain', margin: '0 auto' }}
+                  />
+                ) : (
+                  badge.icon
+                )}
               </div>
-              
+
               <Title level={5} className="mb-2">
                 {badge.label}
               </Title>
-              
+
               <Text type="secondary" className="text-sm">
                 {badge.description}
               </Text>
 
               <div className="mt-4">
-                <Text className="text-xs text-gray-500">
-                  Quyền lợi:
-                </Text>
+                <Text className="text-xs text-gray-500">Quyền lợi:</Text>
                 {badge.benefits.map((benefit, idx) => (
                   <div key={idx} className="text-xs text-gray-600 mt-1">
                     • {benefit}

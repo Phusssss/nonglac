@@ -1,456 +1,374 @@
-import React from 'react';
-import { Layout, Typography, Card, Row, Col, Button, Divider, Space, Avatar, Tag } from 'antd';
-import { ArrowLeftOutlined, PlayCircleOutlined, DownloadOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useState } from 'react';
+import {
+  ShieldCheck,
+  Bot,
+  BookOpen,
+  Truck,
+  Users,
+  LineChart,
+  Bird,
+  Globe,
+  Sprout,
+  User,
+  Code,
+  PenTool,
+  Database,
+  X,
+  Info
+} from 'lucide-react';
 import AdvancedSEO from '../components/AdvancedSEO';
 
-const { Title, Paragraph, Text } = Typography;
-
 const AboutUs = () => {
-  const navigate = useNavigate();
+  const [modal, setModal] = useState({ open: false, title: '', message: '' });
 
-  const teamMembers = [
-    {
-      name: 'PHAN ĐỨC HUY',
-      role: 'Trưởng Dự Án',
-      philosophy: 'Hiệu quả cuối cùng (Bottom line) là thước đo duy nhất của chiến lược.',
-      avatar: '🎯'
-    },
-    {
-      name: 'TRẦM NGỌC BÍCH',
-      role: 'Giám đốc Vận hành - COO',
-      philosophy: 'Không có dữ liệu đúng, niềm tin chỉ là ảo giác.',
-      avatar: '📊'
-    },
-    {
-      name: 'NGUYỄN TRÂM ANH',
-      role: 'Giám đốc Thương hiệu - CMO',
-      philosophy: 'Kết nối bằng công nghệ, giữ chân bằng trái tim.',
-      avatar: '💝'
-    },
-    {
-      name: 'VĂN PHÚ',
-      role: 'Giám đốc Công nghệ - CTO',
-      philosophy: 'Tốc độ hơn Hoàn hảo (Done is better than Perfect).',
-      avatar: '⚡'
-    }
-  ];
-
-  const partners = [
-    { name: 'Google Cloud', type: 'Hạ tầng Công nghệ' },
-    { name: 'VNPT', type: 'Xác thực & Viễn thông' },
-    { name: 'Viettel', type: 'Mobile ID Partner' },
-    { name: 'Đại học Yersin Đà Lạt', type: 'Hỗ trợ Khởi nghiệp' }
-  ];
+  const showModal = (title, message) => setModal({ open: true, title, message });
+  const closeModal = () => setModal({ open: false, title: '', message: '' });
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <AdvancedSEO 
-        title="Về chúng tôi - NôngLạc | Hệ điều hành Niềm tin Nông nghiệp"
-        description="Tìm hiểu về NôngLạc - Hệ điều hành Niềm tin cho nông nghiệp Việt Nam. Số hóa niềm tin, biến uy tín thành tài sản và đưa sự minh bạch trở lại thị trường."
-        keywords="về nông lạc, hệ điều hành niềm tin, nông nghiệp việt nam, agri-trust score, đội ngũ nông lạc"
+    <div className="bg-[#F8F9FA] text-[#2D3748]">
+      <AdvancedSEO
+        title="Nông Lạc - Kết nối nông sản, Kiến tạo mùa vàng"
+        description="Minh bạch hóa chuỗi cung ứng, biến uy tín và mồ hôi của người nông dân thành tài sản số thiết thực."
+        keywords="Nông Lạc, nông nghiệp, nông sản, Agri-Trust Score, AI cây trồng, Zalo Mini App"
         url="/about-us"
       />
-      
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
-        <div style={{ marginBottom: 24 }}>
-          <Text 
-            style={{ color: '#1890ff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeftOutlined style={{ marginRight: 8 }} />
-            Quay lại
-          </Text>
-        </div>
 
-        {/* HERO SECTION */}
-        <Card 
-          style={{ 
-            borderRadius: 16, 
-            marginBottom: 32,
-            background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-            border: 'none',
-            color: 'white'
-          }}
-          styles={{ body: { padding: '48px 32px', textAlign: 'center' } }}
-        >
-          <div style={{ position: 'relative' }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🌾📱</div>
-            <Title level={1} style={{ color: 'white', marginBottom: 16, fontSize: '2.5rem' }}>
-              NÔNG LẠC - HỆ ĐIỀU HÀNH NIỀM TIN
-            </Title>
-            <Title level={2} style={{ color: 'white', fontWeight: 400, marginBottom: 24 }}>
-              CHO NÔNG NGHIỆP VIỆT NAM
-            </Title>
-            <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: 18, maxWidth: 800, margin: '0 auto 32px' }}>
-              Chúng tôi không chỉ số hóa nông sản. Chúng tôi số hóa niềm tin, biến uy tín thành tài sản và đưa sự minh bạch trở lại thị trường.
-            </Paragraph>
-            <Space size="large">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<PlayCircleOutlined />}
-                style={{ 
-                  background: 'rgba(255,255,255,0.2)', 
-                  border: '2px solid white',
-                  borderRadius: 8,
-                  height: 48
-                }}
-                onClick={() => window.open('https://youtu.be/demo-nonglac', '_blank')}
-              >
-                Video Demo
-              </Button>
-              <Button 
-                size="large" 
-                icon={<DownloadOutlined />}
-                style={{ 
-                  background: '#EDB324', 
-                  border: 'none',
-                  color: 'white',
-                  borderRadius: 8,
-                  height: 48
-                }}
-                onClick={() => window.open('https://docs.google.com/presentation/d/1IFn58PyD6PU7rx4ZOBk1C1jmPPFa4o24d-2aEZRvUvg/edit?slide=id.p12#slide=id.p12', '_blank')}
-              >
-                Hồ sơ Năng lực
-              </Button>
-            </Space>
-          </div>
-        </Card>
+      <section className="relative overflow-hidden bg-[#3A9947]">
+        <div className="absolute inset-0 z-10 bg-black/40" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-[#3A9947] to-[#1CBECF] opacity-80" />
 
-        {/* CÂU CHUYỆN KHỞI NGUYÊN */}
-        <Row gutter={[32, 32]} style={{ marginBottom: 48 }}>
-          <Col xs={24} lg={12}>
-            <div style={{ 
-              background: 'linear-gradient(135deg, #f6ffed, #d9f7be)',
-              borderRadius: 16,
-              padding: 48,
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 120
-            }}>
-              🦅🌍
-            </div>
-          </Col>
-          <Col xs={24} lg={12}>
-            <Card style={{ borderRadius: 16, height: '100%' }}>
-              <Title level={2} style={{ color: '#52c41a' }}>CÂU CHUYỆN KHỞI NGUYÊN & SỨ MỆNH</Title>
-              
-              <Title level={4} style={{ color: '#1890ff' }}>Bối Cảnh: Cuộc Cách Mạng Độc Lập Dữ Liệu</Title>
-              <Paragraph>
-                Nông nghiệp nước ta đang rơi vào trạng thái <Text strong>"Entropy cao"</Text> (hỗn loạn): 
-                thông tin thị trường nhiễu loạn, niềm tin sụp đổ, dẫn đến điệp khúc <Text strong style={{ color: '#ff4d4f' }}>"được mùa mất giá"</Text> và 
-                nạn <Text strong style={{ color: '#ff4d4f' }}>"bẻ cọc"</Text> triền miên.
-              </Paragraph>
-
-              <Title level={4} style={{ color: '#1890ff' }}>Sứ Mệnh: Giải Quyết "Khủng Hoảng Kép"</Title>
-              <Paragraph>
-                Nông Lạc định vị mình là <Text strong style={{ color: '#52c41a' }}>"Bộ điều chỉnh Entropy"</Text> - 
-                sử dụng công nghệ để sắp xếp lại trật tự, minh bạch hóa dòng chảy thông tin và đưa nông sản Việt về đúng Giá trị thật.
-              </Paragraph>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* GIÁ TRỊ CỐT LÕI */}
-        <Card style={{ borderRadius: 16, marginBottom: 48 }}>
-          <Title level={2} style={{ color: '#52c41a', textAlign: 'center', marginBottom: 32 }}>
-            GIÁ TRỊ CỐT LÕI - TRIẾT LÝ CÂY CỔ THỤ
-          </Title>
-          
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={8}>
-              <Card 
-                style={{ 
-                  borderRadius: 12, 
-                  textAlign: 'center',
-                  background: 'linear-gradient(135deg, #fff7e6, #ffd591)'
-                }}
-              >
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🌳</div>
-                <Title level={4} style={{ color: '#d4380d' }}>BỘ RỄ</Title>
-                <Text strong>Người Nông Dân - The Foundation</Text>
-                <Paragraph style={{ marginTop: 12 }}>
-                  Cần bám sâu vào "đất" (dữ liệu canh tác chuẩn, quy trình VietGAP). 
-                  Nông Lạc cung cấp công cụ "Nhật ký canh tác số".
-                </Paragraph>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card 
-                style={{ 
-                  borderRadius: 12, 
-                  textAlign: 'center',
-                  background: 'linear-gradient(135deg, #f6ffed, #d9f7be)'
-                }}
-              >
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🏛️</div>
-                <Title level={4} style={{ color: '#389e0d' }}>THÂN CÂY</Title>
-                <Text strong>Công Nghệ Nông Lạc - The Core</Text>
-                <Paragraph style={{ marginTop: 12 }}>
-                  Phải sừng sững, thẳng đứng và minh bạch tuyệt đối (Radical Transparency). 
-                  Trục "Hợp tác trong Cạnh tranh" (Coopetition).
-                </Paragraph>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card 
-                style={{ 
-                  borderRadius: 12, 
-                  textAlign: 'center',
-                  background: 'linear-gradient(135deg, #e6f7ff, #91d5ff)'
-                }}
-              >
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🌿</div>
-                <Title level={4} style={{ color: '#0958d9' }}>TÁN CÂY</Title>
-                <Text strong>Lợi Nhuận & Tác Động - The Impact</Text>
-                <Paragraph style={{ marginTop: 12 }}>
-                  Tỏa bóng mát cho đời. Lợi nhuận song hành với sự thịnh vượng của cộng đồng 
-                  và sự trong lành của môi trường (Net Zero).
-                </Paragraph>
-              </Card>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* THÁCH THỨC & GIẢI PHÁP */}
-        <Card style={{ borderRadius: 16, marginBottom: 48 }}>
-          <Title level={2} style={{ color: '#52c41a', marginBottom: 32 }}>THÁCH THỨC & GIẢI PHÁP</Title>
-          
-          <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-            <Col xs={24} lg={12}>
-              <Title level={4} style={{ color: '#ff4d4f' }}>Nỗi Đau Của Thị Trường</Title>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <Card size="small" style={{ background: '#fff2f0' }}>
-                  <Text strong style={{ color: '#cf1322' }}>Nông Dân:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Không biết giá thị trường thực, rơi vào "bẫy tín dụng đen", sản xuất manh mún.
-                  </Paragraph>
-                </Card>
-                <Card size="small" style={{ background: '#fff2f0' }}>
-                  <Text strong style={{ color: '#cf1322' }}>Thương Lái:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Nông dân "bẻ kèo", xe tải chạy rỗng chiều về gây lãng phí 25% chi phí.
-                  </Paragraph>
-                </Card>
-                <Card size="small" style={{ background: '#fff2f0' }}>
-                  <Text strong style={{ color: '#cf1322' }}>Ngân Hàng:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Không thể thẩm định tín dụng cho hàng triệu nông hộ nhỏ lẻ.
-                  </Paragraph>
-                </Card>
-              </Space>
-            </Col>
-            <Col xs={24} lg={12}>
-              <Title level={4} style={{ color: '#52c41a' }}>Giải Pháp Nông Lạc</Title>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <Card size="small" style={{ background: '#f6ffed' }}>
-                  <Text strong style={{ color: '#389e0d' }}>Agri-Trust Score:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Thuật toán định lượng uy tín dựa trên Quy tắc 20-30-50
-                  </Paragraph>
-                  <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
-                    <li>20% Dữ liệu Xác thực (Mobile ID & GPS)</li>
-                    <li>30% Dữ liệu Canh tác (Nhật ký, quy trình)</li>
-                    <li>50% Dữ liệu Giao dịch & Xã hội</li>
-                  </ul>
-                </Card>
-                <Card size="small" style={{ background: '#f6ffed' }}>
-                  <Text strong style={{ color: '#389e0d' }}>Mobile ID & Xác thực Thụ động:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Loại bỏ rào cản eKYC phức tạp, trải nghiệm "Zero Friction".
-                  </Paragraph>
-                </Card>
-                <Card size="small" style={{ background: '#f6ffed' }}>
-                  <Text strong style={{ color: '#389e0d' }}>AI Plant Doctor:</Text>
-                  <Paragraph style={{ margin: '8px 0 0' }}>
-                    Chẩn đoán bệnh qua ảnh chụp, tương tác bằng giọng nói.
-                  </Paragraph>
-                </Card>
-              </Space>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* ĐỘI NGŨ */}
-        <Card style={{ borderRadius: 16, marginBottom: 48 }}>
-          <Title level={2} style={{ color: '#52c41a', textAlign: 'center', marginBottom: 32 }}>
-            ĐỘI NGŨ LÃNH ĐẠO
-          </Title>
-          <Paragraph style={{ textAlign: 'center', marginBottom: 32, fontSize: 16 }}>
-            Với tư duy thực chiến và khát vọng đổi mới
-          </Paragraph>
-          
-          <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-            {teamMembers.map((member, index) => (
-              <Col xs={24} sm={12} lg={6} key={index}>
-                <Card 
-                  style={{ 
-                    borderRadius: 12, 
-                    textAlign: 'center',
-                    height: '100%'
-                  }}
-                  hoverable
-                >
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>{member.avatar}</div>
-                  <Title level={5} style={{ marginBottom: 8 }}>{member.name}</Title>
-                  <Tag color="blue" style={{ marginBottom: 12 }}>{member.role}</Tag>
-                  <Paragraph style={{ fontStyle: 'italic', fontSize: 12 }}>
-                    "{member.philosophy}"
-                  </Paragraph>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          <Divider />
-          
-          <div style={{ textAlign: 'center' }}>
-            <Title level={4} style={{ color: '#722ed1' }}>CỐ VẤN CHIẾN LƯỢC</Title>
-            <Card 
-              style={{ 
-                maxWidth: 400, 
-                margin: '0 auto',
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #f9f0ff, #efdbff)'
-              }}
+        <div className="relative z-20 mx-auto flex max-w-7xl flex-col items-center px-4 py-24 text-center sm:px-6 lg:px-8 lg:py-32">
+          <span className="mb-4 text-sm font-bold uppercase tracking-wider text-[#EDB324] sm:text-base">
+            Hệ điều hành niềm tin Nông nghiệp
+          </span>
+          <h1 className="mb-6 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+            Kết nối nông sản <br /> Kiến tạo mùa vàng
+          </h1>
+          <p className="mb-10 max-w-2xl text-lg leading-relaxed text-[#F8F9FA] sm:text-xl">
+            Minh bạch hóa chuỗi cung ứng, biến uy tín và mồ hôi của người nông dân thành tài sản số thiết thực.
+          </p>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <a
+              href="#giai-phap"
+              className="rounded-full bg-[#EDB324] px-8 py-3.5 text-lg font-bold text-[#2D3748] shadow-lg transition hover:bg-yellow-500"
             >
-              <div style={{ fontSize: 48, marginBottom: 16 }}>👨‍🏫</div>
-              <Title level={5}>PGS.TS ĐINH TIÊN MINH</Title>
-              <Text>Trưởng Bộ môn Marketing - Khoa Kinh doanh Quốc tế & Marketing (UEH)</Text>
-              <Paragraph style={{ marginTop: 12, fontStyle: 'italic' }}>
-                Người dẫn đường về tư duy quản trị và chiến lược thị trường
-              </Paragraph>
-            </Card>
+              Khám phá giải pháp
+            </a>
           </div>
-        </Card>
+        </div>
+      </section>
 
-        {/* TÁC ĐỘNG & ĐỐI TÁC */}
-        <Row gutter={[32, 32]} style={{ marginBottom: 48 }}>
-          <Col xs={24} lg={12}>
-            <Card style={{ borderRadius: 16, height: '100%' }}>
-              <Title level={3} style={{ color: '#52c41a' }}>CAM KẾT ESG</Title>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <div>
-                  <Tag color="green" style={{ marginBottom: 8 }}>E - Environment</Tag>
-                  <Paragraph>
-                    Giảm 20% lượng khí thải CO2 nhờ thuật toán tối ưu logistics. 
-                    Tiên phong xây dựng cơ sở dữ liệu cho thị trường Tín chỉ Carbon.
-                  </Paragraph>
-                </div>
-                <div>
-                  <Tag color="blue" style={{ marginBottom: 8 }}>S - Social</Tag>
-                  <Paragraph>
-                    Mục tiêu đến 2030 hỗ trợ 10.000 nông dân tiếp cận vốn vay ngân hàng chính thống, 
-                    thoát bẫy tín dụng đen.
-                  </Paragraph>
-                </div>
-                <div>
-                  <Tag color="purple" style={{ marginBottom: 8 }}>G - Governance</Tag>
-                  <Paragraph>
-                    Minh bạch hóa 100% hợp đồng thu mua, giảm thiểu tranh chấp thương mại 
-                    bằng Hợp đồng số (Smart Contracts).
-                  </Paragraph>
-                </div>
-              </Space>
-            </Card>
-          </Col>
-          <Col xs={24} lg={12}>
-            <Card style={{ borderRadius: 16, height: '100%' }}>
-              <Title level={3} style={{ color: '#52c41a' }}>ĐỐI TÁC CHIẾN LƯỢC</Title>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                {partners.map((partner, index) => (
-                  <Card 
-                    key={index}
-                    size="small" 
-                    style={{ 
-                      background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
-                      border: '1px solid #91d5ff'
-                    }}
-                  >
-                    <Row justify="space-between" align="middle">
-                      <Col>
-                        <Text strong style={{ color: '#0958d9' }}>{partner.name}</Text>
-                      </Col>
-                      <Col>
-                        <Tag color="cyan">{partner.type}</Tag>
-                      </Col>
-                    </Row>
-                  </Card>
-                ))}
-              </Space>
-            </Card>
-          </Col>
-        </Row>
+      <section id="cau-chuyen" className="bg-[#F8F9FA] py-20">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-3xl font-bold text-[#3A9947] sm:text-4xl">Lời giải từ niềm tin</h2>
+          <div className="space-y-6 text-left text-lg leading-relaxed text-gray-700 sm:text-justify">
+            <p>
+              Nông nghiệp Việt Nam vươn ra thế giới với những con số xuất khẩu đáng tự hào. Nhưng đằng sau ánh hào quang
+              vĩ mô ấy, bà con nông dân vẫn trăn trở với điệp khúc "được mùa rớt giá" và những chuyến xe chạy rỗng chiều
+              về. Tỷ lệ thất thoát sau thu hoạch và chi phí vận tải vẫn chiếm một phần quá lớn trong công sức gieo trồng.
+            </p>
+            <p>
+              Căn nguyên không nằm ở kỹ thuật canh tác, mà ở{' '}
+              <strong className="text-[#2D3748]">Sự đứt gãy niềm tin thị trường (Information Asymmetry)</strong>. Sự thiếu
+              minh bạch khiến nông sản chất lượng bị cào bằng. Người trồng thiếu thông tin giá cả, người mua thấp thỏm nỗi
+              lo bẻ cọc. Một thị trường khuyết thiếu niềm tin là một bài toán không có người thắng.
+            </p>
+            <p>
+              Từ những ngày bám đất tại "thủ phủ" Vạn Thành - Lâm Đồng, <strong className="text-[#3A9947]">Nông Lạc</strong>{' '}
+              ra đời. Chúng tôi không vẽ thêm một phần mềm quản lý phức tạp. Chúng tôi kiến tạo một{' '}
+              <strong>Hệ điều hành Niềm tin (Trust Operating System)</strong> đi từ dưới lên, lấy người nông dân làm gốc rễ.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        {/* FOOTER & LIÊN HỆ */}
-        <Card 
-          style={{ 
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #001529, #002140)',
-            color: 'white'
+      <section id="giai-phap" className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-[#3A9947] sm:text-4xl">Các Trụ Cột Giải Pháp</h2>
+            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+              Tích hợp trực tiếp trên Zalo Mini App, phá bỏ mọi rào cản công nghệ, mang trải nghiệm mượt mà đến tận tay bà
+              con.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-[#3A9947]/10">
+                <ShieldCheck className="h-8 w-8 text-[#3A9947]" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Agri-Trust Score</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Điểm tín nhiệm nông nghiệp. Số hóa lịch sử canh tác, tính minh bạch và sự tuân thủ cam kết thành "giấy
+                thông hành" để vay vốn và mua vật tư trả chậm.
+              </p>
+              <button
+                onClick={() =>
+                  showModal(
+                    'Agri-Trust Score',
+                    'Hệ thống đang trích xuất dữ liệu tín nhiệm mẫu. Chức năng đánh giá hồ sơ sẽ hiển thị tại đây.'
+                  )
+                }
+                className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+
+            <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-[#1CBECF]/10">
+                <Bot className="h-8 w-8 text-[#1CBECF]" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Trợ lý AI Lạc Lạc</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Bác sĩ cây trồng tại gia. Chỉ cần một bức ảnh, AI sẽ chẩn đoán bệnh và đưa ra phác đồ điều trị chuẩn xác dựa
+                trên dữ liệu Khuyến nông Quốc gia.
+              </p>
+              <button
+                onClick={() =>
+                  showModal('Trợ lý AI Lạc Lạc', 'Vui lòng cho phép truy cập Camera để tải ảnh lá cây lên hệ thống chẩn đoán.')
+                }
+                className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+
+            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Đang phát triển
+              </div>
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
+                <BookOpen className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Sổ Nợ Số</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Thay thế sổ tay vật lý. Minh bạch hóa công nợ, nhắc nợ tinh tế qua Zalo, đảm bảo đối soát rõ ràng và chấm dứt
+                rủi ro tranh chấp.
+              </p>
+              <button
+                onClick={() =>
+                  showModal('Sổ Nợ Số', 'Tính năng đang trong giai đoạn hoàn thiện nội bộ (Beta). Sẽ sớm ra mắt để phục vụ bà con!')
+                }
+                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+
+            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Đang phát triển
+              </div>
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
+                <Truck className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Ghép Chuyến Thông Minh</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Tối ưu hóa các chuyến xe chạy rỗng chiều về bằng thuật toán Logistics. Cắt giảm chi phí vận tải, gia tăng giá
+                trị lợi nhuận cho chuỗi cung ứng.
+              </p>
+              <button
+                onClick={() =>
+                  showModal(
+                    'Ghép Chuyến Thông Minh',
+                    'Thuật toán Logistics đang được huấn luyện (Training) với dữ liệu thực tế tại Đà Lạt. Vui lòng quay lại sau!'
+                  )
+                }
+                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+
+            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Đang phát triển
+              </div>
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
+                <Users className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Mạng xã hội & Chợ nông sản</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Không gian để bà con giao lưu kinh nghiệm đồng áng và kết nối giao thương trực tiếp, giữ lại vẹn nguyên giá
+                trị nông sản mà không qua trung gian.
+              </p>
+              <button
+                onClick={() =>
+                  showModal(
+                    'Mạng xã hội & Chợ',
+                    'Giao diện cộng đồng đang được xây dựng. Hãy chờ đón một chợ nông sản số minh bạch và sôi động!'
+                  )
+                }
+                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+
+            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Đang phát triển
+              </div>
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
+                <LineChart className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="mb-3 text-xl font-bold">Thông báo giá nông sản</h3>
+              <p className="mb-6 flex-grow text-gray-600">
+                Cập nhật khách quan biến động giá cả thị trường mỗi ngày. Cung cấp bức tranh tổng thể để nhà nông tự tin làm
+                chủ quyết định thu hoạch.
+              </p>
+              <button
+                onClick={() =>
+                  showModal('Thông báo giá', 'Hệ thống đang tích hợp API dữ liệu giá từ các chợ đầu mối. Tính năng sẽ sớm được kích hoạt.')
+                }
+                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+              >
+                Trải nghiệm tính năng
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="triet-ly" className="bg-[#F8F9FA] py-20">
+        <div className="mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
+          <div>
+            <h2 className="mb-6 text-3xl font-bold text-[#3A9947]">Cánh chim Lạc vươn mình cùng địa cầu số</h2>
+            <div className="space-y-4 text-gray-700">
+              <div className="flex items-start">
+                <Bird className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-[#3A9947]" />
+                <p>
+                  <strong>Cánh Chim Lạc (Di sản):</strong> Lòng tự hào dân tộc và khát vọng vươn cao, ôm trọn những giá trị cốt lõi.
+                </p>
+              </div>
+              <div className="flex items-start">
+                <Globe className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-[#1CBECF]" />
+                <p>
+                  <strong>Quả Địa Cầu Số (Tầm nhìn):</strong> Giải quyết bài toán địa phương bằng chuẩn mực kết nối vạn vật (IoT)
+                  toàn cầu.
+                </p>
+              </div>
+              <div className="flex items-start">
+                <Sprout className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-[#EDB324]" />
+                <p>
+                  <strong>Cây Lúa (Gốc rễ):</strong> Dù công nghệ hiện đại đến đâu, bệ phóng vững chắc nhất vẫn luôn là đồng ruộng và
+                  người nông dân.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+            <h3 className="mb-6 text-2xl font-bold text-[#3A9947]">Tác động Xã hội (ESG)</h3>
+            <p className="mb-6 text-gray-600">
+              Thước đo thành công của Nông Lạc vượt ra khỏi ranh giới lợi nhuận, hướng tới <strong>Chỉ số Hạnh phúc Nông nghiệp</strong>:
+            </p>
+            <ul className="space-y-4 text-gray-700">
+              <li className="flex items-center">
+                <div className="mr-3 h-2 w-2 rounded-full bg-[#3A9947]" />
+                <span>
+                  <strong>Môi trường:</strong> Canh tác chính xác, giảm khí thải logistics.
+                </span>
+              </li>
+              <li className="flex items-center">
+                <div className="mr-3 h-2 w-2 rounded-full bg-[#1CBECF]" />
+                <span>
+                  <strong>Xã hội:</strong> Phổ cập tài chính cho người chưa có tài khoản ngân hàng.
+                </span>
+              </li>
+              <li className="flex items-center">
+                <div className="mr-3 h-2 w-2 rounded-full bg-[#EDB324]" />
+                <span>
+                  <strong>Quản trị:</strong> Bà con làm chủ dữ liệu. Sự tử tế được ghi nhận minh bạch.
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="doi-ngu" className="bg-white py-20 text-center">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-4 text-3xl font-bold text-[#3A9947]">Đội ngũ Sáng lập</h2>
+          <p className="mb-12 text-lg text-gray-600">Những người trẻ sẵn sàng "lấm lem" cùng thực địa.</p>
+
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <div>
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-gray-400">
+                <User className="h-10 w-10" />
+              </div>
+              <h4 className="text-lg font-bold">Đức Huy</h4>
+              <p className="text-sm font-medium text-[#3A9947]">Lead</p>
+            </div>
+            <div>
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-gray-400">
+                <Code className="h-10 w-10" />
+              </div>
+              <h4 className="text-lg font-bold">Văn Phú</h4>
+              <p className="text-sm font-medium text-[#1CBECF]">Tech</p>
+            </div>
+            <div>
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-gray-400">
+                <PenTool className="h-10 w-10" />
+              </div>
+              <h4 className="text-lg font-bold">Trâm Anh</h4>
+              <p className="text-sm font-medium text-[#EDB324]">Brand</p>
+            </div>
+            <div>
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-gray-400">
+                <Database className="h-10 w-10" />
+              </div>
+              <h4 className="text-lg font-bold">Ngọc Bích</h4>
+              <p className="text-sm font-medium text-[#3A9947]">Data/Ops</p>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-12 max-w-2xl border-t border-gray-100 pt-8">
+            <p className="mb-2 text-sm font-medium uppercase tracking-widest text-gray-500">Cố vấn Chiến lược</p>
+            <h4 className="text-xl font-bold">PGS.TS Đinh Tiên Minh</h4>
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-[#2D3748] py-12 text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 text-center sm:px-6 md:grid-cols-2 md:text-left lg:px-8">
+          <div>
+            <h3 className="mb-2 text-2xl font-bold">NÔNG LẠC</h3>
+            <p className="font-light italic text-gray-400">"Đưa nông sản Việt vươn xa, đôi chân vẫn bám sâu đồng ruộng."</p>
+          </div>
+          <div className="md:text-right">
+            <p className="mb-2 text-gray-300">www.nonglac.com</p>
+            <p className="text-gray-300">administration@nonglac.com</p>
+          </div>
+        </div>
+      </footer>
+
+      {modal.open && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
           }}
         >
-          <Row gutter={[32, 32]}>
-            <Col xs={24} lg={12}>
-              <Title level={3} style={{ color: 'white' }}>THÔNG TIN LIÊN HỆ</Title>
-              <Space direction="vertical" size="middle">
-                <div>
-                  <Text strong style={{ color: '#91d5ff' }}>Trụ sở chính:</Text>
-                  <br />
-                  <Text style={{ color: 'rgba(255,255,255,0.85)' }}>
-                    Vườn ươm Khởi nghiệp, Trường Đại học Yersin Đà Lạt<br />
-                    27 Tôn Thất Tùng, P.8, TP. Đà Lạt
-                  </Text>
-                </div>
-                <div>
-                  <Text strong style={{ color: '#91d5ff' }}>Hotline Hỗ trợ:</Text>
-                  <br />
-                  <Text style={{ color: 'rgba(255,255,255,0.85)' }}>(+84) 938 xxx xxx</Text>
-                </div>
-                <div>
-                  <Text strong style={{ color: '#91d5ff' }}>Email:</Text>
-                  <br />
-                  <Text style={{ color: 'rgba(255,255,255,0.85)' }}>administration@nonglac.com</Text>
-                </div>
-              </Space>
-            </Col>
-            <Col xs={24} lg={12}>
-              <Title level={3} style={{ color: 'white' }}>KẾT NỐI VỚI CHÚNG TÔI</Title>
-              <Space size="large">
-                <Button 
-                  type="primary" 
-                  style={{ 
-                    background: '#1877f2', 
-                    border: 'none',
-                    borderRadius: 8
-                  }}
-                >
-                  Facebook
-                </Button>
-                <Button 
-                  style={{ 
-                    background: '#0084ff', 
-                    border: 'none',
-                    color: 'white',
-                    borderRadius: 8
-                  }}
-                >
-                  Zalo OA
-                </Button>
-              </Space>
-              <Divider style={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-              <Text style={{ color: 'rgba(255,255,255,0.65)' }}>
-                © 2025 Nông Lạc. All Rights Reserved.
-              </Text>
-            </Col>
-          </Row>
-        </Card>
-      </div>
-    </Layout>
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+            <button onClick={closeModal} className="absolute right-4 top-4 text-gray-400 transition hover:text-gray-600" aria-label="Close">
+              <X className="h-6 w-6" />
+            </button>
+            <div className="mb-4 text-[#3A9947]">
+              <Info className="h-10 w-10" />
+            </div>
+            <h3 className="mb-2 text-2xl font-bold text-[#2D3748]">{modal.title}</h3>
+            <p className="mb-6 leading-relaxed text-gray-600">{modal.message}</p>
+            <button onClick={closeModal} className="w-full rounded-lg bg-[#3A9947] py-3 font-bold text-white transition hover:bg-green-700">
+              Đã hiểu
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
 export default AboutUs;
+

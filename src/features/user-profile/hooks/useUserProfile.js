@@ -5,6 +5,8 @@ import { USER_PROFILE_CONSTANTS } from '../constants';
 
 export const useUserProfile = (userId) => {
   const [userProfile, setUserProfile] = useState(null);
+  const [userDisplayBadgeKey, setUserDisplayBadgeKey] = useState(null);
+  const [userMissionScore, setUserMissionScore] = useState(0);
   const [userPosts, setUserPosts] = useState([]);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
@@ -44,6 +46,31 @@ export const useUserProfile = (userId) => {
     }
   };
 
+  const fetchUserDisplayBadge = async () => {
+    try {
+      const missionsDoc = await getDoc(doc(db, 'userMissions', userId));
+      if (!missionsDoc.exists()) {
+        setUserDisplayBadgeKey(null);
+        setUserMissionScore(0);
+        return;
+      }
+
+      const missionsData = missionsDoc.data() || {};
+      const unlockedBadges = Array.isArray(missionsData.unlockedBadges) ? missionsData.unlockedBadges : [];
+      const displayBadgeKey = missionsData.selectedDisplayBadge
+        || missionsData.selectedProfessionBadge
+        || unlockedBadges[0]
+        || null;
+
+      setUserDisplayBadgeKey(displayBadgeKey);
+      setUserMissionScore(typeof missionsData.score === 'number' ? missionsData.score : 0);
+    } catch (error) {
+      console.error('Error fetching user display badge:', error);
+      setUserDisplayBadgeKey(null);
+      setUserMissionScore(0);
+    }
+  };
+
   const loadFollowStats = () => {
     const followersQuery = query(
       collection(db, 'follows'),
@@ -71,6 +98,7 @@ export const useUserProfile = (userId) => {
     if (userId) {
       fetchUserProfile();
       fetchUserPosts();
+      fetchUserDisplayBadge();
       const cleanup = loadFollowStats();
       return cleanup;
     }
@@ -78,6 +106,8 @@ export const useUserProfile = (userId) => {
 
   return {
     userProfile,
+    userDisplayBadgeKey,
+    userMissionScore,
     userPosts,
     followers,
     following,

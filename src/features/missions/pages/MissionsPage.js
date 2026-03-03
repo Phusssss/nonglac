@@ -16,6 +16,10 @@ import {
 import EnhancedLoginModal from '../../../components/enhanced/EnhancedLoginModal';
 
 const { Title, Text } = Typography;
+const isImageIcon = (icon) => (
+  typeof icon === 'string' &&
+  (icon.endsWith('.svg') || icon.endsWith('.png') || icon.startsWith('http') || icon.startsWith('data:'))
+);
 
 /**
  * Trang chính của missions feature
@@ -32,12 +36,21 @@ const MissionsPage = () => {
   const [activeTab, setActiveTab] = useState('missions');
   const [actionLoading, setActionLoading] = useState(false);
   const [showBadgeSelection, setShowBadgeSelection] = useState(false);
+  const [hasShownGuestPrompt, setHasShownGuestPrompt] = useState(false);
+
+  // Tự động hiện popup đăng nhập khi vào trang nhiệm vụ mà chưa đăng nhập
+  React.useEffect(() => {
+    if (!user && !hasShownGuestPrompt) {
+      setShowLoginModal(true);
+      setHasShownGuestPrompt(true);
+    }
+  }, [user, hasShownGuestPrompt, setShowLoginModal]);
 
   // Kiểm tra xem có cần hiển thị modal chọn badge không
   React.useEffect(() => {
     const checkAndCleanupBadges = async () => {
       if (!user) return;
-      
+
       // Kiểm tra dữ liệu hợp lệ
       if (!missionsData.unlockedBadges || !Array.isArray(missionsData.unlockedBadges)) {
         return;
@@ -46,7 +59,7 @@ const MissionsPage = () => {
       // Cleanup dữ liệu cũ nếu có nhiều badge profession
       const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
       const userProfessionBadges = missionsData.unlockedBadges.filter(
-        badge => professionBadges.includes(badge)
+        (badge) => professionBadges.includes(badge)
       );
 
       // Nếu có nhiều hơn 1 badge profession, cleanup
@@ -66,10 +79,10 @@ const MissionsPage = () => {
 
       // Kiểm tra có cần hiển thị modal chọn badge không
       if (missionsData.score >= 500) {
-        const hasSelectedProfession = professionBadges.some(badge => 
+        const hasSelectedProfession = professionBadges.some((badge) =>
           missionsData.unlockedBadges.includes(badge)
         );
-        
+
         if (!hasSelectedProfession) {
           setShowBadgeSelection(true);
         }
@@ -84,11 +97,11 @@ const MissionsPage = () => {
    */
   const handleSelectBadge = async (badgeId) => {
     if (!user) return;
-    
+
     setActionLoading(true);
     const result = await missionsService.selectProfessionBadge(user.uid, badgeId);
     setActionLoading(false);
-    
+
     if (result.success) {
       setShowBadgeSelection(false);
       notification.success({
@@ -96,7 +109,7 @@ const MissionsPage = () => {
         description: `Bạn đã chọn danh hiệu: ${result.badge.label}`,
         duration: 5
       });
-      
+
       // Reload missions data
       window.location.reload();
     } else {
@@ -115,7 +128,7 @@ const MissionsPage = () => {
       setActionLoading(true);
       const result = await executeMission(mission, additionalData);
       setActionLoading(false);
-      
+
       if (result.success) {
         if (result.waitingVerification) {
           notification.info({
@@ -153,16 +166,16 @@ const MissionsPage = () => {
       setActionLoading(true);
       const result = await claimMissionReward(missionId);
       setActionLoading(false);
-      
+
       if (result.success) {
         notification.success({
           message: 'Nhận thưởng thành công!',
           description: `Bạn đã nhận được ${missionsUtils.formatScore(result.reward)} điểm uy tín!`
         });
-        
+
         // Hiển thị badges mới nếu có
         if (result.newBadges && result.newBadges.length > 0) {
-          result.newBadges.forEach(badgeId => {
+          result.newBadges.forEach((badgeId) => {
             const badge = missionsUtils.getBadgeInfo(badgeId);
             if (badge) {
               notification.success({
@@ -202,6 +215,7 @@ const MissionsPage = () => {
 
   // Sắp xếp missions theo độ ưu tiên
   const sortedMissions = missionsUtils.sortMissionsByPriority(missionsData.missions);
+  const currentLevel = missionsUtils.getAgriTrustLevel(missionsData.score);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -209,7 +223,7 @@ const MissionsPage = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <Title level={2} className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-            <TrophyOutlined style={{ color: MISSIONS_CONSTANTS.COLORS.SECONDARY }} /> 
+            <TrophyOutlined style={{ color: MISSIONS_CONSTANTS.COLORS.SECONDARY }} />
             {MISSIONS_CONSTANTS.MESSAGES.LABELS.MISSIONS_TITLE}
           </Title>
           <Text className="text-gray-600">
@@ -223,17 +237,33 @@ const MissionsPage = () => {
         </div>
 
         {/* AgriTrust Level Card */}
-        <Card className="mb-6" style={{ 
-          background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
-          border: 'none',
-          color: 'white'
-        }}>
+        <Card
+          className="mb-6"
+          style={{
+            background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
+            border: 'none',
+            color: 'white'
+          }}
+        >
           <div className="text-center">
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>
-              {missionsUtils.getAgriTrustLevel(missionsData.score).icon}
+            <div style={{ marginBottom: '12px' }}>
+              {isImageIcon(currentLevel.icon) ? (
+                <img
+                  src={currentLevel.icon}
+                  alt={currentLevel.name}
+                  style={{
+                    width: window.innerWidth < 768 ? 72 : 96,
+                    height: window.innerWidth < 768 ? 72 : 96,
+                    objectFit: 'contain',
+                    margin: '0 auto'
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: '48px' }}>{currentLevel.icon}</span>
+              )}
             </div>
             <Title level={3} style={{ color: 'white', margin: 0 }}>
-              {missionsUtils.getAgriTrustLevel(missionsData.score).name}
+              {currentLevel.name}
             </Title>
             <Title level={1} style={{ color: 'white', margin: '8px 0' }}>
               {missionsUtils.formatScore(missionsData.score)} điểm
@@ -252,9 +282,9 @@ const MissionsPage = () => {
         />
 
         {/* Tabs */}
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
           className="bg-white rounded-lg p-4"
           items={[
             {
@@ -268,7 +298,7 @@ const MissionsPage = () => {
                       {MISSIONS_CONSTANTS.MESSAGES.LABELS.LAYER_1}
                     </Title>
                     <Row gutter={[16, 16]} justify="center">
-                      {sortedMissions.filter(m => m.layer === 1).map(mission => (
+                      {sortedMissions.filter((m) => m.layer === 1).map((mission) => (
                         <Col xs={24} sm={12} md={12} lg={12} xl={8} key={mission.id}>
                           <MissionCard
                             mission={mission}
@@ -280,14 +310,14 @@ const MissionsPage = () => {
                       ))}
                     </Row>
                   </div>
-                  
+
                   {/* Lớp 2 */}
                   <div className="mb-6">
                     <Title level={4} className="mb-4">
                       {MISSIONS_CONSTANTS.MESSAGES.LABELS.LAYER_2}
                     </Title>
                     <Row gutter={[16, 16]} justify="center">
-                      {sortedMissions.filter(m => m.layer === 2).map(mission => (
+                      {sortedMissions.filter((m) => m.layer === 2).map((mission) => (
                         <Col xs={24} sm={12} md={12} lg={12} xl={8} key={mission.id}>
                           <MissionCard
                             mission={mission}
@@ -299,14 +329,14 @@ const MissionsPage = () => {
                       ))}
                     </Row>
                   </div>
-                  
+
                   {/* Lớp 3 */}
                   <div className="mb-6">
                     <Title level={4} className="mb-4">
                       {MISSIONS_CONSTANTS.MESSAGES.LABELS.LAYER_3}
                     </Title>
                     <Row gutter={[16, 16]} justify="center">
-                      {sortedMissions.filter(m => m.layer === 3).map(mission => (
+                      {sortedMissions.filter((m) => m.layer === 3).map((mission) => (
                         <Col xs={24} sm={12} md={12} lg={12} xl={8} key={mission.id}>
                           <MissionCard
                             mission={mission}
@@ -318,17 +348,17 @@ const MissionsPage = () => {
                       ))}
                     </Row>
                   </div>
-                  
+
                   {/* Lớp 4 - Tương lai */}
                   <div>
                     <Title level={4} className="mb-4">
-                      Lớp 4: Tương lai (2027) 
+                      Lớp 4: Tương lai (2027)
                       <span className="text-sm text-gray-500 ml-2">
                         {MISSIONS_CONSTANTS.MESSAGES.LABELS.COMING_SOON}
                       </span>
                     </Title>
                     <Row gutter={[16, 16]} justify="center">
-                      {sortedMissions.filter(m => m.layer === 4).map(mission => (
+                      {sortedMissions.filter((m) => m.layer === 4).map((mission) => (
                         <Col xs={24} sm={12} md={12} lg={12} xl={8} key={mission.id}>
                           <MissionCard
                             mission={mission}
@@ -348,7 +378,7 @@ const MissionsPage = () => {
               label: MISSIONS_CONSTANTS.MESSAGES.LABELS.BADGES_TITLE,
               children: (
                 <Row gutter={[16, 16]} justify="center">
-                  {Object.keys(MISSIONS_CONSTANTS.BADGES).map(badgeId => (
+                  {Object.keys(MISSIONS_CONSTANTS.BADGES).map((badgeId) => (
                     <Col xs={12} sm={8} md={6} lg={6} xl={4} key={badgeId}>
                       <BadgeCard
                         badgeId={badgeId}
@@ -363,8 +393,6 @@ const MissionsPage = () => {
           ]}
         />
 
-
-        
         {/* Badge Selection Modal */}
         <BadgeSelectionModal
           open={showBadgeSelection}

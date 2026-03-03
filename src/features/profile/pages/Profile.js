@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { notification } from 'antd';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
-import { useProfile, useProfileEdit } from '../hooks';
+import { useProfile, useProfileEdit, useProfileBadgeSelection } from '../hooks';
 import { profileService } from '../services';
 import { PROFILE_CONSTANTS } from '../constants';
 import {
@@ -28,6 +29,7 @@ const Profile = () => {
     hasMore,
     followers,
     following,
+    missionScore,
     loadMorePosts
   } = useProfile();
 
@@ -42,6 +44,34 @@ const Profile = () => {
     openEditDialog,
     closeEditDialog
   } = useProfileEdit();
+
+  const {
+    loading: badgeLoading,
+    saving: badgeSaving,
+    selectedBadgeId,
+    selectedBadge,
+    availableBadges,
+    updateSelectedBadge
+  } = useProfileBadgeSelection();
+
+  const handleBadgeChange = async (badgeId) => {
+    const result = await updateSelectedBadge(badgeId);
+    if (result.success) {
+      notification.success({
+        message: 'Da cap nhat danh hieu',
+        description: badgeId
+          ? 'Danh hieu hien thi: ' + (result.badge?.label || 'Da cap nhat')
+          : 'Da tat hien thi danh hieu'
+      });
+      return true;
+    }
+
+    notification.error({
+      message: 'Khong the cap nhat danh hieu',
+      description: result.error || 'Vui long thu lai'
+    });
+    return false;
+  };
 
   // Redirect if not logged in
   useEffect(() => {
@@ -77,7 +107,16 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col gap-8">
-          <ProfileHeader onEditClick={openEditDialog} />
+          <ProfileHeader
+            onEditClick={openEditDialog}
+            selectedBadgeId={selectedBadgeId}
+            selectedBadge={selectedBadge}
+            availableBadges={availableBadges}
+            badgeLoading={badgeLoading}
+            badgeSaving={badgeSaving}
+            missionScore={missionScore}
+            onBadgeChange={handleBadgeChange}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <ProfileSidebar 
@@ -127,3 +166,5 @@ const Profile = () => {
 };
 
 export default Profile;
+
+

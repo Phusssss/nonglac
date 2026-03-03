@@ -16,7 +16,16 @@ export const missionsService = {
     try {
       const userDoc = await getDoc(doc(db, 'userMissions', userId));
       if (userDoc.exists()) {
-        return { success: true, data: userDoc.data() };
+        const data = userDoc.data();
+        return {
+          success: true,
+          data: {
+            ...data,
+            unlockedBadges: Array.isArray(data.unlockedBadges) ? data.unlockedBadges : [],
+            selectedProfessionBadge: data.selectedProfessionBadge || null,
+            selectedDisplayBadge: data.selectedDisplayBadge || data.selectedProfessionBadge || null
+          }
+        };
       }
       
       // Tạo dữ liệu mặc định nếu chưa có
@@ -24,6 +33,8 @@ export const missionsService = {
         score: 0,
         missions: MISSIONS_CONSTANTS.DEFAULT_MISSIONS,
         unlockedBadges: [],
+        selectedProfessionBadge: null,
+        selectedDisplayBadge: null,
         dailyLoginStreak: 0,
         lastLoginDate: null,
         createdAt: new Date(),
@@ -513,29 +524,18 @@ export const missionsService = {
    * @returns {string[]} Danh sách badges đã mở khóa
    */
   checkUnlockedBadges(score, currentBadges = []) {
-    // Kiểm tra xem user đã có badge trong nhóm profession chưa
-    const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
-    const hasSelectedProfession = professionBadges.some(badge => 
-      currentBadges.includes(badge)
-    );
-
     const allBadges = Object.entries(MISSIONS_CONSTANTS.BADGES)
       .filter(([badgeKey, badge]) => {
-        // Điều kiện 1: Đạt đủ điểm
         if (score < badge.minScore) return false;
-        
-        // Điều kiện 2: Nếu là badge yêu cầu chọn (profession group)
+
         if (badge.requiresSelection && badge.selectionGroup === 'profession') {
-          // Chỉ thêm nếu badge này đã có trong currentBadges (đã được chọn)
-          // Không tự động thêm badge mới trong nhóm này
           return currentBadges.includes(badgeKey);
         }
-        
-        // Điều kiện 3: Badge tự động mở khóa
+
         return badge.autoUnlock || !badge.requiresSelection;
       })
       .map(([key, _]) => key);
-    
+
     return [...new Set([...currentBadges, ...allBadges])];
   },
 
@@ -546,16 +546,7 @@ export const missionsService = {
    * @returns {boolean} True nếu đủ điểm và chưa chọn
    */
   canSelectProfessionBadge(score, currentBadges = []) {
-    // Kiểm tra đủ 500 điểm
-    if (score < 500) return false;
-    
-    // Kiểm tra đã chọn badge chuyên môn chưa
-    const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
-    const hasSelectedProfession = professionBadges.some(badge => 
-      currentBadges.includes(badge)
-    );
-    
-    return !hasSelectedProfession;
+    return score >= 500;
   },
 
   /**
@@ -566,41 +557,37 @@ export const missionsService = {
    */
   async selectProfessionBadge(userId, badgeId) {
     try {
-      // Validate badge ID
       const validBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
       if (!validBadges.includes(badgeId)) {
         return { success: false, error: 'Badge không hợp lệ' };
       }
 
-      // Lấy dữ liệu user hiện tại
-      const userData = await this.getUserMissionsData(userId);
-      
-      // Đảm bảo unlockedBadges là array
-      const currentBadges = Array.isArray(userData.unlockedBadges) 
-        ? userData.unlockedBadges 
+      const result = await this.getUserMissionsData(userId);
+      if (!result.success) return result;
+      const userData = result.data;
+
+      const currentBadges = Array.isArray(userData.unlockedBadges)
+        ? userData.unlockedBadges
         : [];
-      
-      // Kiểm tra điều kiện
+
       if (!this.canSelectProfessionBadge(userData.score, currentBadges)) {
-        return { success: false, error: 'Không đủ điều kiện hoặc đã chọn badge' };
+        return { success: false, error: 'Bạn cần đạt ít nhất 500 điểm để chọn danh hiệu này' };
       }
 
-      // Xóa tất cả badge profession cũ (nếu có - cleanup dữ liệu cũ)
       const cleanedBadges = currentBadges.filter(
         badge => !validBadges.includes(badge)
       );
 
-      // Thêm badge mới vào danh sách
       const updatedBadges = [...cleanedBadges, badgeId];
 
-      // Cập nhật Firestore
       await this.updateUserMissionsData(userId, {
         unlockedBadges: updatedBadges,
-        selectedProfessionBadge: badgeId
+        selectedProfessionBadge: badgeId,
+        selectedDisplayBadge: badgeId
       });
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         badge: MISSIONS_CONSTANTS.BADGES[badgeId]
       };
     } catch (error) {
@@ -617,23 +604,21 @@ export const missionsService = {
    */
   async cleanupProfessionBadges(userId) {
     try {
-      const userData = await this.getUserMissionsData(userId);
-      
-      // Kiểm tra dữ liệu hợp lệ
-      if (!userData || !userData.unlockedBadges || !Array.isArray(userData.unlockedBadges)) {
+      const result = await this.getUserMissionsData(userId);
+      if (!result.success) return result;
+      const userData = result.data;
+
+      if (!userData || !Array.isArray(userData.unlockedBadges)) {
         return { success: true, cleaned: false, message: 'Không có dữ liệu badge' };
       }
 
       const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
-      
-      // Tìm các badge profession user đang có
+
       const userProfessionBadges = userData.unlockedBadges.filter(
         badge => professionBadges.includes(badge)
       );
 
-      // Nếu có nhiều hơn 1 badge profession
       if (userProfessionBadges.length > 1) {
-        // Giữ lại badge đầu tiên, xóa các badge còn lại
         const badgeToKeep = userProfessionBadges[0];
         const cleanedBadges = userData.unlockedBadges.filter(
           badge => !professionBadges.includes(badge) || badge === badgeToKeep
@@ -641,11 +626,12 @@ export const missionsService = {
 
         await this.updateUserMissionsData(userId, {
           unlockedBadges: cleanedBadges,
-          selectedProfessionBadge: badgeToKeep
+          selectedProfessionBadge: badgeToKeep,
+          selectedDisplayBadge: userData.selectedDisplayBadge || badgeToKeep
         });
 
-        return { 
-          success: true, 
+        return {
+          success: true,
           cleaned: true,
           keptBadge: badgeToKeep,
           removedBadges: userProfessionBadges.filter(b => b !== badgeToKeep)
@@ -659,6 +645,72 @@ export const missionsService = {
     }
   },
 
+  /**
+   * Lấy danh sách danh hiệu có thể hiển thị trên profile
+   * @param {object} missionsData - Dữ liệu missions của user
+   * @returns {string[]} Danh sách badge keys
+   */
+  getAvailableProfileBadges(missionsData = {}) {
+    const unlockedBadges = Array.isArray(missionsData.unlockedBadges) ? missionsData.unlockedBadges : [];
+    const validBadgeKeys = Object.keys(MISSIONS_CONSTANTS.BADGES);
+    const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+
+    const available = [...unlockedBadges];
+
+    if ((missionsData.score || 0) >= 500) {
+      available.push(...professionBadges);
+    }
+
+    if (missionsData.selectedDisplayBadge) {
+      available.push(missionsData.selectedDisplayBadge);
+    }
+
+    return [...new Set(available)].filter((badgeKey) => validBadgeKeys.includes(badgeKey));
+  },
+
+  /**
+   * Cập nhật danh hiệu hiển thị trên profile
+   * @param {string} userId - ID của user
+   * @param {string|null} badgeId - Badge key
+   * @returns {Promise<{success: boolean, badge?: object, error?: string}>}
+   */
+  async setProfileDisplayBadge(userId, badgeId) {
+    try {
+      const result = await this.getUserMissionsData(userId);
+      if (!result.success) return result;
+
+      const userData = result.data;
+      const availableBadges = this.getAvailableProfileBadges(userData);
+      const selectedBadge = badgeId || null;
+
+      if (selectedBadge && !availableBadges.includes(selectedBadge)) {
+        return { success: false, error: 'Danh hiệu chưa được mở khóa' };
+      }
+
+      const professionBadges = ['PRODUCER', 'SUPPLIER', 'TRADER'];
+      const currentBadges = Array.isArray(userData.unlockedBadges) ? userData.unlockedBadges : [];
+      const updatePayload = {
+        selectedDisplayBadge: selectedBadge
+      };
+
+      if (selectedBadge && professionBadges.includes(selectedBadge)) {
+        const cleanedBadges = currentBadges.filter((badge) => !professionBadges.includes(badge));
+        updatePayload.unlockedBadges = [...cleanedBadges, selectedBadge];
+        updatePayload.selectedProfessionBadge = selectedBadge;
+      }
+
+      const updateResult = await this.updateUserMissionsData(userId, updatePayload);
+      if (!updateResult.success) return updateResult;
+
+      return {
+        success: true,
+        badge: selectedBadge ? MISSIONS_CONSTANTS.BADGES[selectedBadge] : null
+      };
+    } catch (error) {
+      console.error('Error setting profile display badge:', error);
+      return { success: false, error: error.message };
+    }
+  },
   /**
    * Cập nhật daily login streak
    * @param {string} userId - ID của user

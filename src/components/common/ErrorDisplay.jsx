@@ -1,7 +1,12 @@
 import React from 'react';
 import { Alert, Button, Space } from 'antd';
 import { ExclamationCircleOutlined, ReloadOutlined, CustomerServiceOutlined } from '@ant-design/icons';
-import { getErrorMessage, isNetworkError, shouldRetry } from '../../constants/errorMessages';
+import {
+  getErrorMessage,
+  isNetworkError,
+  shouldRetry,
+  normalizeVietnameseText
+} from '../../constants/errorMessages';
 
 /**
  * ErrorDisplay Component - Hiển thị lỗi một cách thống nhất
@@ -25,48 +30,41 @@ const ErrorDisplay = ({
 }) => {
   if (!error) return null;
 
-  // Xử lý cả string và Error object
   let errorMessage;
   let isNetwork = false;
   let canRetry = false;
 
   if (typeof error === 'string') {
-    // Nếu error là string, sử dụng trực tiếp
-    errorMessage = error;
-    // Kiểm tra xem có phải là thông báo lỗi đã được format chưa
-    if (error.includes('Số điện thoại hoặc mật khẩu không đúng') || 
-        error.includes('không đúng') || 
-        error.includes('không hợp lệ')) {
-      // Đã là thông báo thân thiện, không cần retry
+    errorMessage = normalizeVietnameseText(error);
+
+    if (
+      errorMessage.includes('Số điện thoại hoặc mật khẩu không đúng') ||
+      errorMessage.includes('không đúng') ||
+      errorMessage.includes('không hợp lệ')
+    ) {
       canRetry = false;
     } else {
-      // Có thể là lỗi kỹ thuật, cho phép retry
       canRetry = true;
     }
   } else {
-    // Nếu error là Error object, sử dụng getErrorMessage
     errorMessage = getErrorMessage(error);
     isNetwork = isNetworkError(error);
     canRetry = shouldRetry(error);
   }
 
-  // Xác định icon dựa trên loại lỗi
   const getIcon = () => {
     if (isNetwork) return <ReloadOutlined />;
     return <ExclamationCircleOutlined />;
   };
 
-  // Xác định loại alert dựa trên lỗi
   const getAlertType = () => {
     if (isNetwork) return 'warning';
     return type;
   };
 
-  // Action buttons
   const renderActions = () => {
     const actions = [];
 
-    // Nút thử lại
     if (showRetry && canRetry && onRetry) {
       actions.push(
         <Button
@@ -81,7 +79,6 @@ const ErrorDisplay = ({
       );
     }
 
-    // Nút liên hệ hỗ trợ
     if (showSupport) {
       actions.push(
         <Button
@@ -90,7 +87,6 @@ const ErrorDisplay = ({
           size="small"
           icon={<CustomerServiceOutlined />}
           onClick={() => {
-            // Có thể mở modal liên hệ hoặc chuyển đến trang hỗ trợ
             window.open('mailto:support@nonglac.com', '_blank');
           }}
         >
@@ -110,12 +106,12 @@ const ErrorDisplay = ({
     <div className={className}>
       <Alert
         message="Có lỗi xảy ra"
-        description={
+        description={(
           <div>
             <div className="mb-2">{errorMessage}</div>
             {renderActions()}
           </div>
-        }
+        )}
         type={getAlertType()}
         icon={getIcon()}
         closable={closable}

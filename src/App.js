@@ -41,6 +41,7 @@ const AdminDashboard = React.lazy(() => import('./features/admin'));
 
 const PlantDoctor = React.lazy(() => import('./pages/PlantDoctor'));
 const MarketInsights = React.lazy(() => import('./pages/MarketInsights'));
+const LatestCoffeePrices = React.lazy(() => import('./pages/LatestCoffeePrices'));
 const AgriMap = React.lazy(() => import('./pages/AgriMap'));
 const AIVideoCall = React.lazy(() => import('./pages/AIVideoCall'));
 
@@ -130,11 +131,14 @@ function App() {
 
             <Route path="/plant-doctor" element={<PlantDoctor />} />
             <Route path="/market-insights" element={<MarketInsights />} />
+            <Route path="/gia-ca-phe-hom-nay" element={<LatestCoffeePrices />} />
+            <Route path="/gia-nong-san" element={<LatestCoffeePrices />} />
             <Route path="/agri-map" element={<AgriMap />} />
             <Route path="/ai-video-call" element={<AIVideoCall />} />
 
             <Route path="/missions" element={<MissionScreen />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/privacy" element={<TermsOfService />} />
             <Route path="/about-us" element={<AboutUs />} />
 
 

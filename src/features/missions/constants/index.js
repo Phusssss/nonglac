@@ -1,3 +1,10 @@
+const badgeVerified = '/badges/badge-verified.svg';
+const badgeProducer = '/badges/badge-producer.svg';
+const badgeSupplier = '/badges/badge-supplier.svg';
+const badgeTrader = '/badges/badge-trader.svg';
+const badgeConnector = '/badges/badge-connector.svg';
+const badgeLoanEligible = '/badges/badge-loan-eligible.svg';
+
 export const MISSIONS_CONSTANTS = {
   // UI Constants
   COLORS: {
@@ -13,15 +20,15 @@ export const MISSIONS_CONSTANTS = {
   // AgriTrust Score System
   AGRI_TRUST: {
     LEVELS: {
-      BRONZE: { min: 200, max: 499, name: 'Tích xanh', icon: '✅', color: '#cd7f32' },
-      SILVER: { min: 500, max: 999, name: 'Người sản xuất', icon: '🥈', color: '#c0c0c0' },
-      GOLD: { min: 1000, max: 1499, name: 'Người kết nối', icon: '🥇', color: '#ffd700' },
-      PLATINUM: { min: 1500, max: 9999, name: 'Vay vốn', icon: '💎', color: '#e5e4e2' }
+      BRONZE: { min: 200, max: 499, name: 'Tích xanh', icon: badgeVerified, color: '#cd7f32' },
+      SILVER: { min: 500, max: 999, name: 'Người sản xuất', icon: badgeProducer, color: '#c0c0c0' },
+      GOLD: { min: 1000, max: 1499, name: 'Người kết nối', icon: badgeConnector, color: '#ffd700' },
+      PLATINUM: { min: 1500, max: 9999, name: 'Vay vốn', icon: badgeLoanEligible, color: '#e5e4e2' }
     },
     WEIGHTS: {
-      IDENTITY: 0.2,  // Lớp 1: 20%
-      BEHAVIOR: 0.4,  // Lớp 2: 40% 
-      FINANCIAL: 0.4  // Lớp 3: 40%
+      IDENTITY: 0.2, // Lớp 1: 20%
+      BEHAVIOR: 0.4, // Lớp 2: 40%
+      FINANCIAL: 0.4 // Lớp 3: 40%
     }
   },
 
@@ -36,10 +43,10 @@ export const MISSIONS_CONSTANTS = {
 
   // Mission Categories
   MISSION_CATEGORIES: {
-    IDENTITY: 'identity',     // Lớp 1
-    BEHAVIOR: 'behavior',     // Lớp 2
-    SOCIAL: 'social',         // Lớp 3
-    REFERRAL: 'referral'      // Mini game
+    IDENTITY: 'identity', // Lớp 1
+    BEHAVIOR: 'behavior', // Lớp 2
+    SOCIAL: 'social', // Lớp 3
+    REFERRAL: 'referral' // Mini game
   },
 
   // Badge Types
@@ -50,9 +57,9 @@ export const MISSIONS_CONSTANTS = {
     DIAMOND: 'diamond'
   },
 
-  // Default Missions theo thuật toán mới
+  // Default missions theo thuật toán mới
   DEFAULT_MISSIONS: [
-    // NHIỆM VỤ 1 - Lớp 1 (20%): Dữ liệu định danh & tài sản
+    // Nhiệm vụ lớp 1 (20%): Dữ liệu định danh
     {
       id: 'verify_phone',
       title: 'Xác minh số điện thoại',
@@ -79,8 +86,8 @@ export const MISSIONS_CONSTANTS = {
       layer: 1,
       weight: 0.2
     },
-    
-    // NHIỆM VỤ 2 - Lớp 2 (40%): Năng lực & Hành vi
+
+    // Nhiệm vụ lớp 2 (40%): Năng lực & Hành vi
     {
       id: 'add_farm_area',
       title: 'Diện tích canh tác',
@@ -94,7 +101,8 @@ export const MISSIONS_CONSTANTS = {
       layer: 2,
       weight: 0.4
     },
-    {      id: 'first_product_post',
+    {
+      id: 'first_product_post',
       title: 'Đăng sản phẩm đầu tiên',
       description: 'Đăng sản phẩm đầu tiên lên marketplace',
       icon: '📦',
@@ -107,8 +115,8 @@ export const MISSIONS_CONSTANTS = {
       weight: 0.4,
       actionText: 'Xem hướng dẫn'
     },
-    
-    // NHIỆM VỤ 3 - Lớp 3 (40%): Uy tín xã hội
+
+    // Nhiệm vụ lớp 3 (40%): Uy tín xã hội
     {
       id: 'get_first_like',
       title: 'Nhận lượt thích',
@@ -141,12 +149,12 @@ export const MISSIONS_CONSTANTS = {
       autoUpdate: true,
       noButton: true
     },
-    
-    // NHIỆM VỤ 4 - Tương lai (2027)
+
+    // Nhiệm vụ lớp 4: Tương lai (2027)
     {
       id: 'transaction_success_rate',
-      title: 'Tỉ lệ giao dịch thành công',
-      description: 'Đạt >90% tỉ lệ xác nhận giao dịch thành công (từ giao dịch thứ 100)',
+      title: 'Tỷ lệ giao dịch thành công',
+      description: 'Đạt >90% tỷ lệ xác nhận giao dịch thành công (từ giao dịch thứ 100)',
       icon: '💰',
       category: 'behavior',
       reward: 500,
@@ -165,7 +173,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'verified',
       label: 'Tích xanh',
       description: 'Đã xác minh thông tin cơ bản',
-      icon: '✅',
+      icon: badgeVerified,
       minScore: 200,
       type: 'bronze',
       benefits: ['Bài viết được ưu tiên hiển thị'],
@@ -175,7 +183,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'producer',
       label: 'Người sản xuất',
       description: 'Nhà sản xuất nông sản uy tín',
-      icon: '🌾',
+      icon: badgeProducer,
       minScore: 500,
       type: 'silver',
       benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
@@ -186,7 +194,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'supplier',
       label: 'Nhà cung cấp',
       description: 'Nhà cung cấp vật tư nông nghiệp',
-      icon: '🚚',
+      icon: badgeSupplier,
       minScore: 500,
       type: 'silver',
       benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
@@ -197,7 +205,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'trader',
       label: 'Vựa/Buôn bán',
       description: 'Thương lái, vựa thu mua',
-      icon: '🏪',
+      icon: badgeTrader,
       minScore: 500,
       type: 'silver',
       benefits: ['Chọn huy hiệu chuyên môn', 'Ưu tiên hiển thị cao hơn'],
@@ -208,7 +216,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'connector',
       label: 'Người kết nối',
       description: 'Thành viên tích cực kết nối cộng đồng',
-      icon: '🥇',
+      icon: badgeConnector,
       minScore: 1000,
       type: 'gold',
       benefits: ['Nhận Nút Bạc vật lý', 'Ghép xe logistics', 'BNPL', 'Ưu tiên tối đa'],
@@ -218,7 +226,7 @@ export const MISSIONS_CONSTANTS = {
       id: 'loan_eligible',
       label: 'Đủ điều kiện vay vốn',
       description: 'Đủ điều kiện vay vốn ngân hàng',
-      icon: '💎',
+      icon: badgeLoanEligible,
       minScore: 1500,
       type: 'diamond',
       benefits: ['Vay vốn ngân hàng', 'Tất cả quyền lợi cao cấp'],
@@ -227,23 +235,23 @@ export const MISSIONS_CONSTANTS = {
     }
   },
 
-  // Referral System - Mini Game
+  // Referral System - Mini game
   REFERRAL_SYSTEM: {
     BRONZE_BUTTON: {
       title: 'Nút Đồng NôngLạc',
       description: 'Tiếp thị liên kết - Nhận thưởng lên tới 100.000đ/người',
       icon: '🥉',
       rewards: {
-        MISSION_1: 30000,  // 30k khi người được mời hoàn thành nhiệm vụ 1
-        MISSION_2: 20000,  // +20k khi hoàn thành nhiệm vụ 2
-        MISSION_3: 50000   // +50k khi hoàn thành nhiệm vụ 3
+        MISSION_1: 30000, // 30k khi người được mời hoàn thành nhiệm vụ 1
+        MISSION_2: 20000, // +20k khi hoàn thành nhiệm vụ 2
+        MISSION_3: 50000 // +50k khi hoàn thành nhiệm vụ 3
       },
       endDate: '2024-07-01',
       launchDate: '2024-04-01'
     }
   },
 
-  // Physical Rewards
+  // Physical rewards
   PHYSICAL_REWARDS: {
     SILVER_BUTTON: {
       id: 'silver_button',
@@ -286,7 +294,7 @@ export const MISSIONS_CONSTANTS = {
     }
   },
 
-  // Modal Configurations
+  // Modal configurations
   MODAL_CONFIGS: {
     FARM_ADDRESS: {
       title: 'Nhập địa chỉ canh tác',

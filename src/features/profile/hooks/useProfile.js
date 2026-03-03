@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, limit, startAfter, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, startAfter, getDocs, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
 import { PROFILE_CONSTANTS } from '../constants';
@@ -13,6 +13,7 @@ export const useProfile = () => {
   const [lastDoc, setLastDoc] = useState(null);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
+  const [missionScore, setMissionScore] = useState(0);
 
   const loadInitialPosts = async () => {
     if (!user) return;
@@ -106,6 +107,26 @@ export const useProfile = () => {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setMissionScore(0);
+      return undefined;
+    }
+
+    const missionDocRef = doc(db, 'userMissions', user.uid);
+    const unsubscribeMissionScore = onSnapshot(missionDocRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setMissionScore(0);
+        return;
+      }
+
+      const data = snapshot.data() || {};
+      setMissionScore(typeof data.score === 'number' ? data.score : 0);
+    });
+
+    return () => unsubscribeMissionScore();
+  }, [user?.uid]);
+
   return {
     userPosts,
     loading,
@@ -113,6 +134,7 @@ export const useProfile = () => {
     hasMore,
     followers,
     following,
+    missionScore,
     loadMorePosts
   };
 };

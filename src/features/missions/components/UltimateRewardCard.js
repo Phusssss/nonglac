@@ -9,10 +9,10 @@ const { Title, Text } = Typography;
 /**
  * Component hiển thị ultimate reward
  */
-const UltimateRewardCard = ({ 
-  currentScore, 
+const UltimateRewardCard = ({
+  currentScore,
   onClaimUltimateReward,
-  loading = false 
+  loading = false
 }) => {
   const { PHYSICAL_REWARDS } = MISSIONS_CONSTANTS;
   const silverButton = PHYSICAL_REWARDS.SILVER_BUTTON;
@@ -21,20 +21,20 @@ const UltimateRewardCard = ({
   const remaining = Math.max(0, silverButton.threshold - currentScore);
 
   return (
-    <Card 
-      className="mb-6" 
-      style={{ 
-        background: MISSIONS_CONSTANTS.COLORS.GRADIENT_REWARD, 
-        border: `2px solid ${MISSIONS_CONSTANTS.COLORS.SECONDARY}` 
+    <Card
+      className="mb-6"
+      style={{
+        background: MISSIONS_CONSTANTS.COLORS.GRADIENT_REWARD,
+        border: `2px solid ${MISSIONS_CONSTANTS.COLORS.SECONDARY}`
       }}
     >
       <Row align="middle" gutter={[16, 16]}>
         {/* Ultimate Reward Icon */}
         <Col xs={24} sm={4} className="text-center">
-          <img 
-            src={nutbacImage} 
-            alt="Nút Bạc NôngLạc" 
-            style={{ 
+          <img
+            src={nutbacImage}
+            alt="Nút Bạc NôngLạc"
+            style={{
               width: window.innerWidth < 768 ? '120px' : '180px',
               height: window.innerWidth < 768 ? '120px' : '180px',
               objectFit: 'contain',
@@ -46,7 +46,7 @@ const UltimateRewardCard = ({
             }}
           />
         </Col>
-        
+
         {/* Ultimate Reward Info */}
         <Col xs={24} sm={14}>
           <Title level={window.innerWidth < 768 ? 5 : 4} style={{ margin: 0 }}>
@@ -55,14 +55,14 @@ const UltimateRewardCard = ({
           <Text className="text-sm md:text-base">
             {silverButton.description}
           </Text>
-          
+
           {/* Progress */}
           <div style={{ marginTop: '10px' }}>
             <Text strong className="text-xs md:text-sm">
               Tiến độ: {missionsUtils.formatScore(currentScore)} / {missionsUtils.formatScore(silverButton.threshold)}
             </Text>
-            <Progress 
-              percent={progressPercent} 
+            <Progress
+              percent={progressPercent}
               strokeColor={MISSIONS_CONSTANTS.COLORS.SECONDARY}
               trailColor="#f0f0f0"
             />
@@ -91,12 +91,12 @@ const UltimateRewardCard = ({
             </ul>
           </div>
         </Col>
-        
+
         {/* Claim Button */}
         <Col xs={24} sm={6} className="text-center">
-          <Button 
-            type="primary" 
-            size={window.innerWidth < 768 ? 'middle' : 'large'} 
+          <Button
+            type="primary"
+            size={window.innerWidth < 768 ? 'middle' : 'large'}
             disabled={!canClaim}
             loading={loading}
             onClick={onClaimUltimateReward}
@@ -108,11 +108,11 @@ const UltimateRewardCard = ({
           >
             {canClaim ? 'Nhận ngay!' : 'Chưa đủ điều kiện'}
           </Button>
-          
+
           {canClaim && (
             <div className="mt-2">
               <Text style={{ fontSize: '10px', color: '#52c41a' }}>
-                ✨ Sẵn sàng nhận thưởng!
+                Sẵn sàng nhận thưởng!
               </Text>
             </div>
           )}

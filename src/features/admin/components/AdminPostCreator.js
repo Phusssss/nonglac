@@ -1,45 +1,173 @@
-import React, { useState } from 'react';
-import { Card, Form, Input, Button, Select, Space, message, Row, Col, Typography } from 'antd';
+import React, { useRef, useState } from 'react';
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Select,
+  Space,
+  message,
+  Row,
+  Col,
+  Typography,
+  Modal
+} from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
+import { auth, db } from '../../../firebase/config';
+import GitHubImageUpload from '../../../components/GitHubImageUpload';
+import PostCard from '../../../components/PostCard';
 import { FileEdit, Send } from 'lucide-react';
 
 const { Title, Text } = Typography;
 
+const parseImageUrls = (raw) => {
+  if (!raw || typeof raw !== 'string') return [];
+  return raw
+    .split(/\r?\n|,/)
+    .map((url) => url.trim())
+    .filter(Boolean);
+};
+
+const sanitizeOptional = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const stripUndefinedDeep = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(stripUndefinedDeep);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, stripUndefinedDeep(v)])
+    );
+  }
+
+  return value;
+};
+
 const AdminPostCreator = () => {
   const [form] = Form.useForm();
+  const uploaderRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+
+  const buildPostData = (values, uploadedMedia = []) => {
+    const externalImageUrls = parseImageUrls(values.externalImageUrls);
+
+    const externalMedia = externalImageUrls.map((url) => ({
+      url,
+      type: 'image',
+      fileName: null,
+      fileSize: null
+    }));
+
+    const media = [...uploadedMedia, ...externalMedia];
+    const images = media.map((item) => item.url).filter(Boolean);
+
+    return {
+      title: values.title.trim(),
+      content: values.content.trim(),
+      category: values.category,
+      source: sanitizeOptional(values.source),
+      url: sanitizeOptional(values.url),
+      media,
+      images,
+      imageUrl: images[0] || null,
+      authorId: 'news_admin',
+      authorName: sanitizeOptional(values.authorName) || 'Tin tức nông nghiệp',
+      authorAvatar: null,
+      likes: 0,
+      comments: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      isAdminPost: true
+    };
+  };
+
+  const resetFormToDefaults = () => {
+    form.resetFields();
+    form.setFieldsValue({
+      category: 'news',
+      authorName: 'Tin tức nông nghiệp',
+      source: 'Khuyến nông',
+      url: '',
+      externalImageUrls: ''
+    });
+    if (uploaderRef.current?.clearAll) {
+      uploaderRef.current.clearAll();
+    }
+  };
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const postData = {
-        ...values,
-        authorId: 'admin_system',
-        authorName: 'Hệ thống NôngLạc',
-        authorAvatar: null,
-        likes: 0,
-        comments: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isAdminPost: true
-      };
+      if (!auth.currentUser && uploaderRef.current?.uploadSelectedFiles) {
+        throw new Error('Bạn cần đăng nhập tài khoản trước khi tải ảnh từ máy lên. Hoặc dùng mục "URL ảnh bổ sung".');
+      }
 
+      let uploadedMedia = [];
+      if (uploaderRef.current?.uploadSelectedFiles) {
+        uploadedMedia = await uploaderRef.current.uploadSelectedFiles();
+      }
+
+      const postData = stripUndefinedDeep(buildPostData(values, uploadedMedia));
       await addDoc(collection(db, 'posts'), postData);
+
       message.success('Đã tạo bài viết thành công!');
-      form.resetFields();
+      resetFormToDefaults();
+      setPreviewOpen(false);
+      setPreviewData(null);
     } catch (error) {
-      message.error('Lỗi khi tạo bài viết: ' + error.message);
+      const msg = String(error?.message || '');
+      if (msg.includes('storage/unauthorized')) {
+        message.error('Bạn chưa đăng nhập tài khoản nên không có quyền upload ảnh lên Firebase Storage. Vui lòng đăng nhập rồi thử lại.');
+      } else {
+        message.error(`Lỗi khi tạo bài viết: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleOpenPreview = async () => {
+    try {
+      const values = await form.validateFields();
+      const localPreviewItems = uploaderRef.current?.getSelectedPreviewItems?.() || [];
+      const localPreviewMedia = localPreviewItems.map((item) => ({
+        url: item.url,
+        type: item.isVideo ? 'video' : 'image',
+        thumbnailUrl: item.thumbnailUrl,
+        fileName: item.fileName
+      }));
+
+      const data = buildPostData(values, localPreviewMedia);
+      setPreviewData({
+        ...data,
+        id: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        authorReputation: 100,
+        isAutoGenerated: true
+      });
+      setPreviewOpen(true);
+    } catch (error) {
+      // AntD sẽ hiển thị lỗi trực tiếp tại form
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Card 
-        bordered={false} 
+      <Card
+        bordered={false}
         className="shadow-sm rounded-2xl overflow-hidden"
-        title={
+        title={(
           <div className="flex items-center gap-3 py-2">
             <div className="w-10 h-10 bg-agri-100 rounded-xl flex items-center justify-center">
               <FileEdit className="text-agri-600 w-6 h-6" />
@@ -49,13 +177,19 @@ const AdminPostCreator = () => {
               <Text type="secondary" className="text-xs">Đăng tin tức hoặc thông báo chính thức</Text>
             </div>
           </div>
-        }
+        )}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ category: 'news' }}
+          initialValues={{
+            category: 'news',
+            authorName: 'Tin tức nông nghiệp',
+            source: 'Khuyến nông',
+            url: '',
+            externalImageUrls: ''
+          }}
         >
           <Row gutter={24}>
             <Col xs={24} md={16}>
@@ -64,7 +198,7 @@ const AdminPostCreator = () => {
                 label={<Text strong>Tiêu đề bài viết</Text>}
                 rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
               >
-                <Input placeholder="Ví dụ: Cập nhật giá lúa hôm nay tại ĐBSCL" className="h-12 rounded-xl" />
+                <Input placeholder="Ví dụ: Hội thảo: Phát huy và nâng cao hiệu quả mô hình kinh tế VAC" className="h-12 rounded-xl" />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
@@ -83,33 +217,87 @@ const AdminPostCreator = () => {
             </Col>
           </Row>
 
+          <Row gutter={24}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="authorName"
+                label={<Text strong>Tác giả hiển thị</Text>}
+                rules={[{ required: true, message: 'Vui lòng nhập tên tác giả hiển thị' }]}
+              >
+                <Input placeholder="Ví dụ: Tin tức nông nghiệp" className="h-12 rounded-xl" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="source"
+                label={<Text strong>Nguồn</Text>}
+              >
+                <Input placeholder="Ví dụ: Khuyến nông" className="h-12 rounded-xl" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="url"
+            label={<Text strong>Link bài gốc (tùy chọn)</Text>}
+            rules={[{ type: 'url', message: 'Link bài gốc không hợp lệ' }]}
+          >
+            <Input placeholder="https://..." className="h-12 rounded-xl" />
+          </Form.Item>
+
           <Form.Item
             name="content"
             label={<Text strong>Nội dung chi tiết</Text>}
             rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}
           >
-            <Input.TextArea 
-              rows={8} 
-              placeholder="Nhập nội dung bài viết..." 
+            <Input.TextArea
+              rows={8}
+              placeholder="Nhập nội dung bài viết..."
               className="rounded-xl p-4"
             />
           </Form.Item>
 
           <Form.Item
-            name="imageUrl"
-            label={<Text strong>URL Hình ảnh (tùy chọn)</Text>}
+            label={<Text strong>Ảnh từ bộ nhớ máy</Text>}
+            extra="Chọn nhiều ảnh trực tiếp từ máy. Ảnh sẽ được upload khi bấm Đăng bài."
           >
-            <Input placeholder="https://example.com/image.jpg" className="h-12 rounded-xl" />
+            <GitHubImageUpload
+              ref={uploaderRef}
+              autoUpload={false}
+              maxSize={8}
+              maxFiles={10}
+              supportVideo={false}
+              folder="posts"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="externalImageUrls"
+            label={<Text strong>URL ảnh bổ sung (tùy chọn)</Text>}
+            extra="Chỉ dùng khi bạn muốn gắn thêm ảnh từ nguồn bên ngoài. Mỗi dòng 1 URL."
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder={'https://example.com/image-1.jpg\nhttps://example.com/image-2.jpg'}
+              className="rounded-xl p-4"
+            />
           </Form.Item>
 
           <div className="pt-4 border-t border-gray-50 flex justify-end">
             <Space>
-              <Button onClick={() => form.resetFields()} className="h-12 px-8 rounded-xl">
+              <Button onClick={resetFormToDefaults} className="h-12 px-8 rounded-xl">
                 Làm mới
               </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                icon={<EyeOutlined />}
+                onClick={handleOpenPreview}
+                className="h-12 px-8 rounded-xl"
+              >
+                Xem trước
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 icon={<Send className="w-4 h-4" />}
                 className="bg-agri-600 border-none h-12 px-10 rounded-xl font-bold flex items-center gap-2"
@@ -120,6 +308,27 @@ const AdminPostCreator = () => {
           </div>
         </Form>
       </Card>
+
+      <Modal
+        title="Xem trước bài viết"
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        width={920}
+        footer={(
+          <Space>
+            <Button onClick={() => setPreviewOpen(false)}>Đóng</Button>
+            <Button type="primary" loading={loading} onClick={() => form.submit()}>
+              Đăng bài
+            </Button>
+          </Space>
+        )}
+      >
+        {previewData && (
+          <div className="pointer-events-none">
+            <PostCard post={previewData} isDetailView />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

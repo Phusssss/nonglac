@@ -279,6 +279,31 @@ const ResponsiveNavbar = () => {
         </div>
       </header>
 
+      {/* Quick access links for About/Policy pages */}
+      <div className="border-b border-green-100 bg-[#F8FFF5]">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-2 text-xs sm:text-sm">
+          <button
+            onClick={() => navigate('/about-us')}
+            className={`font-medium transition-colors ${
+              location.pathname === '/about-us' ? 'text-[#2E7D32]' : 'text-gray-700 hover:text-[#2E7D32]'
+            }`}
+          >
+            Giới thiệu
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => navigate('/terms-of-service')}
+            className={`font-medium transition-colors ${
+              location.pathname === '/terms-of-service' || location.pathname === '/privacy'
+                ? 'text-[#2E7D32]'
+                : 'text-gray-700 hover:text-[#2E7D32]'
+            }`}
+          >
+            Điều khoản & Bảo mật
+          </button>
+        </div>
+      </div>
+
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 text-gray-600">
         <div className="flex justify-center items-end px-4 py-3 relative">

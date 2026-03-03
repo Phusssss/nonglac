@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import { Card, Button, Typography, Space, Alert, Table, Tag } from 'antd';
 import { ToolOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons';
-import { cleanupAllUsersProfessionBadges, reportDuplicateProfessionBadges } from '../utils/cleanupProfessionBadges';
+import {
+  cleanupAllUsersProfessionBadges,
+  reportDuplicateProfessionBadges,
+  migrateSelectedDisplayBadgeForLegacyUsers
+} from '../utils/cleanupProfessionBadges';
 
 const { Title, Text } = Typography;
 
 /**
- * Component admin để cleanup badge profession thừa
+ * Component admin để cleanup badge profession thừa + migration selectedDisplayBadge
  */
 const BadgeCleanupTool = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [cleanupResult, setCleanupResult] = useState(null);
+  const [migrationResult, setMigrationResult] = useState(null);
 
   const handleReport = async () => {
     setLoading(true);
     setCleanupResult(null);
+    setMigrationResult(null);
     try {
       const duplicates = await reportDuplicateProfessionBadges();
       setReportData(duplicates);
@@ -32,11 +38,29 @@ const BadgeCleanupTool = () => {
 
     setLoading(true);
     setReportData(null);
+    setMigrationResult(null);
     try {
       const result = await cleanupAllUsersProfessionBadges();
       setCleanupResult(result);
     } catch (error) {
       console.error('Error during cleanup:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleMigrateDisplayBadge = async () => {
+    if (!window.confirm('Bạn có chắc muốn chạy migration selectedDisplayBadge cho tài khoản cũ?')) {
+      return;
+    }
+
+    setLoading(true);
+    setReportData(null);
+    setCleanupResult(null);
+    try {
+      const result = await migrateSelectedDisplayBadgeForLegacyUsers();
+      setMigrationResult(result);
+    } catch (error) {
+      console.error('Error during selectedDisplayBadge migration:', error);
     }
     setLoading(false);
   };
@@ -54,7 +78,7 @@ const BadgeCleanupTool = () => {
       key: 'badges',
       render: (badges) => (
         <Space>
-          {badges.map(badge => (
+          {badges.map((badge) => (
             <Tag color="orange" key={badge}>{badge}</Tag>
           ))}
         </Space>
@@ -87,7 +111,7 @@ const BadgeCleanupTool = () => {
       key: 'removedBadges',
       render: (badges) => badges ? (
         <Space>
-          {badges.map(badge => (
+          {badges.map((badge) => (
             <Tag color="red" key={badge}>{badge}</Tag>
           ))}
         </Space>
@@ -110,16 +134,16 @@ const BadgeCleanupTool = () => {
       <Title level={4}>
         <ToolOutlined /> Badge Cleanup Tool
       </Title>
-      
+
       <Alert
-        message="Công cụ cleanup badge profession"
-        description="Công cụ này giúp xóa các badge profession thừa cho user có nhiều hơn 1 badge (PRODUCER, SUPPLIER, TRADER). Hệ thống sẽ giữ lại badge đầu tiên và xóa các badge còn lại."
+        message="Công cụ cleanup và migration badge"
+        description="Dùng để cleanup badge profession bị trùng và chạy migration selectedDisplayBadge cho các tài khoản cũ."
         type="info"
         showIcon
         className="mb-4"
       />
 
-      <Space className="mb-4">
+      <Space className="mb-4" wrap>
         <Button
           icon={<SearchOutlined />}
           onClick={handleReport}
@@ -127,7 +151,7 @@ const BadgeCleanupTool = () => {
         >
           Kiểm tra User có Badge thừa
         </Button>
-        
+
         <Button
           type="primary"
           danger
@@ -136,6 +160,14 @@ const BadgeCleanupTool = () => {
           loading={loading}
         >
           Cleanup Tất cả
+        </Button>
+
+        <Button
+          type="primary"
+          onClick={handleMigrateDisplayBadge}
+          loading={loading}
+        >
+          Migrate selectedDisplayBadge
         </Button>
       </Space>
 
@@ -169,7 +201,7 @@ const BadgeCleanupTool = () => {
             showIcon
             className="mb-4"
           />
-          
+
           {cleanupResult.results.length > 0 && (
             <>
               <Title level={5}>Chi tiết cleanup</Title>
@@ -182,6 +214,24 @@ const BadgeCleanupTool = () => {
               />
             </>
           )}
+        </div>
+      )}
+
+      {migrationResult && (
+        <div className="mt-4">
+          <Alert
+            message="Migration selectedDisplayBadge hoàn tất"
+            description={
+              <div>
+                <p>Tổng số user đã kiểm tra: {migrationResult.totalUsers}</p>
+                <p>Số user đã migrate: {migrationResult.migratedUsers}</p>
+                <p>Số user bỏ qua: {migrationResult.skippedUsers}</p>
+                <p>Số lỗi: {migrationResult.errorUsers}</p>
+              </div>
+            }
+            type="success"
+            showIcon
+          />
         </div>
       )}
     </Card>

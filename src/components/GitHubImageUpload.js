@@ -190,6 +190,15 @@ const GitHubImageUpload = forwardRef(({
       const pending = previewsRef.current.filter((item) => !item.uploadedMedia);
       return uploadPreviewItems(pending);
     },
+    getSelectedPreviewItems: () => (
+      previewsRef.current.map((item) => ({
+        id: item.id,
+        url: item.url,
+        thumbnailUrl: item.thumbnailUrl || null,
+        isVideo: Boolean(item.isVideo),
+        fileName: item.file?.name || null
+      }))
+    ),
     clearAll: () => {
       previewsRef.current.forEach((item) => {
         if (item.url) URL.revokeObjectURL(item.url);

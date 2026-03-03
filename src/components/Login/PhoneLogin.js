@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService';
 import { authRedirectService } from '../../services/authRedirectService';
 import { ErrorDisplay } from '../common';
+import { normalizeVietnameseText } from '../../constants/errorMessages';
 import logo from '../../assets/images/logo.demo.nontext.png';
 
 const { Title, Text, Link } = Typography;
@@ -19,7 +20,7 @@ const PhoneLogin = () => {
   useEffect(() => {
     const message = localStorage.getItem('loginMessage');
     if (message) {
-      setLoginMessage(message);
+      setLoginMessage(normalizeVietnameseText(message));
     }
   }, []);
 
@@ -32,16 +33,14 @@ const PhoneLogin = () => {
         values.phoneNumber,
         values.password
       );
-      
+
       if (result.success) {
-        // Xử lý redirect sau khi đăng nhập thành công
         authRedirectService.handlePostLoginRedirect(navigate);
       } else {
-        // ErrorDisplay có thể xử lý cả string và Error object
-        setError(result.message);
+        setError(normalizeVietnameseText(result.message));
       }
-    } catch (error) {
-      setError(error);
+    } catch (caughtError) {
+      setError(caughtError);
     } finally {
       setLoading(false);
     }
@@ -53,9 +52,9 @@ const PhoneLogin = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card 
+      <Card
         className="w-full max-w-md"
-        style={{ 
+        style={{
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
         }}
       >
@@ -73,8 +72,8 @@ const PhoneLogin = () => {
           <ErrorDisplay
             error={error}
             onRetry={handleRetry}
-            showRetry={true}
-            showSupport={true}
+            showRetry
+            showSupport
             className="mb-4"
           />
         )}
@@ -133,7 +132,7 @@ const PhoneLogin = () => {
           <div>
             <Space>
               <Text className="text-gray-600">Chưa có tài khoản?</Text>
-              <Link 
+              <Link
                 onClick={() => navigate('/phone-register')}
                 className="text-[#4CAF50] hover:text-[#45a049]"
               >

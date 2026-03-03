@@ -9,7 +9,7 @@ export const FIREBASE_AUTH_ERRORS = {
   'auth/user-disabled': 'Tài khoản đã bị vô hiệu hóa. Liên hệ hỗ trợ để được giúp đỡ.',
   'auth/email-already-in-use': 'Email này đã được sử dụng cho tài khoản khác.',
   'auth/weak-password': 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn (tối thiểu 6 ký tự).',
-  
+
   // Phone authentication errors
   'auth/invalid-phone-number': 'Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng.',
   'auth/missing-phone-number': 'Vui lòng nhập số điện thoại.',
@@ -19,25 +19,25 @@ export const FIREBASE_AUTH_ERRORS = {
   'auth/invalid-verification-id': 'Phiên xác thực không hợp lệ. Vui lòng gửi lại mã OTP.',
   'auth/code-expired': 'Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.',
   'auth/session-expired': 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-  
+
   // Network and server errors
   'auth/network-request-failed': 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.',
   'auth/timeout': 'Kết nối bị timeout. Vui lòng thử lại.',
   'auth/too-many-requests': 'Quá nhiều yêu cầu. Vui lòng đợi một lúc rồi thử lại.',
   'auth/internal-error': 'Lỗi hệ thống. Vui lòng thử lại sau.',
   'auth/operation-not-allowed': 'Phương thức đăng nhập này chưa được kích hoạt.',
-  
+
   // Account management errors
   'auth/requires-recent-login': 'Thao tác này yêu cầu đăng nhập gần đây. Vui lòng đăng nhập lại.',
   'auth/credential-already-in-use': 'Thông tin xác thực đã được sử dụng cho tài khoản khác.',
   'auth/account-exists-with-different-credential': 'Tài khoản đã tồn tại với phương thức đăng nhập khác.',
-  
+
   // Custom application errors
   'app/phone-not-registered': 'Số điện thoại chưa được đăng ký. Vui lòng tạo tài khoản mới.',
   'app/phone-already-registered': 'Số điện thoại đã được đăng ký. Vui lòng đăng nhập.',
   'app/invalid-phone-format': 'Định dạng số điện thoại không đúng. Vui lòng nhập số điện thoại Việt Nam hợp lệ.',
   'app/otp-not-sent': 'Không thể gửi mã OTP. Vui lòng thử lại.',
-  'app/registration-incomplete': 'Quá trình đăng ký chưa hoàn tất. Vui lòng thử lại từ đầu.',
+  'app/registration-incomplete': 'Quá trình đăng ký chưa hoàn tất. Vui lòng thử lại từ đầu.'
 };
 
 // Firestore Database Error Messages
@@ -52,7 +52,7 @@ export const FIRESTORE_ERRORS = {
   'firestore/unimplemented': 'Tính năng chưa được hỗ trợ.',
   'firestore/internal': 'Lỗi hệ thống cơ sở dữ liệu.',
   'firestore/unavailable': 'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.',
-  'firestore/data-loss': 'Mất dữ liệu không thể khôi phục.',
+  'firestore/data-loss': 'Mất dữ liệu không thể khôi phục.'
 };
 
 // Storage Error Messages
@@ -71,7 +71,7 @@ export const STORAGE_ERRORS = {
   'storage/invalid-argument': 'Tham số không hợp lệ.',
   'storage/no-default-bucket': 'Chưa cấu hình bucket mặc định.',
   'storage/cannot-slice-blob': 'Không thể xử lý file này.',
-  'storage/server-file-wrong-size': 'Kích thước file không đúng.',
+  'storage/server-file-wrong-size': 'Kích thước file không đúng.'
 };
 
 // Network Error Messages
@@ -85,7 +85,7 @@ export const NETWORK_ERRORS = {
   'network/forbidden': 'Truy cập bị từ chối.',
   'network/not-found': 'Không tìm thấy tài nguyên.',
   'network/conflict': 'Xung đột dữ liệu.',
-  'network/too-many-requests': 'Quá nhiều yêu cầu. Vui lòng đợi một lúc.',
+  'network/too-many-requests': 'Quá nhiều yêu cầu. Vui lòng đợi một lúc.'
 };
 
 // Default fallback messages
@@ -93,42 +93,33 @@ export const DEFAULT_MESSAGES = {
   unknown: 'Có lỗi không xác định xảy ra. Vui lòng thử lại.',
   generic: 'Có lỗi xảy ra. Vui lòng thử lại sau.',
   maintenance: 'Hệ thống đang bảo trì. Vui lòng thử lại sau.',
-  contact_support: 'Nếu lỗi vẫn tiếp tục, vui lòng liên hệ hỗ trợ.',
+  contact_support: 'Nếu lỗi vẫn tiếp tục, vui lòng liên hệ hỗ trợ.'
 };
 
+const MOJIBAKE_PATTERN = /(Ã.|Ä.|Â.|â.|ðŸ|�)/;
+const RAW_ERROR_CODE_PATTERN = /^(auth|firestore|storage|network|app)\//;
+
 /**
- * Get user-friendly error message from Firebase error
- * @param {Error|string} error - Firebase error object or error code
- * @returns {string} User-friendly error message
+ * Cố gắng chuẩn hóa chuỗi tiếng Việt bị lỗi encoding (mojibake).
+ * Hàm này chỉ decode khi chuỗi có dấu hiệu bị lỗi để tránh làm hỏng chuỗi đúng.
  */
-export const getErrorMessage = (error) => {
-  // If error is a string (error code)
-  if (typeof error === 'string') {
-    return getAllErrorMessages()[error] || DEFAULT_MESSAGES.unknown;
-  }
-  
-  // If error is an Error object
-  if (error && typeof error === 'object') {
-    const errorCode = error.code || error.message;
-    
-    // Try to get message from error code
-    if (errorCode) {
-      const message = getAllErrorMessages()[errorCode];
-      if (message) return message;
-    }
-    
-    // Check if it's a network error
-    if (error.message && error.message.includes('network')) {
-      return NETWORK_ERRORS['network/request-failed'];
-    }
-    
-    // Return original message if it's user-friendly (Vietnamese)
-    if (error.message && /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(error.message)) {
-      return error.message;
+export const normalizeVietnameseText = (text) => {
+  if (typeof text !== 'string' || !text) return text;
+
+  let normalized = text;
+
+  for (let i = 0; i < 2; i += 1) {
+    if (!MOJIBAKE_PATTERN.test(normalized)) break;
+    try {
+      const decoded = decodeURIComponent(escape(normalized));
+      if (!decoded || decoded === normalized) break;
+      normalized = decoded;
+    } catch (error) {
+      break;
     }
   }
-  
-  return DEFAULT_MESSAGES.unknown;
+
+  return normalized.replace(/\uFFFD/g, '').trim();
 };
 
 /**
@@ -139,8 +130,44 @@ export const getAllErrorMessages = () => ({
   ...FIREBASE_AUTH_ERRORS,
   ...FIRESTORE_ERRORS,
   ...STORAGE_ERRORS,
-  ...NETWORK_ERRORS,
+  ...NETWORK_ERRORS
 });
+
+/**
+ * Get user-friendly error message from Firebase error
+ * @param {Error|string} error - Firebase error object or error code
+ * @returns {string} User-friendly error message
+ */
+export const getErrorMessage = (error) => {
+  const allMessages = getAllErrorMessages();
+
+  // If error is a string (error code or message)
+  if (typeof error === 'string') {
+    const mapped = allMessages[error];
+    if (mapped) return normalizeVietnameseText(mapped);
+    if (!RAW_ERROR_CODE_PATTERN.test(error)) return normalizeVietnameseText(error);
+    return DEFAULT_MESSAGES.unknown;
+  }
+
+  // If error is an Error-like object
+  if (error && typeof error === 'object') {
+    const errorCode = error.code;
+    const mappedByCode = errorCode ? allMessages[errorCode] : null;
+    if (mappedByCode) return normalizeVietnameseText(mappedByCode);
+
+    const rawMessage = normalizeVietnameseText(error.message || '');
+    if (rawMessage && !RAW_ERROR_CODE_PATTERN.test(rawMessage)) {
+      // Ưu tiên hiển thị thông điệp đã được chuẩn hóa nếu đây là câu mô tả
+      return rawMessage;
+    }
+
+    if (rawMessage.toLowerCase().includes('network')) {
+      return NETWORK_ERRORS['network/request-failed'];
+    }
+  }
+
+  return DEFAULT_MESSAGES.unknown;
+};
 
 /**
  * Check if error is a network-related error
@@ -149,7 +176,7 @@ export const getAllErrorMessages = () => ({
  */
 export const isNetworkError = (error) => {
   if (!error) return false;
-  
+
   const networkIndicators = [
     'network',
     'timeout',
@@ -158,9 +185,9 @@ export const isNetworkError = (error) => {
     'internet',
     'fetch'
   ];
-  
+
   const errorString = (error.code || error.message || '').toLowerCase();
-  return networkIndicators.some(indicator => errorString.includes(indicator));
+  return networkIndicators.some((indicator) => errorString.includes(indicator));
 };
 
 /**
@@ -170,7 +197,7 @@ export const isNetworkError = (error) => {
  */
 export const shouldRetry = (error) => {
   if (!error) return false;
-  
+
   const retryableCodes = [
     'auth/network-request-failed',
     'auth/timeout',
@@ -181,7 +208,7 @@ export const shouldRetry = (error) => {
     'network/timeout',
     'network/server-error'
   ];
-  
+
   return retryableCodes.includes(error.code);
 };
 
@@ -190,6 +217,7 @@ export default {
   getAllErrorMessages,
   isNetworkError,
   shouldRetry,
+  normalizeVietnameseText,
   FIREBASE_AUTH_ERRORS,
   FIRESTORE_ERRORS,
   STORAGE_ERRORS,
