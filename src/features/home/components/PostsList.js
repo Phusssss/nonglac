@@ -1,9 +1,30 @@
 import React, { useMemo } from 'react';
 import { Card, Button, Empty, Spin, Space } from 'antd';
-import { ReloadOutlined, LoadingOutlined, EnvironmentOutlined, EyeOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EnvironmentOutlined, EyeOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import PostCard from '../../../components/PostCard';
 import { marketplaceService } from '../../marketplace/services';
+
+const FeedSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map((item) => (
+      <div key={item} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-gray-200" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-1/3 rounded bg-gray-200" />
+            <div className="h-2.5 w-1/4 rounded bg-gray-100" />
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          <div className="h-3 w-4/5 rounded bg-gray-200" />
+          <div className="h-3 w-3/5 rounded bg-gray-100" />
+        </div>
+        <div className="mt-4 h-52 rounded-lg bg-gray-100" />
+      </div>
+    ))}
+  </div>
+);
 
 const HomeProductCard = ({ product, onClick }) => {
   const coverImage = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null;
@@ -73,12 +94,7 @@ const PostsList = ({
   const totalProducts = useMemo(() => items.filter((item) => item.type === 'product').length, [items]);
 
   if (loading) {
-    return (
-      <div className="text-center py-12">
-        <Spin size="large" indicator={<LoadingOutlined spin />} />
-        <div className="mt-4 text-gray-500">Đang tải nội dung...</div>
-      </div>
-    );
+    return <FeedSkeleton />;
   }
 
   if (items.length === 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Row, Col, Button } from 'antd';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
@@ -26,6 +26,7 @@ import { HOME_CONSTANTS, POST_CATEGORIES } from '../constants';
 
 const ALL_CATEGORY = POST_CATEGORIES[0]?.value || 'Tất cả';
 const SEARCH_LIMIT = 50;
+const VIEW_DEDUP_MS = 10000;
 
 const toMillis = (value) => {
   if (!value) return 0;
@@ -53,6 +54,10 @@ const HomePage = () => {
   const [lastProductDoc, setLastProductDoc] = useState(null);
 
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY);
+  const [showMobileInsights, setShowMobileInsights] = useState(false);
+  const [mobileStickyTop, setMobileStickyTop] = useState(64);
+  const [compactMobileFilter, setCompactMobileFilter] = useState(false);
+  const clickCooldownRef = useRef({});
 
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
@@ -76,6 +81,13 @@ const HomePage = () => {
 
   const trackClick = useCallback((type, id) => {
     if (!id) return;
+
+    const key = `${type}_${id}`;
+    const now = Date.now();
+    const lastTrackedAt = clickCooldownRef.current[key] || 0;
+    if (now - lastTrackedAt < VIEW_DEDUP_MS) return;
+
+    clickCooldownRef.current[key] = now;
     incrementCounter(type, id, 'views');
   }, [incrementCounter]);
 
@@ -304,8 +316,48 @@ const HomePage = () => {
     loadInitialContent();
   }, [loadInitialContent]);
 
+  useEffect(() => {
+    const updateStickyOffset = () => {
+      const headerEl = document.querySelector('header.sticky.top-0');
+      const headerHeight = headerEl?.offsetHeight || 64;
+      setMobileStickyTop(headerHeight);
+    };
+
+    updateStickyOffset();
+    window.addEventListener('resize', updateStickyOffset);
+    window.addEventListener('orientationchange', updateStickyOffset);
+
+    return () => {
+      window.removeEventListener('resize', updateStickyOffset);
+      window.removeEventListener('orientationchange', updateStickyOffset);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setCompactMobileFilter(window.scrollY > 140);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showMobileInsights) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [showMobileInsights]);
+
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
+    setShowMobileInsights(false);
   };
 
   const handlePostCreated = () => {
@@ -340,7 +392,7 @@ const HomePage = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Row gutter={[16, 16]}>
-            <Col xs={24} lg={6}>
+            <Col xs={{ span: 24, order: 2 }} lg={{ span: 6, order: 1 }}>
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100">
                   {user ? (
@@ -388,10 +440,12 @@ const HomePage = () => {
                   )}
                 </div>
 
-                <CategoryFilter
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={handleCategoryChange}
-                />
+                <div className="hidden lg:block">
+                  <CategoryFilter
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={handleCategoryChange}
+                  />
+                </div>
 
                 <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-4 border-b border-gray-100 bg-blue-50/50">
@@ -427,7 +481,7 @@ const HomePage = () => {
               </div>
             </Col>
 
-            <Col xs={24} lg={12}>
+            <Col xs={{ span: 24, order: 1 }} lg={{ span: 12, order: 2 }}>
               <div className="space-y-6">
                 {searchTerm && (
                   <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
@@ -448,6 +502,37 @@ const HomePage = () => {
                   setShowLoginModal={setShowLoginModal}
                 />
 
+                <div
+                  className={`sticky z-20 -mx-4 border-b border-gray-200 bg-gray-50/95 px-4 backdrop-blur transition-all duration-200 lg:hidden ${
+                    compactMobileFilter ? 'py-1' : 'py-2'
+                  }`}
+                  style={{ top: mobileStickyTop }}
+                >
+                  <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className={`flex gap-2 ${compactMobileFilter ? 'pb-0.5' : 'pb-1'}`}>
+                      {POST_CATEGORIES.map((category) => {
+                        const isSelected = selectedCategory === category.value;
+                        return (
+                          <button
+                            key={category.key}
+                            type="button"
+                            onClick={() => handleCategoryChange(category.value)}
+                            className={`shrink-0 rounded-full border font-semibold transition ${
+                              compactMobileFilter ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
+                            } ${
+                              isSelected
+                                ? 'border-[#4CAF50] bg-[#4CAF50] text-white'
+                                : 'border-gray-200 bg-white text-gray-600'
+                            }`}
+                          >
+                            {category.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
                 <PostsList
                   items={feedItems}
                   loading={loading}
@@ -459,10 +544,20 @@ const HomePage = () => {
                   onPostClick={handlePostClick}
                   onProductClick={handleProductClick}
                 />
+
+                <div className="lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileInsights((prev) => !prev)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm"
+                  >
+                    {showMobileInsights ? 'Ẩn xu hướng và gợi ý ▲' : 'Xem xu hướng và gợi ý ▼'}
+                  </button>
+                </div>
               </div>
             </Col>
 
-            <Col xs={24} lg={6}>
+            <Col xs={{ span: 24, order: 3 }} lg={{ span: 6, order: 3 }} className="hidden lg:block">
               <RightSidebar
                 trendingTopics={trendingTopics}
                 topContributors={topContributors}
@@ -473,6 +568,37 @@ const HomePage = () => {
           </Row>
         </div>
       </div>
+
+      {showMobileInsights && (
+        <div className="fixed inset-0 z-[120] lg:hidden">
+          <button
+            type="button"
+            aria-label="Đóng gợi ý"
+            className="absolute inset-0 bg-black/35"
+            onClick={() => setShowMobileInsights(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[78vh] rounded-t-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <h3 className="text-base font-bold text-gray-900">Xu hướng và gợi ý</h3>
+              <button
+                type="button"
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600"
+                onClick={() => setShowMobileInsights(false)}
+              >
+                Đóng
+              </button>
+            </div>
+            <div className="max-h-[calc(78vh-56px)] overflow-y-auto p-4">
+              <RightSidebar
+                trendingTopics={trendingTopics}
+                topContributors={topContributors}
+                selectedCategory={selectedCategory}
+                onCategoryChange={handleCategoryChange}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <LoginModal
         isOpen={showLoginModal}
