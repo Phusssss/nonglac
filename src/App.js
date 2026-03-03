@@ -110,47 +110,49 @@ function App() {
                 
                 <ResponsiveNavbar />
                 <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/user/:userId" element={<UserProfile />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/messages" element={<MessagesPage />} />
+                  <div className="pb-24 lg:pb-0">
+                    <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/user/:userId" element={<UserProfile />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/messages" element={<MessagesPage />} />
 
 
-            <Route path="/post/:postId" element={<PostDetail />} />
-            <Route path="/login" element={<PhoneLogin />} />
-            <Route path="/phone-login" element={<PhoneLogin />} />
+              <Route path="/post/:postId" element={<PostDetail />} />
+              <Route path="/login" element={<PhoneLogin />} />
+              <Route path="/phone-login" element={<PhoneLogin />} />
 
-            <Route path="/register" element={<Registration />} />
-            <Route path="/phone-register" element={<Registration />} />
+              <Route path="/register" element={<Registration />} />
+              <Route path="/phone-register" element={<Registration />} />
 
-            <Route path="/admin" element={<AdminDashboard />} />
-
-
-            <Route path="/plant-doctor" element={<PlantDoctor />} />
-            <Route path="/market-insights" element={<MarketInsights />} />
-            <Route path="/gia-ca-phe-hom-nay" element={<LatestCoffeePrices />} />
-            <Route path="/gia-nong-san" element={<LatestCoffeePrices />} />
-            <Route path="/agri-map" element={<AgriMap />} />
-            <Route path="/ai-video-call" element={<AIVideoCall />} />
-
-            <Route path="/missions" element={<MissionScreen />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/privacy" element={<TermsOfService />} />
-            <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/admin" element={<AdminDashboard />} />
 
 
-            
-            {/* SEO-friendly routes */}
-            <Route path="/kinh-nghiem-nong-nghiep" element={<Home />} />
+              <Route path="/plant-doctor" element={<PlantDoctor />} />
+              <Route path="/market-insights" element={<MarketInsights />} />
+              <Route path="/gia-ca-phe-hom-nay" element={<LatestCoffeePrices />} />
+              <Route path="/gia-nong-san" element={<LatestCoffeePrices />} />
+              <Route path="/agri-map" element={<AgriMap />} />
+              <Route path="/ai-video-call" element={<AIVideoCall />} />
 
-            <Route path="/tin-tuc-nong-nghiep" element={<Home />} />
-            <Route path="/cong-nghe-nong-nghiep-4-0" element={<Home />} />
-            <Route path="/dien-dan-nong-nghiep" element={<Home />} />
-            <Route path="/cong-dong-nong-dan" element={<Home />} />
-                  </Routes>
+              <Route path="/missions" element={<MissionScreen />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/privacy" element={<TermsOfService />} />
+              <Route path="/about-us" element={<AboutUs />} />
+
+
+              
+              {/* SEO-friendly routes */}
+              <Route path="/kinh-nghiem-nong-nghiep" element={<Home />} />
+
+              <Route path="/tin-tuc-nong-nghiep" element={<Home />} />
+              <Route path="/cong-nghe-nong-nghiep-4-0" element={<Home />} />
+              <Route path="/dien-dan-nong-nghiep" element={<Home />} />
+              <Route path="/cong-dong-nong-dan" element={<Home />} />
+                    </Routes>
+                  </div>
                 </Suspense>
               </Layout>
               <Suspense fallback={null}>
