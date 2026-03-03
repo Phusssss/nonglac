@@ -1,7 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Row, Col, Button, Modal } from 'antd';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Row, Col, Button } from 'antd';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, where, limit, startAfter, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  orderBy,
+  where,
+  limit,
+  startAfter,
+  getDocs,
+  doc,
+  updateDoc,
+  increment
+} from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -11,67 +22,135 @@ import CreatePostForm from './CreatePostForm';
 import CategoryFilter from './CategoryFilter';
 import PostsList from './PostsList';
 import RightSidebar from './RightSidebar';
-import { HOME_CONSTANTS } from '../constants';
+import { HOME_CONSTANTS, POST_CATEGORIES } from '../constants';
+
+const ALL_CATEGORY = POST_CATEGORIES[0]?.value || 'Tất cả';
+const SEARCH_LIMIT = 50;
+
+const toMillis = (value) => {
+  if (!value) return 0;
+  if (typeof value?.toDate === 'function') return value.toDate().getTime();
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return value;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 const HomePage = () => {
   const { user, userProfile } = useAuth();
   const { showLoginModal, setShowLoginModal } = useAuthGuard();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  // Posts state
+
   const [posts, setPosts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState(null);
-  
-  // Filter state
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
-  const [filteredPosts, setFilteredPosts] = useState([]);
-  
-  // Sidebar state
+
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [lastPostDoc, setLastPostDoc] = useState(null);
+  const [lastProductDoc, setLastProductDoc] = useState(null);
+
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY);
+
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
-  
-  // Get search term from URL params
+
   const searchTerm = searchParams.get('search') || '';
+  const isSearchMode = Boolean(searchTerm.trim());
+  const isAllCategory = selectedCategory === ALL_CATEGORY;
 
-  // Filter posts based on category and search term
-  useEffect(() => {
-    let filtered = posts;
-    
-    // Filter by category
-    if (selectedCategory !== 'Tất cả') {
-      filtered = filtered.filter(post => 
-        post.category === selectedCategory || 
-        (post.category && post.category.includes(selectedCategory))
+  const incrementCounter = useCallback(async (type, id, fieldName) => {
+    if (!id) return;
+
+    const collectionName = type === 'product' ? 'marketplace_products' : 'posts';
+    try {
+      await updateDoc(doc(db, collectionName, id), {
+        [fieldName]: increment(1)
+      });
+    } catch (error) {
+      console.error(`Failed to increment ${fieldName} for ${type} ${id}:`, error);
+    }
+  }, []);
+
+  const trackClick = useCallback((type, id) => {
+    if (!id) return;
+    incrementCounter(type, id, 'views');
+  }, [incrementCounter]);
+
+  const filteredPosts = useMemo(() => {
+    let next = posts;
+
+    if (!isAllCategory) {
+      next = next.filter((post) => post.category === selectedCategory || post.category?.includes(selectedCategory));
+    }
+
+    if (isSearchMode) {
+      const keyword = searchTerm.toLowerCase();
+      next = next.filter((post) =>
+        post.title?.toLowerCase().includes(keyword)
+        || post.content?.toLowerCase().includes(keyword)
+        || post.authorName?.toLowerCase().includes(keyword)
       );
     }
-    
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title?.toLowerCase().includes(searchLower) ||
-        post.content?.toLowerCase().includes(searchLower) ||
-        post.authorName?.toLowerCase().includes(searchLower)
+
+    return next;
+  }, [posts, isAllCategory, selectedCategory, isSearchMode, searchTerm]);
+
+  const filteredProducts = useMemo(() => {
+    if (!isAllCategory && !isSearchMode) return [];
+
+    let next = products;
+    if (isSearchMode) {
+      const keyword = searchTerm.toLowerCase();
+      next = next.filter((product) =>
+        product.name?.toLowerCase().includes(keyword)
+        || product.description?.toLowerCase().includes(keyword)
+        || product.category?.toLowerCase().includes(keyword)
+        || product.address?.toLowerCase().includes(keyword)
+        || product.location?.toLowerCase().includes(keyword)
       );
     }
-    
-    setFilteredPosts(filtered);
-  }, [posts, selectedCategory, searchTerm]);
 
-  // Load trending topics and top contributors
+    return next;
+  }, [products, isAllCategory, isSearchMode, searchTerm]);
+
+  const feedItems = useMemo(() => {
+    const postItems = filteredPosts.map((post) => ({
+      type: 'post',
+      id: post.id,
+      createdAtMs: toMillis(post?.createdAt),
+      data: post
+    }));
+
+    const productItems = filteredProducts.map((product) => ({
+      type: 'product',
+      id: product.id,
+      createdAtMs: toMillis(product?.createdAt),
+      data: product
+    }));
+
+    return [...postItems, ...productItems].sort((a, b) => b.createdAtMs - a.createdAtMs);
+  }, [filteredPosts, filteredProducts]);
+
   useEffect(() => {
-    if (posts.length === 0) return;
+    if (!posts.length) {
+      setTrendingTopics([]);
+      setTopContributors([]);
+      return;
+    }
 
     try {
-      // Calculate trending topics
       const categoryCount = {};
-      posts.forEach(post => {
+      const authorCount = {};
+
+      posts.forEach((post) => {
         if (post.category) {
           categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
+        }
+        if (post.authorName) {
+          authorCount[post.authorName] = (authorCount[post.authorName] || 0) + 1;
         }
       });
 
@@ -79,14 +158,6 @@ const HomePage = () => {
         .map(([topic, count]) => ({ topic, posts: count }))
         .sort((a, b) => b.posts - a.posts)
         .slice(0, 5);
-
-      // Calculate top contributors
-      const authorCount = {};
-      posts.forEach(post => {
-        if (post.authorName) {
-          authorCount[post.authorName] = (authorCount[post.authorName] || 0) + 1;
-        }
-      });
 
       const contributors = Object.entries(authorCount)
         .map(([name, count]) => ({ name, posts: count }))
@@ -96,123 +167,170 @@ const HomePage = () => {
       setTrendingTopics(trending);
       setTopContributors(contributors);
     } catch (error) {
-      console.error('Error calculating trending data:', error);
+      console.error('Error calculating home sidebar stats:', error);
       setTrendingTopics([]);
       setTopContributors([]);
     }
   }, [posts]);
 
-  // Load initial posts
-  const loadInitialPosts = useCallback(async () => {
+  const loadInitialContent = useCallback(async () => {
     setLoading(true);
+    setLoadingMore(false);
     setPosts([]);
-    setLastDoc(null);
-    setHasMore(true);
-    
+    setProducts([]);
+    setLastPostDoc(null);
+    setLastProductDoc(null);
+    setHasMorePosts(true);
+    setHasMoreProducts(true);
+
     try {
-      let q;
-      if (searchTerm.trim()) {
-        // Load more posts for search
-        q = query(
-          collection(db, 'posts'),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-      } else if (selectedCategory === 'Tất cả') {
-        q = query(
-          collection(db, 'posts'),
-          orderBy('createdAt', 'desc'),
-          limit(HOME_CONSTANTS.POSTS_PER_PAGE)
-        );
-      } else {
-        q = query(
+      const postLimit = isSearchMode ? SEARCH_LIMIT : HOME_CONSTANTS.POSTS_PER_PAGE;
+      const postQuery = !isAllCategory
+        ? query(
           collection(db, 'posts'),
           where('category', '==', selectedCategory),
           orderBy('createdAt', 'desc'),
-          limit(HOME_CONSTANTS.POSTS_PER_PAGE)
+          limit(postLimit)
+        )
+        : query(
+          collection(db, 'posts'),
+          orderBy('createdAt', 'desc'),
+          limit(postLimit)
         );
+
+      const shouldLoadProducts = isAllCategory || isSearchMode;
+      const productLimit = isSearchMode ? SEARCH_LIMIT : HOME_CONSTANTS.POSTS_PER_PAGE;
+      const productQuery = shouldLoadProducts
+        ? query(
+          collection(db, 'marketplace_products'),
+          orderBy('createdAt', 'desc'),
+          limit(productLimit)
+        )
+        : null;
+
+      const [postSnapshot, productSnapshot] = await Promise.all([
+        getDocs(postQuery),
+        productQuery ? getDocs(productQuery) : Promise.resolve(null)
+      ]);
+
+      const postData = postSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      setPosts(postData);
+      setLastPostDoc(postSnapshot.docs[postSnapshot.docs.length - 1] || null);
+      setHasMorePosts(!isSearchMode && postSnapshot.docs.length === HOME_CONSTANTS.POSTS_PER_PAGE);
+
+      if (productSnapshot) {
+        const productData = productSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        setProducts(productData);
+        setLastProductDoc(productSnapshot.docs[productSnapshot.docs.length - 1] || null);
+        setHasMoreProducts(!isSearchMode && productSnapshot.docs.length === HOME_CONSTANTS.POSTS_PER_PAGE);
+      } else {
+        setProducts([]);
+        setLastProductDoc(null);
+        setHasMoreProducts(false);
       }
-      
-      const snapshot = await getDocs(q);
-      const postsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setPosts(postsData);
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(!searchTerm.trim() && snapshot.docs.length === HOME_CONSTANTS.POSTS_PER_PAGE);
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error('Error loading home content:', error);
+      setHasMorePosts(false);
+      setHasMoreProducts(false);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, searchTerm]);
+  }, [isAllCategory, isSearchMode, selectedCategory]);
 
-  // Load more posts
-  const loadMorePosts = useCallback(async () => {
-    if (!hasMore || loadingMore || !lastDoc || searchTerm.trim()) return;
-    
+  const loadMoreContent = useCallback(async () => {
+    if (loadingMore || isSearchMode) return;
+    if (!hasMorePosts && (!isAllCategory || !hasMoreProducts)) return;
+
     setLoadingMore(true);
+
     try {
-      let q;
-      if (selectedCategory === 'Tất cả') {
-        q = query(
+      const postPromise = hasMorePosts && lastPostDoc
+        ? getDocs(query(
           collection(db, 'posts'),
-          orderBy('createdAt', 'desc'),
-          startAfter(lastDoc),
+          ...(isAllCategory
+            ? [orderBy('createdAt', 'desc')]
+            : [where('category', '==', selectedCategory), orderBy('createdAt', 'desc')]),
+          startAfter(lastPostDoc),
           limit(HOME_CONSTANTS.POSTS_PER_PAGE)
-        );
-      } else {
-        q = query(
-          collection(db, 'posts'),
-          where('category', '==', selectedCategory),
+        ))
+        : Promise.resolve(null);
+
+      const shouldLoadMoreProducts = isAllCategory && hasMoreProducts && lastProductDoc;
+      const productPromise = shouldLoadMoreProducts
+        ? getDocs(query(
+          collection(db, 'marketplace_products'),
           orderBy('createdAt', 'desc'),
-          startAfter(lastDoc),
+          startAfter(lastProductDoc),
           limit(HOME_CONSTANTS.POSTS_PER_PAGE)
-        );
+        ))
+        : Promise.resolve(null);
+
+      const [postSnapshot, productSnapshot] = await Promise.all([postPromise, productPromise]);
+
+      if (postSnapshot) {
+        const nextPosts = postSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        if (nextPosts.length) {
+          setPosts((prev) => [...prev, ...nextPosts]);
+          setLastPostDoc(postSnapshot.docs[postSnapshot.docs.length - 1]);
+        }
+        setHasMorePosts(nextPosts.length === HOME_CONSTANTS.POSTS_PER_PAGE);
       }
-      
-      const snapshot = await getDocs(q);
-      const newPosts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      if (newPosts.length > 0) {
-        setPosts(prev => [...prev, ...newPosts]);
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(newPosts.length === HOME_CONSTANTS.POSTS_PER_PAGE);
-      } else {
-        setHasMore(false);
+
+      if (productSnapshot) {
+        const nextProducts = productSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        if (nextProducts.length) {
+          setProducts((prev) => [...prev, ...nextProducts]);
+          setLastProductDoc(productSnapshot.docs[productSnapshot.docs.length - 1]);
+        }
+        setHasMoreProducts(nextProducts.length === HOME_CONSTANTS.POSTS_PER_PAGE);
       }
     } catch (error) {
-      console.error('Error loading more posts:', error);
+      console.error('Error loading more home content:', error);
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loadingMore, lastDoc, searchTerm, selectedCategory]);
+  }, [
+    loadingMore,
+    isSearchMode,
+    hasMorePosts,
+    hasMoreProducts,
+    lastPostDoc,
+    lastProductDoc,
+    isAllCategory,
+    selectedCategory
+  ]);
 
-  // Load posts when component mounts or filters change
   useEffect(() => {
-    loadInitialPosts();
-  }, [loadInitialPosts]);
+    loadInitialContent();
+  }, [loadInitialContent]);
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
   };
 
   const handlePostCreated = () => {
-    loadInitialPosts();
+    loadInitialContent();
   };
 
   const handleRefresh = () => {
-    loadInitialPosts();
+    loadInitialContent();
   };
+
+  const handlePostClick = (post) => {
+    trackClick('post', post?.id);
+  };
+
+  const handleProductClick = (product) => {
+    if (!product?.id) return;
+    trackClick('product', product.id);
+    navigate(`/product/${product.id}`);
+  };
+
+  const hasMore = isAllCategory ? (hasMorePosts || hasMoreProducts) : hasMorePosts;
 
   return (
     <>
-      <SEO 
+      <SEO
         title="NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam"
         description="Kết nối cộng đồng nông dân Việt Nam. Chia sẻ kinh nghiệm trồng trọt, chăn nuôi và cập nhật giá nông sản realtime."
         keywords="nông nghiệp việt nam, nông dân, trồng trọt, chăn nuôi, giá nông sản, cộng đồng nông nghiệp"
@@ -222,10 +340,8 @@ const HomePage = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Row gutter={[16, 16]}>
-            {/* Left Sidebar - Categories */}
             <Col xs={24} lg={6}>
               <div className="space-y-6">
-                {/* User Profile Card */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100">
                   {user ? (
                     <>
@@ -233,7 +349,7 @@ const HomePage = () => {
                         <div className="w-24 h-24 rounded-full bg-[#4CAF50] flex items-center justify-center text-white text-2xl font-bold">
                           {userProfile?.displayName?.charAt(0) || 'U'}
                         </div>
-                        <div className="absolute bottom-0 right-0 bg-green-500 w-5 h-5 rounded-full border-4 border-white"></div>
+                        <div className="absolute bottom-0 right-0 bg-green-500 w-5 h-5 rounded-full border-4 border-white" />
                       </div>
                       <h2 className="text-xl font-bold text-gray-900 mb-1">
                         {userProfile?.displayName || user?.email || 'Guest'}
@@ -261,8 +377,8 @@ const HomePage = () => {
                       </div>
                       <h2 className="text-xl font-bold text-gray-900 mb-1">Chào mừng đến NôngLạc</h2>
                       <p className="text-sm text-gray-600 mb-6">Kết nối cộng đồng nông nghiệp Việt</p>
-                      <Button 
-                        type="default" 
+                      <Button
+                        type="default"
                         className="w-full"
                         onClick={() => setShowLoginModal(true)}
                       >
@@ -272,13 +388,11 @@ const HomePage = () => {
                   )}
                 </div>
 
-                {/* Categories Menu */}
                 <CategoryFilter
                   selectedCategory={selectedCategory}
                   onCategoryChange={handleCategoryChange}
                 />
 
-                {/* Quick AI Tools Sidebar - Desktop Only */}
                 <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-4 border-b border-gray-100 bg-blue-50/50">
                     <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
@@ -287,21 +401,21 @@ const HomePage = () => {
                     </h3>
                   </div>
                   <div className="p-3 grid grid-cols-1 gap-2">
-                    <button 
+                    <button
                       onClick={() => navigate('/plant-doctor')}
                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors text-gray-700 text-sm font-medium"
                     >
                       <span className="text-xl">🩺</span>
                       Bác sĩ cây trồng
                     </button>
-                    <button 
+                    <button
                       onClick={() => navigate('/market-insights')}
                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 transition-colors text-gray-700 text-sm font-medium"
                     >
                       <span className="text-xl">📈</span>
                       Thị trường
                     </button>
-                    <button 
+                    <button
                       onClick={() => navigate('/agri-map')}
                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors text-gray-700 text-sm font-medium"
                     >
@@ -313,10 +427,8 @@ const HomePage = () => {
               </div>
             </Col>
 
-            {/* Main Content */}
             <Col xs={24} lg={12}>
               <div className="space-y-6">
-                {/* Search Results Header */}
                 {searchTerm && (
                   <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
                     <div className="flex items-center justify-between">
@@ -324,33 +436,32 @@ const HomePage = () => {
                         <span className="text-[#4CAF50] text-xl">🔍</span>
                         <div>
                           <h3 className="font-bold text-gray-900">Kết quả tìm kiếm cho: "{searchTerm}"</h3>
-                          <p className="text-sm text-gray-500">Tìm thấy {filteredPosts.length} bài viết</p>
+                          <p className="text-sm text-gray-500">Tìm thấy {feedItems.length} nội dung</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Create Post Form */}
-                <CreatePostForm 
-                  onPostCreated={handlePostCreated} 
+                <CreatePostForm
+                  onPostCreated={handlePostCreated}
                   setShowLoginModal={setShowLoginModal}
                 />
 
-                {/* Posts List */}
                 <PostsList
-                  posts={filteredPosts}
+                  items={feedItems}
                   loading={loading}
                   loadingMore={loadingMore}
                   hasMore={hasMore}
                   searchTerm={searchTerm}
-                  onLoadMore={loadMorePosts}
+                  onLoadMore={loadMoreContent}
                   onRefresh={handleRefresh}
+                  onPostClick={handlePostClick}
+                  onProductClick={handleProductClick}
                 />
               </div>
             </Col>
 
-            {/* Right Sidebar */}
             <Col xs={24} lg={6}>
               <RightSidebar
                 trendingTopics={trendingTopics}
@@ -363,10 +474,9 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Login Modal */}
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
       />
     </>
   );

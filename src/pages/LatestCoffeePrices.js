@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, ExternalLink } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -181,7 +181,6 @@ const LatestCoffeePrices = () => {
   const sections = useMemo(() => resolveSections(payload), [payload]);
   const pageTitle = payload?.pageTitle || 'Giá nông sản hôm nay';
   const pageUpdatedAt = payload?.pageUpdatedAt || payload?.date || '--';
-  const sourceUrl = payload?.url || 'https://nhabeagri.com/gia-nong-san/';
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] pb-12">
@@ -196,16 +195,6 @@ const LatestCoffeePrices = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-lg border border-[#a76c34] px-3 py-2 text-sm font-semibold text-[#a76c34] hover:bg-[#fff7f0]"
-              >
-                Trang nguồn
-                <ExternalLink size={14} />
-              </a>
-
               <button
                 type="button"
                 onClick={fetchLatest}
@@ -252,18 +241,6 @@ const LatestCoffeePrices = () => {
                   className="nhabe-source overflow-x-auto"
                   dangerouslySetInnerHTML={{ __html: section.tableHtml }}
                 />
-
-                {section.reference?.href && (
-                  <a
-                    href={section.reference.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#a76c34] hover:underline"
-                  >
-                    {section.reference.text || 'Xem chi tiết'}
-                    <ExternalLink size={14} />
-                  </a>
-                )}
               </section>
             ))}
           </div>
