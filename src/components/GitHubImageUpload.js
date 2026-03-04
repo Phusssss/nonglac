@@ -111,10 +111,11 @@ const GitHubImageUpload = forwardRef(({
             folder: 'posts-videos',
             maxSizeMB: maxVideoSize,
             autoCompress: true,
-            alwaysCompress: true,
-            targetWidth: 854,
-            targetHeight: 480,
-            targetBitrate: 620000
+            // Keep original quality when possible; only compress when needed.
+            alwaysCompress: false,
+            targetWidth: 1920,
+            targetHeight: 1080,
+            targetBitrate: 5000000
           });
         } else {
           setProgress(((i + 0.5) / items.length) * 100);
@@ -135,9 +136,9 @@ const GitHubImageUpload = forwardRef(({
             const uploadedThumb = await firebaseStorageService.uploadImage(thumbnailFile, {
               folder: 'posts-thumbnails',
               maxSizeMB: 2,
-              maxWidth: 640,
-              maxHeight: 360,
-              quality: 0.72,
+              maxWidth: 960,
+              maxHeight: 540,
+              quality: 0.9,
               outputType: 'image/webp'
             });
             thumbnailUrl = uploadedThumb.url;

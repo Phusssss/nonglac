@@ -18,7 +18,7 @@ export const homeService = {
       });
 
       // Log analytics
-      logUserAction(ACTIONS.CREATE_POST, { postId: docRef.id });
+      logUserAction(userId, 'Unknown', ACTIONS.CREATE_POST, { postId: docRef.id });
 
       return { success: true, postId: docRef.id };
     } catch (error) {

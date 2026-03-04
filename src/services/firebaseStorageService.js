@@ -213,15 +213,39 @@ const transcodeVideo = async (file, options = {}) => {
   };
 };
 
-const buildCompressionPresets = (originalSize, maxSizeBytes) => {
+const buildCompressionPresets = (originalSize, maxSizeBytes, target = {}) => {
   const pressure = originalSize / maxSizeBytes;
   const baseScale = clamp(Math.sqrt(1 / Math.max(pressure, 1)) * 0.95, 0.4, 1);
+  const baseWidth = target.width || 1920;
+  const baseHeight = target.height || 1080;
+  const baseBitrate = target.bitrate || 5000000;
 
   return [
-    { maxWidth: 1280, maxHeight: 720, videoBitsPerSecond: 1000000, scale: baseScale },
-    { maxWidth: 960, maxHeight: 540, videoBitsPerSecond: 800000, scale: clamp(baseScale * 0.88, 0.36, 1) },
-    { maxWidth: 854, maxHeight: 480, videoBitsPerSecond: 620000, scale: clamp(baseScale * 0.78, 0.32, 1) },
-    { maxWidth: 640, maxHeight: 360, videoBitsPerSecond: 420000, scale: clamp(baseScale * 0.65, 0.28, 1) }
+    { maxWidth: baseWidth, maxHeight: baseHeight, videoBitsPerSecond: baseBitrate, scale: baseScale },
+    {
+      maxWidth: Math.round(baseWidth * 0.83),
+      maxHeight: Math.round(baseHeight * 0.83),
+      videoBitsPerSecond: Math.round(baseBitrate * 0.9),
+      scale: clamp(baseScale * 0.9, 0.36, 1)
+    },
+    {
+      maxWidth: Math.round(baseWidth * 0.67),
+      maxHeight: Math.round(baseHeight * 0.67),
+      videoBitsPerSecond: Math.round(baseBitrate * 0.7),
+      scale: clamp(baseScale * 0.78, 0.32, 1)
+    },
+    {
+      maxWidth: 960,
+      maxHeight: 540,
+      videoBitsPerSecond: 2200000,
+      scale: clamp(baseScale * 0.65, 0.28, 1)
+    },
+    {
+      maxWidth: 854,
+      maxHeight: 480,
+      videoBitsPerSecond: 1600000,
+      scale: clamp(baseScale * 0.56, 0.24, 1)
+    }
   ];
 };
 
@@ -371,9 +395,9 @@ class FirebaseStorageService {
       allowedTypes = DEFAULT_ALLOWED_VIDEO_TYPES,
       autoCompress = true,
       alwaysCompress = false,
-      targetWidth = 854,
-      targetHeight = 480,
-      targetBitrate = 620000,
+      targetWidth = 1920,
+      targetHeight = 1080,
+      targetBitrate = 5000000,
       strictMaxSize = false,
       onProgress,
       metadata,
@@ -409,10 +433,14 @@ class FirebaseStorageService {
           };
         }
       } catch (compressionError) {
-        console.warn('Forced 480p compression failed, fallback to original upload:', compressionError);
+        console.warn('Forced compression failed, fallback to original upload:', compressionError);
       }
     } else if (autoCompress && Number.isFinite(maxSizeBytes) && maxSizeBytes > 0 && file.size > maxSizeBytes) {
-      const presets = buildCompressionPresets(file.size, maxSizeBytes);
+      const presets = buildCompressionPresets(file.size, maxSizeBytes, {
+        width: targetWidth,
+        height: targetHeight,
+        bitrate: targetBitrate
+      });
       let compressed = null;
 
       try {
