@@ -9,7 +9,8 @@ import {
   Edit,
   RefreshCw,
   Database,
-  Wrench
+  Wrench,
+  UserCheck
 } from 'lucide-react';
 
 export const ADMIN_CONSTANTS = {
@@ -18,6 +19,7 @@ export const ADMIN_CONSTANTS = {
   MENU_ITEMS: [
     { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard, path: '/admin' },
     { id: 'users', label: 'Người dùng', icon: Users, path: '/admin?tab=users' },
+    { id: 'student-referral', label: 'Sinh viên & Giới thiệu', icon: UserCheck, path: '/admin?tab=student-referral' },
     { id: 'posts', label: 'Bài viết', icon: FileText, path: '/admin?tab=posts' },
     { id: 'products', label: 'Sản phẩm', icon: ShoppingBag, path: '/admin?tab=products' },
     { id: 'prices', label: 'Giá nông sản', icon: DollarSign, path: '/admin?tab=prices' },

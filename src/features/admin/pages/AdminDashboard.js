@@ -6,6 +6,7 @@ import AdminLayout from '../components/AdminLayout';
 import AdminSecurityGate from '../components/AdminSecurityGate';
 import DashboardOverview from '../components/DashboardOverview';
 import UserManagement from '../components/UserManagement';
+import StudentReferralManagement from '../components/StudentReferralManagement';
 import PostManagement from '../components/PostManagement';
 import PriceManagement from '../components/PriceManagement';
 import ProductManagement from '../components/ProductManagement';
@@ -105,7 +106,8 @@ const AdminDashboard = () => {
           />
         );
       
-      case 'posts': 
+      case 'student-referral': 
+        return <StudentReferralManagement />; 
         return <PostManagement posts={posts} deletePost={async (id) => { await adminService.deletePost(id); loadTabData('posts'); message.success('Đã xóa'); }} />;
       
       case 'prices': 
