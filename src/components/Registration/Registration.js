@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Steps, Card, Typography } from 'antd';
 import { useSearchParams } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase/config';
 import PhoneStep from './PhoneStep';
 import PersonalInfoStep from './PersonalInfoStep';
+import StudentInfoStep from './StudentInfoStep';
 import ReferralCodeStep from './ReferralCodeStep';
 import PasswordStep from './PasswordStep';
 import registrationService from '../../services/registrationService';
@@ -10,32 +13,60 @@ import logo from '../../assets/images/logo.demo.nontext.png';
 
 const { Title } = Typography;
 
-const steps = [
-  {
-    title: 'Số điện thoại',
-    description: 'Nhập số điện thoại'
-  },
-  {
-    title: 'Thông tin cơ bản',
-    description: 'Tên người dùng, giới tính, tuổi'
-  },
-  {
-    title: 'Mã Giới Thiệu',
-    description: 'Nhập mã giới thiệu (tùy chọn)'
-  },
-  {
-    title: 'Mật khẩu',
-    description: 'Tạo mật khẩu'
+const getSteps = (isStudent) => {
+  const baseSteps = [
+    {
+      title: 'Số điện thoại',
+      description: 'Nhập số điện thoại'
+    },
+    {
+      title: 'Thông tin cơ bản',
+      description: 'Tên người dùng, giới tính, tuổi'
+    }
+  ];
+
+  if (isStudent) {
+    baseSteps.push({
+      title: 'Thông tin sinh viên',
+      description: 'Mã sinh viên, trường học'
+    });
   }
-];
+
+  baseSteps.push(
+    {
+      title: 'Mã Giới Thiệu',
+      description: 'Nhập mã giới thiệu (tùy chọn)'
+    },
+    {
+      title: 'Mật khẩu',
+      description: 'Tạo mật khẩu'
+    }
+  );
+
+  return baseSteps;
+};
 
 const Registration = () => {
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
+  const userType = searchParams.get('userType');
+  const isStudent = userType === 'student';
+  const steps = getSteps(isStudent);
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Xóa toàn bộ dữ liệu đăng nhập khi truy cập trang đăng ký
+  useEffect(() => {
+    // Reset dữ liệu trong service
+    registrationService.resetRegistrationData();
+    
+    // Đăng xuất khỏi Firebase để xóa session
+    signOut(auth).catch(() => {
+      // Bỏ qua lỗi nếu chưa đăng nhập
+    });
+  }, []);
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -77,6 +108,19 @@ const Registration = () => {
           />
         );
       case 2:
+        if (isStudent) {
+          return (
+            <StudentInfoStep
+              onNext={handleNext}
+              onBack={handleBack}
+              setLoading={setLoading}
+              setError={setError}
+              loading={loading}
+              error={error}
+            />
+          );
+        }
+        // For non-students, case 2 is referral code
         return (
           <ReferralCodeStep
             onNext={handleNext}
@@ -89,6 +133,20 @@ const Registration = () => {
           />
         );
       case 3:
+        if (isStudent) {
+          return (
+            <ReferralCodeStep
+              onNext={handleNext}
+              onBack={handleBack}
+              setLoading={setLoading}
+              setError={setError}
+              loading={loading}
+              error={error}
+              initialCode={referralCode}
+            />
+          );
+        }
+        // For non-students, case 3 is password
         return (
           <PasswordStep
             onBack={handleBack}
@@ -99,6 +157,21 @@ const Registration = () => {
             error={error}
           />
         );
+      case 4:
+        // Only for students (password step)
+        if (isStudent) {
+          return (
+            <PasswordStep
+              onBack={handleBack}
+              onReset={handleReset}
+              setLoading={setLoading}
+              setError={setError}
+              loading={loading}
+              error={error}
+            />
+          );
+        }
+        return 'Unknown step';
       default:
         return 'Unknown step';
     }

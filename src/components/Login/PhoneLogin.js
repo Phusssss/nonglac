@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Space } from 'antd';
 import { PhoneOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase/config';
 import registrationService from '../../services/registrationService';
 import { authRedirectService } from '../../services/authRedirectService';
 import { ErrorDisplay } from '../common';
@@ -15,6 +17,17 @@ const PhoneLogin = () => {
   const [error, setError] = useState(null);
   const [loginMessage, setLoginMessage] = useState('');
   const navigate = useNavigate();
+
+  // Xóa toàn bộ dữ liệu đăng nhập khi truy cập trang đăng nhập
+  useEffect(() => {
+    // Reset dữ liệu trong service
+    registrationService.resetRegistrationData();
+    
+    // Đăng xuất khỏi Firebase để xóa session
+    signOut(auth).catch(() => {
+      // Bỏ qua lỗi nếu chưa đăng nhập
+    });
+  }, []);
 
   // Hiển thị message từ redirect
   useEffect(() => {

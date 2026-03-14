@@ -15,6 +15,8 @@ class RegistrationService {
       isPhoneVerified: false,
       personalInfo: null,
       locationInfo: null,
+      studentInfo: null,
+      referralCode: null,
       password: ''
     };
   }
@@ -414,6 +416,8 @@ class RegistrationService {
       isPhoneVerified: false,
       personalInfo: null,
       locationInfo: null,
+      studentInfo: null,
+      referralCode: null,
       password: ''
     };
     phoneAuthService.cleanup();
