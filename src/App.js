@@ -1,6 +1,6 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, Spin, App as AntApp } from 'antd';
+import { ConfigProvider, Spin, App as AntApp, Modal, Button } from 'antd';
 import { HelmetProvider } from 'react-helmet-async';
 import 'antd/dist/reset.css';
 import { Layout } from 'antd';
@@ -62,6 +62,12 @@ const LoadingSpinner = () => (
 );
 
 function App() {
+  const [showReferralModal, setShowReferralModal] = useState(() => {
+    // Check if popup has been shown before
+    const hasSeenReferralPopup = localStorage.getItem('hasSeenReferralPopup');
+    return !hasSeenReferralPopup;
+  });
+
   useEffect(() => {
     // Initialize critical services immediately
     initSentry();
@@ -79,6 +85,19 @@ function App() {
       // Cleanup if needed
     };
   }, []);
+
+  const handleReferralModalClose = () => {
+    setShowReferralModal(false);
+    // Save to localStorage to prevent showing again
+    localStorage.setItem('hasSeenReferralPopup', 'true');
+  };
+
+  const handleViewReferralProgram = () => {
+    setShowReferralModal(false);
+    // Save to localStorage to prevent showing again
+    localStorage.setItem('hasSeenReferralPopup', 'true');
+    window.location.href = '/student-affiliate-program';
+  };
 
   return (
     <ErrorBoundary>
@@ -99,11 +118,11 @@ function App() {
                 {/* PWA Status - Handle online/offline notifications */}
                 <PWAStatus />
                 
-                {/* Beta Banner */}
+                {/* Referral Campaign Banner */}
                 <div className="beta-banner">
-                  <span className="beta-text">
-                    Phiên bản beta 1.0
-                  </span>
+                  <a href="/student-affiliate-program" className="beta-text" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Chương trình tiếp thị liên kết
+                  </a>
                 </div>
                 
                 {/* Daily Bot Scheduler - Tự động gửi báo giá hàng ngày */}
@@ -164,6 +183,52 @@ function App() {
                 </ChatProvider>
               </AuthProvider>
             </ProtectionProvider>
+
+            {/* Referral Campaign Modal */}
+            <Modal
+              title="🎉 Chương Trình Tiếp Thị Liên Kết Sinh Viên"
+              open={showReferralModal}
+              onCancel={handleReferralModalClose}
+              footer={[
+                <Button key="close" onClick={handleReferralModalClose}>
+                  Đóng
+                </Button>,
+                <Button 
+                  key="view" 
+                  type="primary" 
+                  onClick={handleViewReferralProgram}
+                >
+                  Xem Chi Tiết
+                </Button>
+              ]}
+              width={600}
+              centered
+            >
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>
+                  Kiếm tiền bằng cách giới thiệu NôngLạc cho bạn bè
+                </h3>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+                  Nhận phần thưởng hấp dẫn cho mỗi bạn bè đăng ký thành công
+                </p>
+                <div style={{ 
+                  background: '#f0f5ff', 
+                  padding: '16px', 
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                    ✅ <strong>+30 điểm</strong> khi bạn bè hoàn thành Cấp 1
+                  </p>
+                  <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                    ✅ <strong>+20 điểm</strong> khi bạn bè hoàn thành Cấp 2
+                  </p>
+                  <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                    ✅ <strong>Tổng +50 điểm</strong> khi bạn bè hoàn thành cả 2 cấp
+                  </p>
+                </div>
+              </div>
+            </Modal>
           </AntApp>
         </ConfigProvider>
       </HelmetProvider>
