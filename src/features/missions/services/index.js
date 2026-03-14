@@ -468,6 +468,126 @@ export const missionsService = {
   },
 
   /**
+   * Check xem đã hoàn thành cả 2 nhiệm vụ cùng cấp chưa, nếu rồi thì cộng điểm cho người mời
+   * @param {string} userId - ID của user
+   * @param {string} missionId - ID của nhiệm vụ vừa claim
+   * @returns {Promise<{success: boolean, bonusAdded?: boolean, error?: string}>}
+   */
+  async checkAndRewardReferrer(userId, missionId) {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) {
+        return { success: false, error: 'User không tồn tại' };
+      }
+
+      const userData = userDoc.data();
+      const referredBy = userData.referredBy;
+
+      if (!referredBy) {
+        return { success: true, bonusAdded: false, message: 'Không có người giới thiệu' };
+      }
+
+      // Lấy dữ liệu missions MỚI NHẤT (sau khi mission vừa được claim)
+      const userMissionsDoc = await getDoc(doc(db, 'userMissions', userId));
+      if (!userMissionsDoc.exists()) {
+        return { success: false, error: 'Missions data không tồn tại' };
+      }
+
+      const missions = userMissionsDoc.data().missions || [];
+
+      // Kiểm tra cấp 1
+      if (missionId === 'verify_phone' || missionId === 'add_farm_address') {
+        const verifyPhoneClaimed = missions.find(m => m.id === 'verify_phone')?.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED;
+        const addFarmAddressClaimed = missions.find(m => m.id === 'add_farm_address')?.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED;
+
+        console.log('Level 1 check - verify_phone:', verifyPhoneClaimed, 'add_farm_address:', addFarmAddressClaimed);
+
+        // Nếu cả 2 đã claim, cộng điểm
+        if (verifyPhoneClaimed && addFarmAddressClaimed) {
+          const alreadyRewarded = userData.level1BonusGiven || false;
+          if (!alreadyRewarded) {
+            console.log('Adding 30 bonus points to referrer for level 1 completion');
+            await this.addBonusPointsToReferrer(referredBy, 30);
+            await updateDoc(doc(db, 'users', userId), {
+              level1BonusGiven: true,
+              updatedAt: new Date()
+            });
+            return { success: true, bonusAdded: true, message: 'Đã cộng 30 điểm cho người mời' };
+          }
+        }
+      }
+
+      // Kiểm tra cấp 2
+      if (missionId === 'add_farm_area' || missionId === 'first_product_post') {
+        const addFarmAreaClaimed = missions.find(m => m.id === 'add_farm_area')?.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED;
+        const firstProductPostClaimed = missions.find(m => m.id === 'first_product_post')?.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED;
+
+        console.log('Level 2 check - add_farm_area:', addFarmAreaClaimed, 'first_product_post:', firstProductPostClaimed);
+
+        // Nếu cả 2 đã claim, cộng điểm
+        if (addFarmAreaClaimed && firstProductPostClaimed) {
+          const alreadyRewarded = userData.level2BonusGiven || false;
+          if (!alreadyRewarded) {
+            console.log('Adding 20 bonus points to referrer for level 2 completion');
+            await this.addBonusPointsToReferrer(referredBy, 20);
+            await updateDoc(doc(db, 'users', userId), {
+              level2BonusGiven: true,
+              updatedAt: new Date()
+            });
+            return { success: true, bonusAdded: true, message: 'Đã cộng 20 điểm cho người mời' };
+          }
+        }
+      }
+
+      return { success: true, bonusAdded: false, message: 'Chưa hoàn thành cả 2 nhiệm vụ cùng cấp' };
+    } catch (error) {
+      console.error('Error checking and rewarding referrer:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Cộng điểm bonus cho người giới thiệu khi user hoàn thành nhiệm vụ cấp 1
+   * @param {string} referralCode - Mã giới thiệu (referredBy)
+   * @param {number} bonusAmount - Số điểm cộng (mặc định 30)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async addBonusPointsToReferrer(referralCode, bonusAmount = 30) {
+    try {
+      if (!referralCode) {
+        return { success: true, message: 'Không có người giới thiệu' };
+      }
+
+      // Tìm user có referralCode trùng với mã được truyền vào
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('referralCode', '==', referralCode));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        return { success: true, message: 'Không tìm thấy người giới thiệu' };
+      }
+
+      const referrerUserId = querySnapshot.docs[0].id;
+      const referrerUserData = querySnapshot.docs[0].data();
+
+      // Cộng điểm vào bonusPoints của người giới thiệu
+      const currentBonusPoints = referrerUserData.bonusPoints || 0;
+      const newBonusPoints = currentBonusPoints + bonusAmount;
+
+      // Cập nhật bonusPoints của người giới thiệu
+      await updateDoc(doc(db, 'users', referrerUserId), {
+        bonusPoints: newBonusPoints,
+        updatedAt: new Date()
+      });
+
+      return { success: true, bonusPoints: newBonusPoints };
+    } catch (error) {
+      console.error('Error adding bonus points to referrer:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
    * Nhận thưởng nhiệm vụ
    * @param {string} userId - ID của user
    * @param {string} missionId - ID của nhiệm vụ
@@ -503,6 +623,11 @@ export const missionsService = {
         missions,
         unlockedBadges: newBadges
       });
+
+      // Kiểm tra và cộng bonus cho người giới thiệu nếu cả 2 nhiệm vụ cùng cấp đã được claim
+      if (updateResult.success) {
+        await this.checkAndRewardReferrer(userId, missionId);
+      }
 
       return {
         success: updateResult.success,
