@@ -2,6 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { profileService } from '../services';
 import { IconButton } from '../../../components/ui';
+import { message, Tooltip, Modal } from 'antd';
+import { CopyOutlined, QrcodeOutlined } from '@ant-design/icons';
+import QRCode from 'qrcode';
+import referralService from '../../../services/referralService';
 
 const isImageIcon = (icon) => (
   typeof icon === 'string' &&
@@ -34,11 +38,79 @@ const ProfileHeader = ({
   const [savingDraft, setSavingDraft] = useState(false);
   const closeTimerRef = useRef(null);
   const pickerListRef = useRef(null);
+  
+  // Referral state
+  const [referralCode, setReferralCode] = useState('');
+  const [referralLink, setReferralLink] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   useEffect(() => {
     setDraftBadgeId(selectedBadgeId || '');
     setFocusedBadgeId(selectedBadgeId || '');
   }, [selectedBadgeId]);
+
+  // Load referral info for student accounts
+  useEffect(() => {
+    if (userProfile?.userType === 'student' && user?.uid) {
+      loadReferralInfo();
+    }
+  }, [user?.uid, userProfile?.userType]);
+
+  const loadReferralInfo = async () => {
+    try {
+      const codeResult = await referralService.getOrCreateReferralCode(
+        user.uid,
+        userProfile?.displayName || 'Student'
+      );
+
+      if (codeResult.success) {
+        setReferralCode(codeResult.referralCode);
+        const link = referralService.generateReferralLink(codeResult.referralCode);
+        setReferralLink(link);
+        await generateQRCode(link);
+      }
+    } catch (error) {
+      console.error('Error loading referral info:', error);
+    }
+  };
+
+  const generateQRCode = async (link) => {
+    try {
+      const dataUrl = await QRCode.toDataURL(link, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 0.95,
+        margin: 1,
+        width: 200,
+        color: {
+          dark: '#2E7D32',
+          light: '#ffffff'
+        }
+      });
+      setQrDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    const result = await referralService.copyToClipboard(referralCode);
+    if (result.success) {
+      message.success('Đã copy mã giới thiệu!');
+    } else {
+      message.error('Không thể copy');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const result = await referralService.copyToClipboard(referralLink);
+    if (result.success) {
+      message.success('Đã copy link giới thiệu!');
+    } else {
+      message.error('Không thể copy');
+    }
+  };
 
   const badgeOptions = [
     { badgeKey: '', label: 'Ẩn danh hiệu', isHiddenOption: true },
@@ -243,6 +315,40 @@ const ProfileHeader = ({
                 Chia sẻ profile
               </button>
             </div>
+
+            {/* Referral Section for Students */}
+            {userProfile?.userType === 'student' && referralCode && (
+              <div className="w-full rounded-xl border border-[#d0e4d1] bg-white p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#2f6e37]">
+                  Mã Giới Thiệu
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 rounded-lg bg-[#f8fcf8] px-3 py-2">
+                      <span className="truncate text-sm font-mono font-semibold text-[#173b22]">
+                        {referralCode}
+                      </span>
+                      <Tooltip title="Copy mã">
+                        <button
+                          onClick={handleCopyCode}
+                          className="shrink-0 text-[#2f6e37] hover:text-[#1f4e28] transition"
+                        >
+                          <CopyOutlined className="text-sm" />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <Tooltip title="Xem QR & Link">
+                    <button
+                      onClick={() => setShowReferralModal(true)}
+                      className="shrink-0 rounded-lg bg-[#1f6f2f] p-2 text-white hover:bg-[#1b5f29] transition"
+                    >
+                      <QrcodeOutlined className="text-sm" />
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -328,6 +434,81 @@ const ProfileHeader = ({
           </div>
         </div>
       )}
+
+      {/* Referral Modal */}
+      <Modal
+        title="Mã Giới Thiệu & QR Code"
+        open={showReferralModal}
+        onCancel={() => setShowReferralModal(false)}
+        footer={null}
+        width={500}
+        centered
+      >
+        <div className="space-y-4">
+          {/* QR Code */}
+          <div className="text-center">
+            <p className="mb-3 text-sm font-semibold text-gray-700">Mã QR Giới Thiệu</p>
+            {qrDataUrl && (
+              <img src={qrDataUrl} alt="QR Code" className="mx-auto" style={{ maxWidth: '200px' }} />
+            )}
+          </div>
+
+          {/* Referral Code */}
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-700">Mã Giới Thiệu</p>
+            <div className="flex items-center gap-2 rounded-lg border border-[#d0e4d1] bg-[#f8fcf8] px-3 py-2">
+              <span className="flex-1 font-mono text-sm font-semibold text-[#173b22]">
+                {referralCode}
+              </span>
+              <Tooltip title="Copy mã">
+                <button
+                  onClick={handleCopyCode}
+                  className="text-[#2f6e37] hover:text-[#1f4e28] transition"
+                >
+                  <CopyOutlined />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* Referral Link */}
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-700">Link Giới Thiệu</p>
+            <div className="flex items-center gap-2 rounded-lg border border-[#d0e4d1] bg-[#f8fcf8] px-3 py-2">
+              <span className="flex-1 truncate font-mono text-xs text-[#173b22]">
+                {referralLink}
+              </span>
+              <Tooltip title="Copy link">
+                <button
+                  onClick={handleCopyLink}
+                  className="shrink-0 text-[#2f6e37] hover:text-[#1f4e28] transition"
+                >
+                  <CopyOutlined />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* View Referred Users */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setShowReferralModal(false);
+                // Scroll to referred users section
+                setTimeout(() => {
+                  const element = document.querySelector('.referred-users-list');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 100);
+              }}
+              className="w-full rounded-lg bg-[#1f6f2f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5f29] transition"
+            >
+              Xem Danh Sách Tài Khoản Đã Mời
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

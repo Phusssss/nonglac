@@ -171,11 +171,12 @@ class ReferralService {
 
   /**
    * Lấy danh sách tài khoản đã đăng ký qua mã giới thiệu
+   * Tìm các user có referredBy = referralCode
    */
   async getReferredUsers(referralCode) {
     try {
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('referralCode', '==', referralCode));
+      const q = query(usersRef, where('referredBy', '==', referralCode));
       const querySnapshot = await getDocs(q);
 
       const referredUsers = [];
