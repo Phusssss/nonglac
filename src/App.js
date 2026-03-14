@@ -48,6 +48,7 @@ const AIVideoCall = React.lazy(() => import('./pages/AIVideoCall'));
 const MissionScreen = React.lazy(() => import('./features/missions'));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 const AboutUs = React.lazy(() => import('./pages/AboutUs'));
+const StudentAffiliateProgram = React.lazy(() => import('./pages/StudentAffiliateProgram'));
 
 
 
@@ -141,6 +142,7 @@ function App() {
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy" element={<TermsOfService />} />
               <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/student-affiliate-program" element={<StudentAffiliateProgram />} />
 
 
               

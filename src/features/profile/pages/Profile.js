@@ -11,13 +11,15 @@ import {
   ProfileSidebar,
   ProfileTabs,
   ProfileContent,
-  EditProfileDialog
+  EditProfileDialog,
+  StudentReferralSection,
+  ReferredUsersList
 } from '../components';
 import EnhancedLoginModal from '../../../components/enhanced/EnhancedLoginModal';
 import '../styles/profile.css';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { showLoginModal, setShowLoginModal } = useAuthGuard();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(PROFILE_CONSTANTS.TABS.POSTS);
@@ -125,7 +127,7 @@ const Profile = () => {
               postsCount={userPosts.length}
             />
 
-            <div className="lg:col-span-2 flex flex-col gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-6">
               <div className="bg-white rounded-xl shadow-sm">
                 <ProfileTabs 
                   activeTab={activeTab}
@@ -138,6 +140,16 @@ const Profile = () => {
                   activeTab={activeTab}
                 />
               </div>
+
+              {/* Hiển thị phần giới thiệu sinh viên nếu là tài khoản sinh viên */}
+              {userProfile?.userType === 'student' && (
+                <>
+                  <StudentReferralSection />
+                  {userProfile?.referralCode && (
+                    <ReferredUsersList referralCode={userProfile.referralCode} />
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

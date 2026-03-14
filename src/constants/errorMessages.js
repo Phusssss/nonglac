@@ -7,7 +7,7 @@ export const FIREBASE_AUTH_ERRORS = {
   'auth/invalid-credential': 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.',
   'auth/invalid-email': 'Địa chỉ email không hợp lệ.',
   'auth/user-disabled': 'Tài khoản đã bị vô hiệu hóa. Liên hệ hỗ trợ để được giúp đỡ.',
-  'auth/email-already-in-use': 'Email này đã được sử dụng cho tài khoản khác.',
+  'auth/email-already-in-use': 'Số điện thoại này đã được sử dụng cho tài khoản khác.',
   'auth/weak-password': 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn (tối thiểu 6 ký tự).',
 
   // Phone authentication errors

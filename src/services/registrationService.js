@@ -105,6 +105,64 @@ class RegistrationService {
     };
   }
 
+  // Lưu thông tin sinh viên
+  saveStudentInfo(studentInfo) {
+    if (!this.registrationData.personalInfo) {
+      return {
+        success: false,
+        message: 'Vui lòng nhập thông tin cá nhân trước'
+      };
+    }
+
+    if (!studentInfo?.studentId || !studentInfo?.university) {
+      return {
+        success: false,
+        message: 'Vui lòng nhập đầy đủ mã sinh viên và trường học'
+      };
+    }
+
+    this.registrationData.studentInfo = {
+      studentId: String(studentInfo.studentId).trim(),
+      university: String(studentInfo.university).trim(),
+      studentType: 'student'
+    };
+
+    return {
+      success: true,
+      message: 'Thông tin sinh viên đã được lưu'
+    };
+  }
+
+  // Lưu mã giới thiệu
+  saveReferralCode(referralCode) {
+    if (!this.registrationData.personalInfo) {
+      return {
+        success: false,
+        message: 'Vui lòng nhập thông tin cá nhân trước'
+      };
+    }
+
+    // Mã giới thiệu là tùy chọn
+    if (referralCode) {
+      // Kiểm tra format mã giới thiệu
+      if (!/^STU_[A-Z0-9]{3}_[A-Z0-9]{6}$/.test(referralCode)) {
+        return {
+          success: false,
+          message: 'Mã giới thiệu không hợp lệ'
+        };
+      }
+
+      this.registrationData.referralCode = referralCode;
+    } else {
+      this.registrationData.referralCode = null;
+    }
+
+    return {
+      success: true,
+      message: 'Mã giới thiệu đã được lưu'
+    };
+  }
+
   // Gửi thông báo cho Admin khi có user mới
   async notifyAdminNewRegistration(userData) {
     try {
@@ -128,7 +186,7 @@ class RegistrationService {
   // Tạo tài khoản đơn giản với phone + password
   async createSimpleAccount(password) {
     try {
-      const { phoneNumber, personalInfo } = this.registrationData;
+      const { phoneNumber, personalInfo, studentInfo, referralCode } = this.registrationData;
 
       if (!phoneNumber) {
         throw new Error('Vui lòng nhập số điện thoại');
@@ -152,7 +210,7 @@ class RegistrationService {
 
       await updateProfile(user, { displayName });
 
-      await setDoc(doc(db, 'users', user.uid), {
+      const userData = {
         uid: user.uid,
         phoneNumber,
         email: tempEmail,
@@ -174,7 +232,21 @@ class RegistrationService {
         verificationStatus: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
+
+      // Thêm thông tin sinh viên nếu có
+      if (studentInfo) {
+        userData.studentId = studentInfo.studentId;
+        userData.university = studentInfo.university;
+        userData.userType = 'student';
+      }
+
+      // Thêm mã giới thiệu nếu có
+      if (referralCode) {
+        userData.referralCode = referralCode;
+      }
+
+      await setDoc(doc(db, 'users', user.uid), userData);
 
       await this.notifyAdminNewRegistration({
         uid: user.uid,

@@ -4,3 +4,5 @@ export { default as ProfileTabs } from './ProfileTabs';
 export { default as ProfileContent } from './ProfileContent';
 export { default as EditProfileDialog } from './EditProfileDialog';
 export { default as FollowButton } from './FollowButton';
+export { default as StudentReferralSection } from './StudentReferralSection';
+export { default as ReferredUsersList } from './ReferredUsersList';

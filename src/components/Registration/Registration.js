@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Steps, Card, Typography } from 'antd';
+import { useSearchParams } from 'react-router-dom';
 import PhoneStep from './PhoneStep';
 import PersonalInfoStep from './PersonalInfoStep';
+import ReferralCodeStep from './ReferralCodeStep';
 import PasswordStep from './PasswordStep';
 import registrationService from '../../services/registrationService';
 import logo from '../../assets/images/logo.demo.nontext.png';
@@ -18,12 +20,19 @@ const steps = [
     description: 'Tên người dùng, giới tính, tuổi'
   },
   {
+    title: 'Mã Giới Thiệu',
+    description: 'Nhập mã giới thiệu (tùy chọn)'
+  },
+  {
     title: 'Mật khẩu',
     description: 'Tạo mật khẩu'
   }
 ];
 
 const Registration = () => {
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref');
+
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +77,18 @@ const Registration = () => {
           />
         );
       case 2:
+        return (
+          <ReferralCodeStep
+            onNext={handleNext}
+            onBack={handleBack}
+            setLoading={setLoading}
+            setError={setError}
+            loading={loading}
+            error={error}
+            initialCode={referralCode}
+          />
+        );
+      case 3:
         return (
           <PasswordStep
             onBack={handleBack}
