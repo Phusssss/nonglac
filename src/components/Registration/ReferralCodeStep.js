@@ -67,14 +67,15 @@ const ReferralCodeStep = ({
           label="Mã Giới Thiệu"
           rules={[
             {
-              validator: (_, value) => {
+              validator: async (_, value) => {
                 if (!value || value.trim() === '') {
                   return Promise.resolve();
                 }
-                // Kiểm tra format mã giới thiệu
-                if (!/^STU_[A-Z0-9]{3}_[A-Z0-9]{6}$/.test(value.trim())) {
+                // Chỉ kiểm tra xem mã có tồn tại trong database không
+                const referrerUser = await registrationService.findUserByReferralCode(value.trim());
+                if (!referrerUser) {
                   return Promise.reject(
-                    new Error('Mã giới thiệu không hợp lệ. Định dạng: STU_XXX_XXXXXX')
+                    new Error('Mã giới thiệu không tồn tại')
                   );
                 }
                 return Promise.resolve();

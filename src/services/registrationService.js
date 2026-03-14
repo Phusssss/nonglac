@@ -146,14 +146,8 @@ class RegistrationService {
 
     // Mã giới thiệu là tùy chọn
     if (referralCode) {
-      // Kiểm tra format mã giới thiệu
-      if (!/^STU_[A-Z0-9]{3}_[A-Z0-9]{6}$/.test(referralCode)) {
-        return {
-          success: false,
-          message: 'Mã giới thiệu không hợp lệ'
-        };
-      }
-
+      // Chỉ kiểm tra xem mã có tồn tại trong database không
+      // Không kiểm tra định dạng nữa
       this.registrationData.referralCode = referralCode;
     } else {
       this.registrationData.referralCode = null;
@@ -245,7 +239,7 @@ class RegistrationService {
 
       // Thêm mã giới thiệu nếu có
       if (referralCode) {
-        userData.referralCode = referralCode;
+        userData.referredBy = referralCode;
       }
 
       await setDoc(doc(db, 'users', user.uid), userData);
@@ -287,7 +281,7 @@ class RegistrationService {
         throw new Error('Thông tin địa điểm chưa được xác thực');
       }
 
-      const { personalInfo, phoneNumber, locationInfo } = this.registrationData;
+      const { personalInfo, phoneNumber, locationInfo, referralCode } = this.registrationData;
 
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -301,7 +295,7 @@ class RegistrationService {
         displayName: personalInfo.displayName
       });
 
-      await setDoc(doc(db, 'users', user.uid), {
+      const userData = {
         uid: user.uid,
         phoneNumber,
         email: personalInfo.email,
@@ -322,7 +316,14 @@ class RegistrationService {
         verificationStatus: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
+
+      // Thêm referredBy nếu có mã giới thiệu
+      if (referralCode) {
+        userData.referredBy = referralCode;
+      }
+
+      await setDoc(doc(db, 'users', user.uid), userData);
 
       await this.notifyAdminNewRegistration({
         uid: user.uid,
@@ -405,6 +406,28 @@ class RegistrationService {
       return null;
     } catch (error) {
       console.error('Error finding user by phone:', error);
+      return null;
+    }
+  }
+
+  // Tìm user theo referral code
+  async findUserByReferralCode(referralCode) {
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('referralCode', '==', referralCode));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        return {
+          uid: querySnapshot.docs[0].id,
+          ...userData
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error finding user by referral code:', error);
       return null;
     }
   }

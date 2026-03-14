@@ -23,6 +23,13 @@ const PhoneLogin = () => {
     // Reset dữ liệu trong service
     registrationService.resetRegistrationData();
     
+    // Xóa localStorage
+    localStorage.removeItem('loginMessage');
+    localStorage.removeItem('redirectAfterLogin');
+    localStorage.removeItem('loginFeature');
+    localStorage.removeItem('nonglac_user_context');
+    localStorage.removeItem('nonglac_chat_history');
+    
     // Đăng xuất khỏi Firebase để xóa session
     signOut(auth).catch(() => {
       // Bỏ qua lỗi nếu chưa đăng nhập

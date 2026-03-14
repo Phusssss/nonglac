@@ -62,11 +62,22 @@ const Registration = () => {
     // Reset dữ liệu trong service
     registrationService.resetRegistrationData();
     
+    // Xóa localStorage
+    localStorage.removeItem('loginMessage');
+    localStorage.removeItem('redirectAfterLogin');
+    localStorage.removeItem('loginFeature');
+    localStorage.removeItem('nonglac_user_context');
+    localStorage.removeItem('nonglac_chat_history');
+    
     // Đăng xuất khỏi Firebase để xóa session
     signOut(auth).catch(() => {
       // Bỏ qua lỗi nếu chưa đăng nhập
     });
-  }, []);
+    
+    // Reset activeStep về 0
+    setActiveStep(0);
+    setError('');
+  }, [searchParams]);
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
