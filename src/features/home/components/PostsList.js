@@ -20,7 +20,7 @@ const FeedSkeleton = () => (
           <div className="h-3 w-4/5 rounded bg-gray-200" />
           <div className="h-3 w-3/5 rounded bg-gray-100" />
         </div>
-        <div className="mt-4 h-52 rounded-lg bg-gray-100" />
+        <div className="mt-4 h-96 rounded-lg bg-gray-100" />
       </div>
     ))}
   </div>
@@ -36,17 +36,17 @@ const HomeProductCard = ({ product, onClick }) => {
       onClick={() => onClick(product)}
       className="w-full text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all"
     >
-      <div className="relative">
+      <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
         {coverImage ? (
           <img
             src={coverImage}
             alt={product.name || 'Sản phẩm'}
-            className="w-full h-52 object-cover"
+            className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-52 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center text-5xl">🌿</div>
+          <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center text-5xl">🌿</div>
         )}
 
         <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-black/65 px-2.5 py-1 text-xs text-white">
