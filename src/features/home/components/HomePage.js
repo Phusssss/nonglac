@@ -16,6 +16,7 @@ import {
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { enrichPostsWithAuthorInfo } from '../../../utils/postEnrichmentService';
 import SEO from '../../../components/SEO';
 import LoginModal from '../../../components/common/LoginModal';
 import CreatePostForm from './CreatePostForm';
@@ -226,7 +227,8 @@ const HomePage = () => {
       ]);
 
       const postData = postSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-      setPosts(postData);
+      const enrichedPostData = await enrichPostsWithAuthorInfo(postData);
+      setPosts(enrichedPostData);
       setLastPostDoc(postSnapshot.docs[postSnapshot.docs.length - 1] || null);
       setHasMorePosts(!isSearchMode && postSnapshot.docs.length === HOME_CONSTANTS.POSTS_PER_PAGE);
 
@@ -281,11 +283,12 @@ const HomePage = () => {
 
       if (postSnapshot) {
         const nextPosts = postSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-        if (nextPosts.length) {
-          setPosts((prev) => [...prev, ...nextPosts]);
+        const enrichedNextPosts = await enrichPostsWithAuthorInfo(nextPosts);
+        if (enrichedNextPosts.length) {
+          setPosts((prev) => [...prev, ...enrichedNextPosts]);
           setLastPostDoc(postSnapshot.docs[postSnapshot.docs.length - 1]);
         }
-        setHasMorePosts(nextPosts.length === HOME_CONSTANTS.POSTS_PER_PAGE);
+        setHasMorePosts(enrichedNextPosts.length === HOME_CONSTANTS.POSTS_PER_PAGE);
       }
 
       if (productSnapshot) {
@@ -394,52 +397,7 @@ const HomePage = () => {
           <Row gutter={[16, 16]}>
             <Col xs={{ span: 24, order: 2 }} lg={{ span: 6, order: 1 }}>
               <div className="space-y-6">
-                <div className="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100">
-                  {user ? (
-                    <>
-                      <div className="relative mx-auto w-24 h-24 mb-4">
-                        <div className="w-24 h-24 rounded-full bg-[#4CAF50] flex items-center justify-center text-white text-2xl font-bold">
-                          {userProfile?.displayName?.charAt(0) || 'U'}
-                        </div>
-                        <div className="absolute bottom-0 right-0 bg-green-500 w-5 h-5 rounded-full border-4 border-white" />
-                      </div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-1">
-                        {userProfile?.displayName || user?.email || 'Guest'}
-                      </h2>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {userProfile?.reputation >= 100 ? 'Chuyên gia' : 'Nông dân tiên tiến'}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-gray-900">{userProfile?.postsCount || 0}</div>
-                          <div className="text-xs text-gray-500">Bài viết</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-[#4CAF50]">{userProfile?.reputation || 0}</div>
-                          <div className="text-xs text-gray-500">Uy tín</div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="relative mx-auto w-24 h-24 mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-2xl">
-                          👤
-                        </div>
-                      </div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-1">Chào mừng đến NôngLạc</h2>
-                      <p className="text-sm text-gray-600 mb-6">Kết nối cộng đồng nông nghiệp Việt</p>
-                      <Button
-                        type="default"
-                        className="w-full"
-                        onClick={() => setShowLoginModal(true)}
-                      >
-                        Đăng nhập để tham gia
-                      </Button>
-                    </>
-                  )}
-                </div>
-
+ 
                 <div className="hidden lg:block">
                   <CategoryFilter
                     selectedCategory={selectedCategory}

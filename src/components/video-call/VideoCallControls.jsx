@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
 import {
-  CameraFilled,
+  VideoCameraFilled,
   PhoneOutlined,
   PictureOutlined,
-  ReloadOutlined,
-  VideoCameraAddOutlined,
-  VideoCameraOutlined,
+  SwapOutlined,
+  CameraOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 
@@ -39,8 +39,17 @@ const VideoCallControls = ({
     fileInputRef.current?.click();
   };
 
-  const utilityBtnClass =
-    'w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/35 transition-all duration-200';
+  const getCameraButtonColor = () => {
+    return isCameraOn ? 'text-cyan-400' : 'text-gray-400';
+  };
+
+  const getUploadButtonColor = () => {
+    return 'text-blue-400';
+  };
+
+  const getEndCallButtonColor = () => {
+    return 'text-red-500';
+  };
 
   return (
     <div className="relative z-20 px-3 pb-3 sm:px-5 sm:pb-5">
@@ -57,89 +66,77 @@ const VideoCallControls = ({
         <div className="grid grid-cols-5 items-center">
           <div className="flex justify-center">
             <Tooltip title={isCameraOn ? 'Tắt camera' : 'Bật camera'}>
-              <Button
-                type="text"
-                shape="circle"
-                size="large"
-                icon={isCameraOn ? <VideoCameraOutlined /> : <VideoCameraAddOutlined />}
+              <button
                 onClick={onToggleCamera}
-                className={`${utilityBtnClass} ${isCameraOn ? '' : 'text-white/65 bg-white/5'}`}
+                className={`flex items-center justify-center text-4xl transition-all duration-200 ${getCameraButtonColor()} hover:opacity-80 relative`}
                 aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
-              />
+              >
+                <VideoCameraFilled />
+                {!isCameraOn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-1.5 bg-red-500 transform -rotate-45 rounded" />
+                  </div>
+                )}
+              </button>
             </Tooltip>
           </div>
 
           <div className="flex justify-center">
             {isCameraOn ? (
               <Tooltip title="Đổi camera">
-                <Button
-                  type="text"
-                  shape="circle"
-                  size="large"
-                  icon={<ReloadOutlined />}
+                <button
                   onClick={onSwitchCamera}
-                  className={utilityBtnClass}
+                  className="flex items-center justify-center text-4xl transition-all duration-200 text-blue-400 hover:opacity-80"
                   aria-label="Đổi camera"
-                />
+                >
+                  <SwapOutlined />
+                </button>
               </Tooltip>
             ) : (
-              <div className="w-11 h-11 sm:w-12 sm:h-12 opacity-0 pointer-events-none" />
+              <div className="w-12 h-12 opacity-0 pointer-events-none" />
             )}
           </div>
 
           <div className="flex justify-center">
             <motion.div whileTap={canCapture ? { scale: 0.94 } : {}} transition={{ duration: 0.12 }}>
               <Tooltip title={canCapture ? 'Chụp ảnh để phân tích' : 'Bật camera để chụp'}>
-                <div
-                  className={`rounded-full p-1.5 sm:p-2 ${
-                    canCapture ? 'bg-cyan-300/30 shadow-[0_0_34px_rgba(120,255,245,0.45)]' : 'bg-slate-400/20'
+                <button
+                  onClick={onCapture}
+                  disabled={!canCapture}
+                  className={`flex items-center justify-center text-5xl transition-all duration-200 ${
+                    canCapture
+                      ? 'text-white hover:opacity-80 cursor-pointer'
+                      : 'text-gray-500 cursor-not-allowed opacity-50'
                   }`}
+                  aria-label="Chụp ảnh"
                 >
-                  <Button
-                    type="text"
-                    shape="circle"
-                    size="large"
-                    icon={<CameraFilled style={{ fontSize: '24px' }} />}
-                    onClick={onCapture}
-                    disabled={!canCapture}
-                    className={`w-[68px] h-[68px] sm:w-[82px] sm:h-[82px] flex items-center justify-center text-2xl border-4 ${
-                      canCapture
-                        ? '!bg-white hover:!bg-white !text-slate-900 border-white shadow-[0_10px_30px_rgba(255,255,255,0.45)]'
-                        : 'bg-slate-500/60 border-slate-300/20 text-white/70 cursor-not-allowed'
-                    }`}
-                    aria-label="Chụp ảnh"
-                  />
-                </div>
+                  <CameraOutlined />
+                </button>
               </Tooltip>
             </motion.div>
           </div>
 
           <div className="flex justify-center">
             <Tooltip title="Tải ảnh lên">
-              <Button
-                type="text"
-                shape="circle"
-                size="large"
-                icon={<PictureOutlined />}
+              <button
                 onClick={handleUploadClick}
-                className={utilityBtnClass}
+                className={`flex items-center justify-center text-4xl transition-all duration-200 ${getUploadButtonColor()} hover:opacity-80`}
                 aria-label="Tải ảnh lên"
-              />
+              >
+                <PictureOutlined />
+              </button>
             </Tooltip>
           </div>
 
           <div className="flex justify-center">
             <Tooltip title="Kết thúc cuộc gọi">
-              <Button
-                type="primary"
-                shape="circle"
-                size="large"
-                danger
-                icon={<PhoneOutlined style={{ transform: 'rotate(135deg)', fontSize: '18px' }} />}
+              <button
                 onClick={onEndCall}
-                className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 border-0"
+                className={`flex items-center justify-center text-4xl transition-all duration-200 ${getEndCallButtonColor()} hover:opacity-80`}
                 aria-label="Kết thúc cuộc gọi"
-              />
+              >
+                <PhoneOutlined style={{ transform: 'rotate(135deg)' }} />
+              </button>
             </Tooltip>
           </div>
         </div>

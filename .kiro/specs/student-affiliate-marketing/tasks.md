@@ -61,7 +61,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Validates: Requirements 4.5, 9.6**
 
 - [ ] 3. Create student campaign landing page
-  - [~] 3.1 Create StudentLandingPage component
+  - [ ] 3.1 Create StudentLandingPage component
     - Create new page component at `src/pages/StudentLandingPage.js`
     - Add hero section with campaign information and benefits list
     - Implement `handleRegisterClick()` to navigate to `/register?student=true`
@@ -69,13 +69,13 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - Style with Tailwind CSS matching existing design system
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
   
-  - [~] 3.2 Add route for student landing page
+  - [ ] 3.2 Add route for student landing page
     - Add route `/student-campaign` in App.js or routing configuration
     - Ensure route is publicly accessible (no auth required)
     - _Requirements: 1.4_
 
 - [ ] 4. Modify registration flow for student and referral fields
-  - [~] 4.1 Update PersonalInfoStep component for student fields
+  - [ ] 4.1 Update PersonalInfoStep component for student fields
     - Detect URL parameter `student=true` and store in component state
     - Add conditional rendering for studentId and universityName input fields
     - Add validation for student fields (required when student=true)
@@ -86,7 +86,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 1: Student registration parameter capture**
     - **Validates: Requirements 2.1, 2.2**
   
-  - [~] 4.3 Update PasswordStep component for referral code input
+  - [ ] 4.3 Update PasswordStep component for referral code input
     - Add referral code input field that displays when student parameter is NOT present
     - Make referral code field optional
     - Auto-populate field from URL parameter `ref` if present
@@ -98,11 +98,11 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 10: Referral code auto-population**
     - **Validates: Requirements 4.3**
 
-- [~] 5. Checkpoint - Ensure registration flows work correctly
+- [ ] 5. Checkpoint - Ensure registration flows work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Create affiliate section for student profiles
-  - [~] 6.1 Create AffiliateSection component
+  - [ ] 6.1 Create AffiliateSection component
     - Create component at `src/features/user-profile/components/AffiliateSection.js`
     - Accept props: userId, referralCode, referralStats
     - Display referral code prominently
@@ -110,7 +110,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - Add copy-to-clipboard button for referral link with success feedback
     - _Requirements: 3.2, 3.3, 3.4, 3.7_
   
-  - [~] 6.2 Add QR code generation to AffiliateSection
+  - [ ] 6.2 Add QR code generation to AffiliateSection
     - Install qrcode.react package: `npm install qrcode.react@^3.1.0`
     - Import and use QRCodeSVG component to encode referral link
     - Make QR code downloadable or shareable
@@ -122,7 +122,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 8: QR code encoding**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
   
-  - [~] 6.4 Add referral statistics display to AffiliateSection
+  - [ ] 6.4 Add referral statistics display to AffiliateSection
     - Display total referrals count
     - Display total points earned
     - Display level 1 mission completions count
@@ -136,7 +136,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 25: Recent referrals display**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.6**
   
-  - [~] 6.6 Integrate AffiliateSection into profile page
+  - [ ] 6.6 Integrate AffiliateSection into profile page
     - Modify user profile page to check if user.type === "student"
     - Conditionally render AffiliateSection for student users
     - Fetch referral statistics using referralService.getReferralStats()
@@ -147,7 +147,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Validates: Requirements 4.1, 4.2**
 
 - [ ] 7. Implement referral statistics service methods
-  - [~] 7.1 Add getReferralStats method to referralService.js
+  - [ ] 7.1 Add getReferralStats method to referralService.js
     - Query referrals collection by studentId
     - Calculate total referrals count
     - Calculate level 1 and level 2 completion counts
@@ -156,7 +156,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - Return structured ReferralStats object
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.6_
   
-  - [~] 7.2 Add getAllStudentsWithReferrals method for admin
+  - [ ] 7.2 Add getAllStudentsWithReferrals method for admin
     - Query all users where type="student"
     - For each student, fetch referral count and total points
     - Return array of StudentData objects
@@ -164,7 +164,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - _Requirements: 7.1, 7.2, 7.3_
 
 - [ ] 8. Integrate referral rewards with mission system
-  - [~] 8.1 Add checkReferralReward method to missionsService
+  - [ ] 8.1 Add checkReferralReward method to missionsService
     - Check if user has referredBy field
     - Identify mission level (level 1 or level 2)
     - Query referrals collection to find referral record
@@ -176,7 +176,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 14: Referral identification on mission completion**
     - **Validates: Requirements 5.1, 6.1**
   
-  - [~] 8.3 Implement awardReferralPoints method in referralService.js
+  - [ ] 8.3 Implement awardReferralPoints method in referralService.js
     - Validate referral exists and points not already awarded
     - Award 30 points for level 1 mission completion
     - Award 20 points for level 2 mission completion
@@ -194,25 +194,25 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 19: Points transaction recording**
     - **Validates: Requirements 5.2, 5.4, 5.5, 6.2, 6.3, 6.4, 6.5**
   
-  - [~] 8.5 Hook checkReferralReward into mission completion flow
+  - [ ] 8.5 Hook checkReferralReward into mission completion flow
     - Find where missions are marked complete in existing code
     - Add call to checkReferralReward after mission completion
     - Ensure it runs asynchronously without blocking mission completion
     - Add error handling to prevent mission completion failures
     - _Requirements: 5.1, 6.1_
 
-- [~] 9. Checkpoint - Ensure mission rewards work correctly
+- [ ] 9. Checkpoint - Ensure mission rewards work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Create admin dashboard for student referrals
-  - [~] 10.1 Create AdminStudentReferrals component
+  - [ ] 10.1 Create AdminStudentReferrals component
     - Create component at `src/features/admin/components/AdminStudentReferrals.js`
     - Display table with columns: Name, University, Points, Referrals
     - Fetch student data using referralService.getAllStudentsWithReferrals()
     - Use Ant Design Table component for display
     - _Requirements: 7.1, 7.2, 7.3_
   
-  - [~] 10.2 Add filtering and sorting to AdminStudentReferrals
+  - [ ] 10.2 Add filtering and sorting to AdminStudentReferrals
     - Add university filter dropdown
     - Implement filter logic to show only students from selected university
     - Add sort controls for points and referrals columns
@@ -224,7 +224,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 21: Admin dashboard points sorting**
     - **Validates: Requirements 7.6, 7.7**
   
-  - [~] 10.4 Add student detail view to AdminStudentReferrals
+  - [ ] 10.4 Add student detail view to AdminStudentReferrals
     - Implement row click handler to select student
     - Create detail panel showing referred users list with names
     - Display mission completion status for each referral
@@ -237,7 +237,7 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - **Property 23: Admin transaction history display**
     - **Validates: Requirements 7.2, 7.3, 7.4, 7.5, 7.8**
   
-  - [~] 10.6 Integrate AdminStudentReferrals into admin dashboard
+  - [ ] 10.6 Integrate AdminStudentReferrals into admin dashboard
     - Add new tab or section in existing admin dashboard
     - Ensure only admin users can access (check admin permissions)
     - Add route for admin referrals page if needed
@@ -245,45 +245,45 @@ This implementation plan breaks down the Student Affiliate Marketing System into
     - _Requirements: 7.1_
 
 - [ ] 11. Update Firestore security rules
-  - [~] 11.1 Add security rules for referrals collection
+  - [ ] 11.1 Add security rules for referrals collection
     - Allow students to read their own referrals
     - Restrict write access to admin only
     - Add validation rules for required fields
     - _Requirements: 9.6_
   
-  - [~] 11.2 Add security rules for referralPoints collection
+  - [ ] 11.2 Add security rules for referralPoints collection
     - Allow students to read their own transactions
     - Restrict write access to admin only
     - Add validation rules for transaction data
     - _Requirements: 5.5, 6.4_
   
-  - [~] 11.3 Update users collection rules for referral codes
+  - [ ] 11.3 Update users collection rules for referral codes
     - Allow authenticated users to read referral codes for validation
     - Maintain existing write restrictions
     - _Requirements: 8.3_
 
 - [ ] 12. Final integration and polish
-  - [~] 12.1 Add error handling throughout the system
+  - [ ] 12.1 Add error handling throughout the system
     - Add try-catch blocks with Vietnamese error messages
     - Implement retry logic with exponential backoff for database operations
     - Add user-friendly error displays in UI components
     - Log errors for admin review
     - _Requirements: All_
   
-  - [~] 12.2 Add loading states and optimistic updates
+  - [ ] 12.2 Add loading states and optimistic updates
     - Add loading spinners for async operations
     - Implement optimistic UI updates for copy actions
     - Add skeleton loaders for statistics
     - _Requirements: All_
   
-  - [~] 12.3 Optimize performance
+  - [ ] 12.3 Optimize performance
     - Implement caching for referral statistics (5-minute TTL)
     - Add pagination for admin dashboard
     - Lazy load QR code library
     - Use Firestore offline persistence
     - _Requirements: All_
 
-- [~] 13. Final checkpoint - Comprehensive testing
+- [ ] 13. Final checkpoint - Comprehensive testing
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

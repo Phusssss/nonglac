@@ -46,7 +46,8 @@
     "version:patch": "node scripts/update-version.js patch",
     "version:minor": "node scripts/update-version.js minor",
     "version:major": "node scripts/update-version.js major",
-    "version:set": "node scripts/update-version.js"
+    "version:set": "node scripts/update-version.js",
+    "generate:icons": "node scripts/generate-icons.js"
   },
   "eslintConfig": {
     "extends": [

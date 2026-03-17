@@ -201,7 +201,7 @@ const ResponsiveNavbar = () => {
                 aria-label="Hồ sơ cá nhân"
               >
                 <PersonRounded className="group-hover:scale-110 transition-transform" sx={{ fontSize: 20 }} />
-                <span>Profile</span>
+                <span>Cá nhân</span>
               </button>
             </nav>
 

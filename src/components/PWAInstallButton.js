@@ -2,20 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, Typography, Space, Card } from 'antd';
 import { 
   DownloadOutlined, 
-  MobileOutlined, 
-  DesktopOutlined,
-  CheckCircleOutlined,
-  CloseOutlined
+  CheckCircleOutlined
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
 
 const PWAInstallButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -24,15 +21,22 @@ const PWAInstallButton = () => {
       return;
     }
 
-    // Check if it's iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
+    // Check if it's iOS (real device, not emulation)
+    const isIOSDevice = () => {
+      const userAgent = navigator.userAgent;
+      const isIOSUA = /iPad|iPhone|iPod/.test(userAgent);
+      const isRealIOS = isIOSUA && typeof navigator.standalone !== 'undefined';
+      return isRealIOS;
+    };
+    
+    setIsIOS(isIOSDevice());
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e) => {
       console.log('PWA: beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
+      setCanInstall(true);
     };
 
     // Listen for app installed event
@@ -40,6 +44,7 @@ const PWAInstallButton = () => {
       console.log('PWA: App was installed');
       setIsInstalled(true);
       setDeferredPrompt(null);
+      setCanInstall(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -58,15 +63,11 @@ const PWAInstallButton = () => {
     }
 
     if (!deferredPrompt) {
-      setShowInstallModal(true);
       return;
     }
 
     try {
-      // Show the install prompt
       deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
       
       console.log(`PWA: User response to the install prompt: ${outcome}`);
@@ -78,70 +79,16 @@ const PWAInstallButton = () => {
       }
       
       setDeferredPrompt(null);
+      setCanInstall(false);
     } catch (error) {
       console.error('PWA: Error during installation:', error);
     }
   };
 
-  // Don't show button if already installed
-  if (isInstalled) {
+  // Don't show button if already installed or can't install
+  if (isInstalled || (!canInstall && !isIOS)) {
     return null;
   }
-
-  const InstallModal = () => (
-    <Modal
-      open={showInstallModal}
-      onCancel={() => setShowInstallModal(false)}
-      footer={null}
-      centered
-      width={500}
-    >
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📱</div>
-        <Title level={3} style={{ marginBottom: '16px' }}>
-          Tải NôngLạc về máy
-        </Title>
-        <Paragraph style={{ fontSize: '16px', marginBottom: '24px' }}>
-          Cài đặt ứng dụng NôngLạc để trải nghiệm tốt hơn:
-        </Paragraph>
-        
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Card size="small" style={{ textAlign: 'left' }}>
-            <Space>
-              <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              <Text>Truy cập nhanh từ màn hình chính</Text>
-            </Space>
-          </Card>
-          <Card size="small" style={{ textAlign: 'left' }}>
-            <Space>
-              <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              <Text>Hoạt động offline khi mất mạng</Text>
-            </Space>
-          </Card>
-          <Card size="small" style={{ textAlign: 'left' }}>
-            <Space>
-              <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              <Text>Nhận thông báo realtime</Text>
-            </Space>
-          </Card>
-          <Card size="small" style={{ textAlign: 'left' }}>
-            <Space>
-              <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              <Text>Tiết kiệm dung lượng thiết bị</Text>
-            </Space>
-          </Card>
-        </Space>
-
-        <div style={{ marginTop: '24px' }}>
-          <Text type="secondary" style={{ fontSize: '14px' }}>
-            Trình duyệt của bạn chưa hỗ trợ cài đặt tự động.
-            <br />
-            Hãy thử lại sau hoặc sử dụng Chrome/Edge.
-          </Text>
-        </div>
-      </div>
-    </Modal>
-  );
 
   const IOSInstructionsModal = () => (
     <Modal
@@ -241,11 +188,11 @@ const PWAInstallButton = () => {
           justifyContent: 'center'
         }}
         className="pwa-install-btn"
+        title="Cài đặt ứng dụng"
       >
         <DownloadOutlined style={{ fontSize: '14px' }} />
       </Button>
 
-      <InstallModal />
       <IOSInstructionsModal />
     </>
   );

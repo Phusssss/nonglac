@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  CallRounded, 
   VideocamRounded, 
   DeleteOutlineRounded, 
   CloseRounded, 
@@ -375,18 +374,8 @@ const ChatBot = () => {
     return audioBuffer;
   };
 
-  const handleVoiceCall = async () => {
-    requireAuthForAI(() => {
-      setCallType('voice');
-      setIsCalling(true);
-      setCallStatus('connecting');
-      startLiveSession(false);
-    });
-  };
-
   const handleVideoCall = async () => {
     requireAuthForAI(() => {
-      // Navigate to the full-screen AI Video Call page
       navigate('/ai-video-call');
       setIsOpen(false);
     });
@@ -519,9 +508,6 @@ const ChatBot = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <button onClick={handleVoiceCall} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CallRounded sx={{ fontSize: 20 }} />
-            </button>
             <button onClick={handleVideoCall} className="hover:bg-white/20 transition-colors" style={{ background: 'none', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <VideocamRounded sx={{ fontSize: 20 }} />
             </button>
