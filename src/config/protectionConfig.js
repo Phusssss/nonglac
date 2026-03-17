@@ -1,17 +1,17 @@
 // Protection system configuration
 export const protectionConfig = {
   // Enable/disable entire protection system
-  enabled: true,
+  enabled: false,
   
   // Individual feature toggles
-  devToolsDetection: true,
-  consoleProtection: true,
-  keyboardProtection: true,
+  devToolsDetection: false,
+  consoleProtection: false,
+  keyboardProtection: false,
   
   // Warning configuration
   warningLevel: 'critical', // 'info' | 'warning' | 'critical'
   violationThreshold: 3, // Number of violations before auto-logout
-  autoLogout: true,
+  autoLogout: false,
   
   // Custom messages (Vietnamese)
   customMessages: {

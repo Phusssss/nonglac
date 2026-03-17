@@ -69,6 +69,9 @@ function App() {
   });
 
   useEffect(() => {
+    // Welcome message
+    console.log('🌾 Chào mừng đến với Nông Lạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam');
+    
     // Initialize critical services immediately
     initSentry();
     initPerformanceOptimizer();

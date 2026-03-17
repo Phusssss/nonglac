@@ -43,7 +43,6 @@ class HealthChecker {
     }, HEALTH_CHECK_CONFIG.interval);
     
     addBreadcrumb('Health monitoring started', 'system', 'info');
-    console.log('Health monitoring started');
   }
 
   // Stop health monitoring
@@ -58,7 +57,6 @@ class HealthChecker {
     }
     
     addBreadcrumb('Health monitoring stopped', 'system', 'info');
-    console.log('Health monitoring stopped');
   }
 
   // Perform health check on all endpoints
@@ -190,8 +188,6 @@ class HealthChecker {
             attempts: result.attempts
           });
         }
-        
-        console.warn(`Health check failed for ${serviceName}:`, result);
       }
     });
   }
@@ -217,7 +213,7 @@ class HealthChecker {
       try {
         callback(status);
       } catch (error) {
-        console.error('Error in health status listener:', error);
+        // Silent fail
       }
     });
   }
@@ -305,10 +301,7 @@ export const HealthStatusIndicator = ({ showDetails = false }) => {
 
 // Initialize health monitoring
 export const initHealthMonitoring = () => {
-  // Only start in production or when explicitly enabled
-  if (process.env.NODE_ENV === 'production' || process.env.REACT_APP_ENABLE_HEALTH_CHECK === 'true') {
-    healthChecker.start();
-  }
+  // Disabled - no health check in production or development
 };
 
 // Stop health monitoring
