@@ -13,7 +13,7 @@ import PostMenu from './PostMenu';
 
 import ReactionButton from './ReactionButton';
 import LoginModal from './common/LoginModal';
-import VideoPlayer from './VideoPlayer';
+import OptimizedVideoPlayer from './OptimizedVideoPlayer';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { MessageCircle, Share2, MoreHorizontal, Eye } from 'lucide-react';
@@ -190,13 +190,13 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
                         className="w-full h-64 object-cover rounded-lg"
                       />
                     ) : mediaItem.type === 'video' ? (
-                      <div key={index} className="video-item mb-2">
-                        <VideoPlayer
+                      <div key={index} className="video-item mb-2" style={{ aspectRatio: '16/9', overflow: 'hidden', borderRadius: '8px' }}>
+                        <OptimizedVideoPlayer
                           src={mediaItem.url}
                           poster={mediaItem.thumbnailUrl}
                           controls={true}
                           lazy={true}
-                          style={{ borderRadius: 8 }}
+                          style={{ width: '100%', height: '100%' }}
                         />
                       </div>
                     ) : null}
@@ -213,12 +213,14 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
                   return (
                     <div key={index} className="media-item mb-2">
                       {isVideo ? (
-                        <VideoPlayer
-                          src={imageUrl}
-                          controls={true}
-                          lazy={true}
-                          style={{ borderRadius: 8 }}
-                        />
+                        <div style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px' }}>
+                          <OptimizedVideoPlayer
+                            src={imageUrl}
+                            controls={true}
+                            lazy={true}
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        </div>
                       ) : (
                         <OptimizedImage
                           src={imageUrl}

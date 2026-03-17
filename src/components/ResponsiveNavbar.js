@@ -94,7 +94,14 @@ const ResponsiveNavbar = () => {
               role="button"
               aria-label="Về trang chủ NôngLạc"
             >
-              <img src={logo} alt="NôngLạc Logo" className="h-8 w-auto" />
+              <img 
+                src={logo} 
+                alt="NôngLạc Logo" 
+                className="h-8 w-auto" 
+                width="85"
+                height="32"
+                style={{ width: '85px', height: '32px' }}
+              />
             </div>
 
             {/* Search Bar - Logic mới cho Mobile */}

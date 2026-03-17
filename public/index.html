@@ -65,6 +65,11 @@
       /* Prevent FOUC */
       .fonts-loading body{opacity:0}
       .fonts-loaded body{opacity:1;transition:opacity .3s}
+      /* Logo sizing to prevent CLS */
+      .navbar-logo{width:85px;height:32px;display:block}
+      /* Video aspect ratio to prevent CLS */
+      .video-container{aspect-ratio:16/9;overflow:hidden}
+      .video-container video{width:100%;height:100%;object-fit:cover}
     </style>
     
     <!-- Preconnect to external origins (highest priority) -->
@@ -92,27 +97,6 @@
     
     <title>NôngLạc - Mạng xã hội nông nghiệp hàng đầu Việt Nam | Cộng đồng nông dân 4.0</title>
     
-    <!-- Google Analytics - Load async with delay -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-910KJYRSXM', {
-        'send_page_view': false
-      });
-      
-      // Delay GA loading
-      setTimeout(function() {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-910KJYRSXM';
-        document.head.appendChild(script);
-      }, 3000);
-    </script>
-    
-    <!-- Defer non-critical scripts -->
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY" defer></script>
-    
     <!-- Performance optimization script -->
     <script>
       // Mark fonts as loading
@@ -137,6 +121,29 @@
         }
       }
     </script>
+    
+    <!-- Google Analytics - Delay loading to reduce TBT -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-910KJYRSXM', {
+        'send_page_view': false
+      });
+      
+      // Delay GTM loading by 5 seconds to reduce TBT
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=G-910KJYRSXM';
+          document.head.appendChild(script);
+        }, 5000);
+      });
+    </script>
+    
+    <!-- Defer non-critical scripts -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY" defer></script>
   </head>
   <body>
     <noscript>Bạn cần bật JavaScript để chạy ứng dụng này.</noscript>
@@ -145,6 +152,5 @@
         <div class="spinner"></div>
       </div>
     </div>
-    
   </body>
 </html>
