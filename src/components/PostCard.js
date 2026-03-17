@@ -99,7 +99,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans"
+      className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans"
       onClickCapture={() => {
         if (typeof onCardClick === 'function') onCardClick(post);
       }}
@@ -190,11 +190,22 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
                         className="w-full h-64 object-cover rounded-lg"
                       />
                     ) : mediaItem.type === 'video' ? (
-                      <div key={index} className="video-item mb-2" style={{ aspectRatio: '16/9', overflow: 'hidden', borderRadius: '8px' }}>
+                      <div 
+                        key={index} 
+                        className="video-item mb-2 relative" 
+                        style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
+                      >
+                        <div
+                          className="cursor-pointer hover:opacity-90 transition-opacity absolute top-0 left-0 right-0 z-10"
+                          onClick={() => navigate(`/reels?reelId=${post.id}`)}
+                          style={{ width: '100%', height: '60%' }}
+                        />
                         <OptimizedVideoPlayer
                           src={mediaItem.url}
                           poster={mediaItem.thumbnailUrl}
                           controls={true}
+                          autoPlay={true}
+                          muted={true}
                           lazy={true}
                           style={{ width: '100%', height: '100%' }}
                         />
@@ -213,10 +224,20 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
                   return (
                     <div key={index} className="media-item mb-2">
                       {isVideo ? (
-                        <div style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px' }}>
+                        <div 
+                          className="relative"
+                          style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
+                        >
+                          <div
+                            className="cursor-pointer hover:opacity-90 transition-opacity absolute top-0 left-0 right-0 z-10"
+                            onClick={() => navigate(`/reels?reelId=${post.id}`)}
+                            style={{ width: '100%', height: '60%' }}
+                          />
                           <OptimizedVideoPlayer
                             src={imageUrl}
                             controls={true}
+                            autoPlay={true}
+                            muted={true}
                             lazy={true}
                             style={{ width: '100%', height: '100%' }}
                           />
