@@ -107,7 +107,9 @@ const AdminDashboard = () => {
         );
       
       case 'student-referral': 
-        return <StudentReferralManagement />; 
+        return <StudentReferralManagement />;
+      
+      case 'posts':
         return <PostManagement posts={posts} deletePost={async (id) => { await adminService.deletePost(id); loadTabData('posts'); message.success('Đã xóa'); }} />;
       
       case 'prices': 

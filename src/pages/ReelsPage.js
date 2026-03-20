@@ -20,6 +20,13 @@ const ReelsPage = () => {
   const [searchParams] = useSearchParams();
   const { user, userProfile, updateReputation } = useAuth();
   const { requireAuthForLike, requireAuthForComment, showLoginModal: authShowLoginModal, setShowLoginModal: authSetShowLoginModal } = useAuthGuard();
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('reelsSoundEnabled') === '1';
+    } catch (error) {
+      return false;
+    }
+  });
   const [reels, setReels] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -295,6 +302,49 @@ const ReelsPage = () => {
     });
   }, [requireAuthForComment]);
 
+  const handleEnableSound = useCallback(() => {
+    setSoundEnabled(true);
+    try {
+      localStorage.setItem('reelsSoundEnabled', '1');
+    } catch (error) {
+      // Ignore storage errors and keep in-memory state.
+    }
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    const currentReel = reels[currentIndex];
+    if (!currentReel) return;
+
+    const shareUrl = `${window.location.origin}/reels?reelId=${currentReel.id}`;
+    const shareTitle = currentReel.title || 'Video NongLac';
+    const shareText = currentReel.content || currentReel.title || 'Xem video nay tren NongLac';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+        return;
+      } catch (error) {
+        // User canceled or share failed; fall back to copy.
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Da copy link de chia se');
+        return;
+      } catch (error) {
+        // fall through to prompt
+      }
+    }
+
+    window.prompt('Copy link de chia se:', shareUrl);
+  }, [currentIndex, reels]);
+
   if (loading) {
     return (
       <div className="reels-container loading">
@@ -338,7 +388,9 @@ const ReelsPage = () => {
               poster={videoMedia.thumbnailUrl}
               controls={true}
               autoPlay={true}
-              muted={true}
+              muted={!soundEnabled}
+              soundEnabled={soundEnabled}
+              onEnableSound={handleEnableSound}
               lazy={false}
               style={{ width: '100%', height: '100%' }}
             />
@@ -390,7 +442,7 @@ const ReelsPage = () => {
           </div>
 
           <div className="action-button">
-            <button className="icon-btn">
+            <button className="icon-btn" onClick={handleShare}>
               <Share2 size={28} />
             </button>
             <span className="action-count">Chia sẻ</span>

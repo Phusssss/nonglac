@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
   Bot,
@@ -19,6 +20,7 @@ import {
 import AdvancedSEO from '../components/AdvancedSEO';
 
 const AboutUs = () => {
+  const navigate = useNavigate();
   const [modal, setModal] = useState({ open: false, title: '', message: '' });
 
   const showModal = (title, message) => setModal({ open: true, title, message });
@@ -103,12 +105,7 @@ const AboutUs = () => {
                 thông hành" để vay vốn và mua vật tư trả chậm.
               </p>
               <button
-                onClick={() =>
-                  showModal(
-                    'Agri-Trust Score',
-                    'Hệ thống đang trích xuất dữ liệu tín nhiệm mẫu. Chức năng đánh giá hồ sơ sẽ hiển thị tại đây.'
-                  )
-                }
+                onClick={() => navigate('/missions')}
                 className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
               >
                 Trải nghiệm tính năng
@@ -125,9 +122,7 @@ const AboutUs = () => {
                 trên dữ liệu Khuyến nông Quốc gia.
               </p>
               <button
-                onClick={() =>
-                  showModal('Trợ lý AI Lạc Lạc', 'Vui lòng cho phép truy cập Camera để tải ảnh lá cây lên hệ thống chẩn đoán.')
-                }
+                onClick={() => navigate('/plant-doctor')}
                 className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
               >
                 Trải nghiệm tính năng
@@ -181,12 +176,9 @@ const AboutUs = () => {
               </button>
             </div>
 
-            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
-              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
-                Đang phát triển
-              </div>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
-                <Users className="h-8 w-8 text-gray-500" />
+            <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-[#1CBECF]/10">
+                <Users className="h-8 w-8 text-[#1CBECF]" />
               </div>
               <h3 className="mb-3 text-xl font-bold">Mạng xã hội & Chợ nông sản</h3>
               <p className="mb-6 flex-grow text-gray-600">
@@ -194,24 +186,16 @@ const AboutUs = () => {
                 trị nông sản mà không qua trung gian.
               </p>
               <button
-                onClick={() =>
-                  showModal(
-                    'Mạng xã hội & Chợ',
-                    'Giao diện cộng đồng đang được xây dựng. Hãy chờ đón một chợ nông sản số minh bạch và sôi động!'
-                  )
-                }
-                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+                onClick={() => navigate('/')}
+                className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
               >
                 Trải nghiệm tính năng
               </button>
             </div>
 
-            <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
-              <div className="absolute right-4 top-4 rounded-full bg-[#EDB324] px-3 py-1 text-xs font-bold text-white shadow-sm">
-                Đang phát triển
-              </div>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gray-200">
-                <LineChart className="h-8 w-8 text-gray-500" />
+            <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-[#F8F9FA] p-8 shadow-sm transition hover:shadow-md">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-[#EDB324]/10">
+                <LineChart className="h-8 w-8 text-[#EDB324]" />
               </div>
               <h3 className="mb-3 text-xl font-bold">Thông báo giá nông sản</h3>
               <p className="mb-6 flex-grow text-gray-600">
@@ -219,10 +203,8 @@ const AboutUs = () => {
                 chủ quyết định thu hoạch.
               </p>
               <button
-                onClick={() =>
-                  showModal('Thông báo giá', 'Hệ thống đang tích hợp API dữ liệu giá từ các chợ đầu mối. Tính năng sẽ sớm được kích hoạt.')
-                }
-                className="w-full cursor-pointer rounded-lg bg-gray-200 py-3 font-semibold text-gray-500 transition hover:bg-gray-300"
+                onClick={() => navigate('/gia-ca-phe-hom-nay')}
+                className="w-full rounded-lg border-2 border-[#3A9947] py-3 font-semibold text-[#3A9947] transition hover:bg-[#3A9947] hover:text-white"
               >
                 Trải nghiệm tính năng
               </button>

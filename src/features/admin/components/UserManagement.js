@@ -2,13 +2,20 @@ import React from 'react';
 import { Card, Table, Tag, Select, Space, Button, Popconfirm, Typography } from 'antd';
 
 const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, deleteUser }) => {
+  // Sắp xếp users theo ngày tạo từ mới đến cũ
+  const sortedUsers = [...users].sort((a, b) => {
+    const dateA = a.createdAt?.toDate?.() || a.joinDate?.toDate?.() || new Date(0);
+    const dateB = b.createdAt?.toDate?.() || b.joinDate?.toDate?.() || new Date(0);
+    return dateB - dateA; // Mới nhất trước
+  });
+
   const columns = [
     {
       title: 'Người dùng',
       key: 'user_info',
       fixed: 'left',
       width: 200,
-      render: (_, record) => (
+      render: (text, record) => (
         <div>
           <div className="font-bold text-gray-800">{record.displayName}</div>
           <div className="text-xs text-gray-500 truncate">{record.phoneNumber || record.email}</div>
@@ -26,6 +33,15 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
         ) : (
           <Tag color="green" className="m-0">✅ Đã xác thực</Tag>
         )
+      ),
+    },
+    {
+      title: 'Người giới thiệu',
+      dataIndex: 'referredBy',
+      key: 'referredBy',
+      width: 150,
+      render: (referredBy) => (
+        <span className="text-gray-600 text-sm">{referredBy || '-'}</span>
       ),
     },
     {
@@ -55,10 +71,16 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
       ),
     },
     {
-      title: 'Tham gia',
-      dataIndex: 'joinDate',
-      key: 'joinDate',
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       width: 120,
+      sorter: (a, b) => {
+        const dateA = a.createdAt?.toDate?.() || a.joinDate?.toDate?.() || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || b.joinDate?.toDate?.() || new Date(0);
+        return dateB - dateA;
+      },
+      defaultSortOrder: 'descend',
       render: (date) => <span className="text-gray-500 text-xs">{date?.toDate?.()?.toLocaleDateString() || 'N/A'}</span>,
     },
     {
@@ -66,7 +88,7 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
       key: 'actions',
       fixed: 'right',
       width: 200,
-      render: (_, record) => (
+      render: (text, record) => (
         <Space size="small">
           {record.verificationStatus === 'pending' ? (
             <Button
@@ -113,13 +135,13 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <Typography.Title level={3} className="m-0 text-xl md:text-2xl">Quản lý người dùng</Typography.Title>
-        <Tag color="blue" className="w-fit">Tổng cộng: {users.length}</Tag>
+        <Tag color="blue" className="w-fit">Tổng cộng: {sortedUsers.length}</Tag>
       </div>
 
       <Card bordered={false} className="shadow-sm overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={sortedUsers}
           rowKey="id"
           pagination={{
             pageSize: 10,
@@ -128,7 +150,7 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
             size: 'small',
             showTotal: (total) => `Tổng ${total} người dùng`,
           }}
-          scroll={{ x: 900 }}
+          scroll={{ x: 1100 }}
           size="middle"
         />
       </Card>

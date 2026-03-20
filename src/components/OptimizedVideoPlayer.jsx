@@ -38,7 +38,9 @@ const OptimizedVideoPlayer = ({
   className,
   style,
   lazy = true,
-  quality = 'auto' // 'auto', '720p', '480p', '360p'
+  quality = 'auto', // 'auto', '720p', '480p', '360p'
+  soundEnabled = true,
+  onEnableSound
 }) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -61,6 +63,13 @@ const OptimizedVideoPlayer = ({
 
   const MAX_RETRY_ATTEMPTS = 3;
   const BUFFER_THRESHOLD = 3; // seconds
+
+  useEffect(() => {
+    setIsMuted(muted);
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+    }
+  }, [muted]);
 
   // Detect network speed
   useEffect(() => {
@@ -245,6 +254,20 @@ const OptimizedVideoPlayer = ({
     }
   }, [isMuted]);
 
+  const handleEnableSound = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      if (videoRef.current.volume === 0) {
+        videoRef.current.volume = 1;
+        setVolume(1);
+      }
+    }
+    setIsMuted(false);
+    if (onEnableSound) {
+      onEnableSound();
+    }
+  }, [onEnableSound]);
+
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
     if (!videoRef.current) return;
@@ -381,6 +404,35 @@ const OptimizedVideoPlayer = ({
                 showReportButton={true}
               />
             </div>
+          )}
+
+          {/* Tap to Unmute Overlay */}
+          {autoPlay && !soundEnabled && (
+            <button
+              type="button"
+              onClick={handleEnableSound}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 8,
+                cursor: 'pointer',
+                zIndex: 12
+              }}
+              aria-label="Cham de bat tieng"
+            >
+              <SoundOutlined style={{ fontSize: 28 }} />
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Chạm để bật tiếng</div>
+            </button>
           )}
 
           {/* Controls */}
