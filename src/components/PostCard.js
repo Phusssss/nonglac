@@ -14,6 +14,7 @@ import PostMenu from './PostMenu';
 import ReactionButton from './ReactionButton';
 import LoginModal from './common/LoginModal';
 import OptimizedVideoPlayer from './OptimizedVideoPlayer';
+import ShareButton from './ShareButton';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { MessageCircle, Share2, MoreHorizontal, Eye } from 'lucide-react';
@@ -311,13 +312,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
               <MessageCircle className="w-5 h-5" />
               {commentCount > 0 && commentCount}
             </button>
-            <button 
-              onClick={() => setShowShareDialog(true)}
-              aria-label="Chia sẻ bài viết"
-              className="flex items-center gap-1 text-gray-500 hover:text-green-500 transition-colors text-sm font-medium"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
+            <ShareButton post={post} size="small" variant="text" />
           </div>
           {!isDetailView && (
             <button

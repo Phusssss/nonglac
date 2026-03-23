@@ -1,9 +1,7 @@
 export const PROFILE_CONSTANTS = {
   POSTS_PER_PAGE: 10,
   TABS: {
-    POSTS: 'posts',
-    ARTICLES: 'articles',
-    QA: 'qa'
+    POSTS: 'posts'
   },
   REPUTATION_LEVELS: {
     EXPERT: { min: 1000, label: 'Chuyên gia' },

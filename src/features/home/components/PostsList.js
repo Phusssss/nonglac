@@ -3,6 +3,7 @@ import { Card, Button, Empty, Spin, Space } from 'antd';
 import { ReloadOutlined, EnvironmentOutlined, EyeOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import PostCard from '../../../components/PostCard';
+import ShareProductButton from '../../../components/ShareProductButton';
 import { marketplaceService } from '../../marketplace/services';
 
 const FeedSkeleton = () => (
@@ -67,7 +68,7 @@ const HomeProductCard = ({ product, onClick }) => {
             {marketplaceService.formatPrice(product.price || 0)}
             <span className="ml-1 text-xs font-medium text-gray-500">/{product.unit || 'kg'}</span>
           </div>
-          <div className="text-xs text-gray-500">{moment(product.createdAt?.toDate?.() || product.createdAt || new Date()).fromNow()}</div>
+          <ShareProductButton product={product} size="small" variant="text" />
         </div>
 
         <div className="mt-3 text-xs text-gray-600 inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1">

@@ -3,9 +3,7 @@ import { PROFILE_CONSTANTS } from '../constants';
 
 const ProfileTabs = ({ activeTab, onTabChange }) => {
   const tabs = [
-    { id: PROFILE_CONSTANTS.TABS.POSTS, label: 'Bài viết gần đây' },
-    { id: PROFILE_CONSTANTS.TABS.ARTICLES, label: 'Bài báo' },
-    { id: PROFILE_CONSTANTS.TABS.QA, label: 'Hỏi đáp' }
+    { id: PROFILE_CONSTANTS.TABS.POSTS, label: 'Bài viết' }
   ];
 
   return (

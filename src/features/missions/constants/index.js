@@ -313,6 +313,15 @@ export const MISSIONS_CONSTANTS = {
           required: true
         },
         {
+          id: 'coordinates',
+          label: 'Vị trí canh tác',
+          placeholder: 'Bấm nút để chọn vị trí trên bản đồ',
+          required: true,
+          type: 'location',
+          readOnly: true,
+          helperText: 'Bấm nút để chọn vị trí, hệ thống sẽ tự động lấy kinh độ và vĩ độ'
+        },
+        {
           id: 'description',
           label: 'Mô tả thêm',
           placeholder: 'Mô tả thêm về hoạt động canh tác của bạn',

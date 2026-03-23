@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { notification } from 'antd';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
-import { useProfile, useProfileEdit, useProfileBadgeSelection } from '../hooks';
+import { useProfile, useProfileEdit, useProfileBadgeSelection, useSharedPosts } from '../hooks';
 import { profileService } from '../services';
 import { PROFILE_CONSTANTS } from '../constants';
 import {
@@ -34,6 +34,14 @@ const Profile = () => {
     missionScore,
     loadMorePosts
   } = useProfile();
+
+  const {
+    sharedPosts,
+    loading: sharedLoading,
+    loadingMore: sharedLoadingMore,
+    hasMore: sharedHasMore,
+    loadMoreSharedPosts
+  } = useSharedPosts();
 
   const {
     editDialog,
@@ -87,21 +95,25 @@ const Profile = () => {
   // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
-      if (loadingMore || !hasMore) return;
+      if (loadingMore || sharedLoadingMore || (!hasMore && !sharedHasMore)) return;
       
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = window.innerHeight;
       
       if (scrollHeight - scrollTop <= clientHeight + 100) {
-        loadMorePosts();
+        if (hasMore) {
+          loadMorePosts();
+        } else if (sharedHasMore) {
+          loadMoreSharedPosts();
+        }
       }
     };
     
     const throttledScroll = profileService.throttle(handleScroll, 200);
     window.addEventListener('scroll', throttledScroll, { passive: true });
     return () => window.removeEventListener('scroll', throttledScroll);
-  }, [loadMorePosts, loadingMore, hasMore]);
+  }, [loadMorePosts, loadMoreSharedPosts, loadingMore, sharedLoadingMore, hasMore, sharedHasMore]);
 
   if (!user) return null;
 
@@ -138,6 +150,9 @@ const Profile = () => {
                   loading={loading}
                   loadingMore={loadingMore}
                   activeTab={activeTab}
+                  sharedPosts={sharedPosts}
+                  sharedLoading={sharedLoading}
+                  sharedLoadingMore={sharedLoadingMore}
                 />
               </div>
 

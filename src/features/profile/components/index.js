@@ -6,3 +6,4 @@ export { default as EditProfileDialog } from './EditProfileDialog';
 export { default as FollowButton } from './FollowButton';
 export { default as StudentReferralSection } from './StudentReferralSection';
 export { default as ReferredUsersList } from './ReferredUsersList';
+export { default as SharedPostsContent } from './SharedPostsContent';
