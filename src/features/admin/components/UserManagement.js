@@ -3,12 +3,17 @@ import { Card, Table, Tag, Select, Space, Button, Popconfirm, Typography, Toolti
 import { InfoCircleOutlined } from '@ant-design/icons';
 
 const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, deleteUser }) => {
-  // Sắp xếp users theo ngày tạo từ mới đến cũ
-  const sortedUsers = [...users].sort((a, b) => {
-    const dateA = a.createdAt?.toDate?.() || a.joinDate?.toDate?.() || new Date(0);
-    const dateB = b.createdAt?.toDate?.() || b.joinDate?.toDate?.() || new Date(0);
-    return dateB - dateA; // Mới nhất trước
-  });
+  // Helper để lấy ngày đồng ý điều khoản hoặc ngày tạo một cách an toàn
+  const getAgreedAt = (user) => {
+    const agreedAt = user.termsAgreement?.agreedAt;
+    if (!agreedAt) return user.createdAt?.toDate?.() || (user.createdAt ? new Date(user.createdAt) : new Date(0));
+    if (agreedAt.toDate && typeof agreedAt.toDate === 'function') return agreedAt.toDate();
+    if (agreedAt.seconds) return new Date(agreedAt.seconds * 1000);
+    return new Date(agreedAt);
+  };
+
+  // Sắp xếp users theo ngày đồng ý điều khoản từ mới đến cũ
+  const sortedUsers = [...users].sort((a, b) => getAgreedAt(b) - getAgreedAt(a));
 
   const columns = [
     {
@@ -73,55 +78,24 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
     },
     {
       title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 120,
-      sorter: (a, b) => {
-        const dateA = a.createdAt?.toDate?.() || a.joinDate?.toDate?.() || new Date(0);
-        const dateB = b.createdAt?.toDate?.() || b.joinDate?.toDate?.() || new Date(0);
-        return dateB - dateA;
-      },
+      key: 'termsDate',
+      width: 110,
+      sorter: (a, b) => getAgreedAt(a) - getAgreedAt(b),
       defaultSortOrder: 'descend',
-      render: (date) => <span className="text-gray-500 text-xs">{date?.toDate?.()?.toLocaleDateString() || 'N/A'}</span>,
-    },
-    {
-      title: 'Đồng ý Điều khoản',
-      key: 'termsAgreement',
-      width: 120,
       render: (text, record) => {
-        const agreement = record.termsAgreement;
-        return agreement ? (
-          <Tag color="green" className="m-0">✅ Đã ký</Tag>
-        ) : (
-          <Tag color="red" className="m-0">❌ Chưa ký</Tag>
-        );
+        const timestamp = getAgreedAt(record);
+        if (timestamp.getTime() === 0) return '-';
+        return <span className="text-gray-600 text-xs">{timestamp.toLocaleDateString('vi-VN')}</span>;
       },
     },
     {
-      title: 'Thời gian ký',
-      key: 'termsTimestamp',
-      width: 140,
+      title: 'Giờ tạo',
+      key: 'termsTime',
+      width: 110,
       render: (text, record) => {
-        const agreement = record.termsAgreement;
-        if (!agreement || !agreement.agreedAt) return '-';
-        
-        // Handle both Timestamp object and Date object
-        let timestamp;
-        if (agreement.agreedAt.toDate && typeof agreement.agreedAt.toDate === 'function') {
-          timestamp = agreement.agreedAt.toDate();
-        } else if (agreement.agreedAt instanceof Date) {
-          timestamp = agreement.agreedAt;
-        } else {
-          timestamp = new Date(agreement.agreedAt);
-        }
-        
-        return (
-          <Tooltip title={timestamp.toLocaleString('vi-VN')}>
-            <span className="text-gray-600 text-xs cursor-help">
-              {timestamp.toLocaleDateString('vi-VN')}
-            </span>
-          </Tooltip>
-        );
+        const timestamp = getAgreedAt(record);
+        if (timestamp.getTime() === 0) return '-';
+        return <span className="text-[#52c41a] font-bold text-xs">{timestamp.toLocaleTimeString('vi-VN')}</span>;
       },
     },
     {

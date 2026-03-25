@@ -213,7 +213,7 @@ const ResponsiveNavbar = () => {
             </nav>
 
             {/* User Actions */}
-            <div className={`flex items-center gap-1.5 sm:gap-2 ${isMobileSearchVisible ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`flex items-center gap-1 sm:gap-2 ${isMobileSearchVisible ? 'hidden md:flex' : 'flex'}`}>
               {/* Mobile Search Trigger */}
               <button 
                 className="md:hidden p-1.5 text-gray-500 hover:text-[#4CAF50]"
@@ -227,12 +227,12 @@ const ResponsiveNavbar = () => {
               {user && (
                 <button 
                   onClick={() => navigate('/messages')}
-                  className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#4CAF50] transition-colors"
+                  className="relative p-1 rounded-full hover:bg-gray-100 text-gray-600 hover:text-[#4CAF50] transition-colors"
                   aria-label="Tin nhắn"
                 >
                   <ChatRounded sx={{ fontSize: 22 }} />
                   {totalUnreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-medium">
                       {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                     </span>
                   )}
@@ -245,21 +245,18 @@ const ResponsiveNavbar = () => {
               {user ? (
                 <>
                   {/* User Avatar & Info */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <div 
                       className="w-7 h-7 bg-[#4CAF50] rounded-full flex items-center justify-center cursor-pointer text-white font-medium text-sm"
                       onClick={() => navigate('/profile')}
                     >
                       {userProfile?.displayName?.charAt(0) || 'U'}
                     </div>
-                    <span className="text-xs text-gray-600 hidden xl:block">
-                      Uy tín: {userProfile?.reputation || 0}
-                    </span>
                   </div>
                   
                   <button
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-red-500 transition-colors text-xs font-medium"
+                    className="text-gray-600 hover:text-red-500 transition-colors text-xs font-medium hidden sm:block"
                   >
                     Đăng xuất
                   </button>
@@ -275,7 +272,7 @@ const ResponsiveNavbar = () => {
                   
                   <button 
                     onClick={() => navigate('/phone-login')}
-                    className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-3 sm:px-4 py-1.5 rounded-full text-[11px] font-semibold shadow-lg shadow-green-500/30 transition-all whitespace-nowrap"
+                    className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] font-semibold shadow-lg shadow-green-500/30 transition-all whitespace-nowrap"
                   >
                     Đăng nhập
                   </button>
@@ -313,14 +310,14 @@ const ResponsiveNavbar = () => {
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 text-gray-600">
-        <div className="flex justify-center items-end px-4 py-3 relative">
+        <div className="flex justify-between items-end px-2 sm:px-4 py-3 relative max-w-lg mx-auto">
           {/* Left side - 2 items */}
           <div className="flex-1 flex justify-around">
             <button 
               onClick={() => navigate('/')}
               className={`flex flex-col items-center ${location.pathname === '/' ? 'text-[#4CAF50]' : ''}`}
             >
-              <HomeRounded />
+              <HomeRounded sx={{ fontSize: 22 }} />
               <span className="text-[10px]">Trang chủ</span>
             </button>
             
@@ -328,19 +325,19 @@ const ResponsiveNavbar = () => {
               onClick={() => navigate('/missions')}
               className={`flex flex-col items-center ${location.pathname === '/missions' ? 'text-[#4CAF50]' : ''}`}
             >
-              <EmojiEventsRounded />
+              <EmojiEventsRounded sx={{ fontSize: 22 }} />
               <span className="text-[10px]">Nhiệm vụ</span>
             </button>
           </div>
           
           {/* Center AI Button */}
-          <div className="relative mx-4">
+          <div className="relative mx-2 sm:mx-4">
             <button 
               onClick={() => setShowMobileAiMenu(!showMobileAiMenu)}
-              className="relative -top-6 bg-gradient-to-tr from-[#4CAF50] to-[#8BC34A] p-4 rounded-full text-white shadow-lg shadow-green-500/40 flex items-center justify-center transition-transform active:scale-90"
+              className="relative -top-6 bg-gradient-to-tr from-[#4CAF50] to-[#8BC34A] p-3.5 rounded-full text-white shadow-lg shadow-green-500/40 flex items-center justify-center transition-transform active:scale-90"
               aria-label="Công cụ AI"
             >
-              <PsychologyAltRounded sx={{ fontSize: 28 }} />
+              <PsychologyAltRounded sx={{ fontSize: 26 }} />
             </button>
             
             {/* Mobile AI Dropdown */}
@@ -373,7 +370,7 @@ const ResponsiveNavbar = () => {
               onClick={() => navigate('/marketplace')}
               className={`flex flex-col items-center ${location.pathname === '/marketplace' ? 'text-[#4CAF50]' : ''}`}
             >
-              <StorefrontRounded />
+              <StorefrontRounded sx={{ fontSize: 22 }} />
               <span className="text-[10px]">Chợ</span>
             </button>
             
@@ -382,9 +379,9 @@ const ResponsiveNavbar = () => {
               className={`flex flex-col items-center relative ${location.pathname === '/messages' ? 'text-[#4CAF50]' : ''}`}
               aria-label="Tin nhắn"
             >
-              <ChatRounded />
+              <ChatRounded sx={{ fontSize: 22 }} />
               {totalUnreadCount > 0 && (
-                <span className="absolute -top-1 right-2 bg-red-500 text-white text-[8px] rounded-full h-4 w-4 flex items-center justify-center font-bold border border-white">
+                <span className="absolute -top-1 right-1 sm:right-2 bg-red-500 text-white text-[8px] rounded-full h-4 w-4 flex items-center justify-center font-bold border border-white">
                   {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                 </span>
               )}

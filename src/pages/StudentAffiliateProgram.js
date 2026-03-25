@@ -172,9 +172,10 @@ const StudentAffiliateProgram = () => {
             <Col xs={24}>
               <Card style={{ backgroundColor: '#f0f5ff', border: '2px solid #1890ff', padding: '32px' }}>
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '56px', fontWeight: 'bold', color: '#52c41a', marginBottom: '8px' }}>1 AF</div>
-                    <Text style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>= 1.000 VNĐ</Text>
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ fontSize: '64px', fontWeight: 'bold', color: '#52c41a', marginBottom: '8px', textShadow: '0 2px 10px rgba(82, 196, 26, 0.2)' }}>1 AF</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff', letterSpacing: '1px' }}>= 1.000 VNĐ</div>
+                    <Paragraph style={{ color: '#8c8c8c', marginTop: '16px' }}>Tỷ lệ quy đổi vàng cho cộng đồng sinh viên</Paragraph>
                   </div>
                   
                   <Divider style={{ margin: '16px 0' }} />
@@ -287,7 +288,7 @@ const StudentAffiliateProgram = () => {
       {/* Footer */}
       <footer className="footer-section">
         <Paragraph className="text-center text-gray-600" style={{ marginBottom: 0 }}>
-          © 2024 Nông Lạc. Chiến dịch Mùa Gặt Số. Tất cả quyền được bảo lưu.
+          © 2026 Nông Lạc. Chiến dịch Mùa Gặt Số. Tất cả quyền được bảo lưu.
         </Paragraph>
       </footer>
     </div>

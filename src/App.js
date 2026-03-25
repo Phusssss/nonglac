@@ -125,8 +125,9 @@ function App() {
                 
                 {/* Referral Campaign Banner */}
                 <div className="beta-banner">
-                  <a href="/student-affiliate-program" className="beta-text" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Chương trình tiếp thị liên kết
+                  <a href="/student-affiliate-program" className="beta-text" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <span style={{ backgroundColor: '#fff', color: '#52C41A', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>HOT</span>
+                    Chiến dịch Mùa Gặt Số - Tiếp thị liên kết Sinh viên 2026
                   </a>
                 </div>
                 
@@ -197,15 +198,20 @@ function App() {
               open={showReferralModal}
               onCancel={handleReferralModalClose}
               footer={[
-                <Button key="close" onClick={handleReferralModalClose}>
-                  Đóng
+                <Button 
+                  key="close" 
+                  onClick={handleReferralModalClose}
+                  style={{ borderRadius: '6px' }}
+                >
+                  Để sau
                 </Button>,
                 <Button 
                   key="view" 
                   type="primary" 
                   onClick={handleViewReferralProgram}
+                  style={{ borderRadius: '6px', fontWeight: 'bold' }}
                 >
-                  Xem Chi Tiết
+                  Khám Phá Ngay
                 </Button>
               ]}
               width={600}
