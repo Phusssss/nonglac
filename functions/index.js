@@ -16,6 +16,56 @@ const { crawlCoffeePricesSimple } = require('./crawler/simpleCrawler');
 const { getCoffeePrices, getLatestPrices, getPriceHistory } = require('./api/priceApi');
 const { scheduledCrawl } = require('./scheduler/cronJobs');
 
+/**
+ * API: Get client IP address
+ * GET /api/client-ip
+ */
+exports.getClientIp = functions
+  .region('asia-southeast1')
+  .https.onRequest((req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+    
+    try {
+      // Lấy IP từ request headers
+      let ip = req.headers['x-forwarded-for'] || 
+               req.headers['x-real-ip'] || 
+               req.connection.remoteAddress || 
+               req.socket.remoteAddress ||
+               req.connection.socket?.remoteAddress ||
+               'unknown';
+      
+      // Nếu có multiple IPs (proxy), lấy cái đầu tiên
+      if (ip && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+      }
+      
+      // Remove IPv6 prefix nếu có
+      if (ip && ip.startsWith('::ffff:')) {
+        ip = ip.substring(7);
+      }
+      
+      res.json({
+        success: true,
+        ip: ip || 'unknown',
+        userAgent: req.headers['user-agent'] || 'unknown'
+      });
+    } catch (error) {
+      console.error('Error getting client IP:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        ip: 'unknown'
+      });
+    }
+  });
+
 // ============================================
 // 🔥 HTTP FUNCTIONS - API Endpoints
 // ============================================

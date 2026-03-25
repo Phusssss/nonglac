@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -11,20 +11,52 @@ import {
   Upload,
   message,
   Space,
-  Typography
+  Typography,
+  Checkbox,
+  Spin
 } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { firebaseStorageService } from '../../../services/firebaseStorageService';
 import { MARKETPLACE_CONSTANTS } from '../constants';
+import { useAuth } from '../../../hooks/useAuth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
 const ProductPostForm = ({ onSubmit, onCancel }) => {
+  const { user } = useAuth();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [imageUrls, setImageUrls] = useState([]);
+  const [farmAddresses, setFarmAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+
+  // Load farm addresses từ user profile
+  useEffect(() => {
+    const loadFarmAddresses = async () => {
+      if (!user?.uid) {
+        setLoadingAddresses(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setFarmAddresses(data.farmAddresses || []);
+        }
+      } catch (error) {
+        console.error('Error loading farm addresses:', error);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadFarmAddresses();
+  }, [user?.uid]);
 
   const getCurrentCoordinates = () => {
     return new Promise((resolve) => {
@@ -309,14 +341,63 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 <Input placeholder="0123456789" size="large" />
               </Form.Item>
             </Col>
+            <Col span={24}>
+              <Form.Item
+                name="contactMethods"
+                label="Phương thức liên hệ"
+                rules={[{ required: true, message: 'Vui lòng chọn ít nhất một phương thức liên hệ' }]}
+              >
+                <Checkbox.Group>
+                  <Row gutter={[16, 8]}>
+                    <Col span={24}>
+                      <Checkbox value="phone">📞 Gọi điện thoại</Checkbox>
+                    </Col>
+                    <Col span={24}>
+                      <Checkbox value="sms">💬 Nhắn tin SMS</Checkbox>
+                    </Col>
+                    <Col span={24}>
+                      <Checkbox value="zalo">👥 Zalo</Checkbox>
+                    </Col>
+                  </Row>
+                </Checkbox.Group>
+              </Form.Item>
+            </Col>
           </Row>
 
           <Form.Item
             name="address"
-            label="Địa chỉ"
-            rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
+            label="Địa chỉ canh tác"
+            rules={[{ required: true, message: 'Vui lòng chọn địa chỉ' }]}
           >
-            <Input placeholder="Địa chỉ cụ thể (xã, huyện, tỉnh)" size="large" />
+            <Select 
+              placeholder="Chọn địa chỉ canh tác" 
+              size="large"
+              loading={loadingAddresses}
+              notFoundContent={
+                loadingAddresses ? <Spin size="small" /> : 
+                farmAddresses.length === 0 ? 
+                  <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>
+                    Chưa có địa chỉ canh tác. Vui lòng thêm địa chỉ trong profile trước.
+                  </div> : 
+                  undefined
+              }
+              optionLabelProp="label"
+            >
+              {farmAddresses.map((address, index) => (
+                <Select.Option 
+                  key={address.id || index} 
+                  value={address.address}
+                  label={`${address.address} (${address.farmType})`}
+                >
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{address.address}</div>
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      {address.farmType}
+                    </div>
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item label="Hình ảnh sản phẩm" required>

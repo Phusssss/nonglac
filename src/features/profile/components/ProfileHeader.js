@@ -6,6 +6,7 @@ import { message, Tooltip, Modal } from 'antd';
 import { CopyOutlined, QrcodeOutlined } from '@ant-design/icons';
 import QRCode from 'qrcode';
 import referralService from '../../../services/referralService';
+import FarmAddressesCompact from './FarmAddressesCompact';
 
 const isImageIcon = (icon) => (
   typeof icon === 'string' &&
@@ -273,6 +274,14 @@ const ProfileHeader = ({
                 <span className="rounded-full bg-[#173b22] px-3 py-1 text-xs font-semibold text-white">
                   Uy tín: {displayScore}
                 </span>
+              </div>
+
+              {/* Farm Addresses Compact */}
+              <div className="mt-3 rounded-lg border border-[#d0e4d1] bg-[#f8fcf8] p-2">
+                <p className="mb-2 text-xs font-semibold text-[#2f6e37] flex items-center gap-1">
+                  <span>🌾 Địa chỉ canh tác</span>
+                </p>
+                <FarmAddressesCompact />
               </div>
             </div>
           </div>

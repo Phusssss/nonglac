@@ -6,8 +6,9 @@ import {
   Button,
   Alert
 } from 'antd';
-import { EnvironmentOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined, PlusOutlined } from '@ant-design/icons';
 import LocationPickerModal from './LocationPickerModal';
+import FarmAddressItem from './FarmAddressItem';
 
 const { TextArea } = Input;
 
@@ -20,30 +21,58 @@ const ProfileInfoModal = ({
   onSubmit, 
   title = "Bổ sung thông tin",
   fields = [],
-  loading = false 
+  loading = false,
+  initialFarmAddresses = []
 }) => {
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationPickerLoading, setLocationPickerLoading] = useState(false);
+  const [farmAddresses, setFarmAddresses] = useState([]);
 
   // Initialize form fields when modal opens
   React.useEffect(() => {
     if (open) {
       const initialValues = {};
       fields.forEach(field => {
-        initialValues[field.id] = '';
+        if (field.type === 'farm-addresses') {
+          // Nếu có initialFarmAddresses, sử dụng nó; nếu không thì khởi tạo rỗng
+          setFarmAddresses(initialFarmAddresses && initialFarmAddresses.length > 0 ? initialFarmAddresses : []);
+        } else {
+          initialValues[field.id] = '';
+        }
       });
       form.setFieldsValue(initialValues);
     }
-  }, [open, fields, form]);
+  }, [open, fields, form, initialFarmAddresses]);
 
   const handleSubmit = async () => {
     try {
+      // Validate farm addresses
+      if (fields.some(f => f.type === 'farm-addresses')) {
+        if (farmAddresses.length === 0) {
+          throw new Error('Vui lòng thêm ít nhất một địa chỉ canh tác');
+        }
+        
+        // Validate each address
+        for (const addr of farmAddresses) {
+          if (!addr.address || !addr.farmType || !addr.coordinates) {
+            throw new Error('Vui lòng điền đầy đủ thông tin cho tất cả địa chỉ');
+          }
+        }
+      }
+
       const values = await form.validateFields();
       setSubmitLoading(true);
+      
+      // Add farm addresses to values
+      if (fields.some(f => f.type === 'farm-addresses')) {
+        values.farmAddresses = farmAddresses;
+      }
+      
       await onSubmit(values);
       form.resetFields();
+      setFarmAddresses([]);
     } catch (error) {
       console.error('Form validation failed:', error);
     } finally {
@@ -53,28 +82,29 @@ const ProfileInfoModal = ({
 
   const handleClose = () => {
     form.resetFields();
+    setFarmAddresses([]);
     onClose();
   };
 
-  const handleLocationConfirm = (lat, lng) => {
-    form.setFieldsValue({
-      coordinates: `${lat.toFixed(6)}, ${lng.toFixed(6)}`
-    });
-    setLocationPickerOpen(false);
+  const handleAddFarmAddress = () => {
+    const newAddress = {
+      id: Date.now(),
+      address: '',
+      farmType: '',
+      coordinates: '',
+      description: ''
+    };
+    setFarmAddresses([...farmAddresses, newAddress]);
   };
 
-  const handleOpenLocationPicker = () => {
-    const coordinates = form.getFieldValue('coordinates');
-    let initialLat = null;
-    let initialLng = null;
-    
-    if (coordinates) {
-      const [lat, lng] = coordinates.split(',').map(v => parseFloat(v.trim()));
-      initialLat = lat;
-      initialLng = lng;
-    }
-    
-    setLocationPickerOpen(true);
+  const handleUpdateFarmAddress = (index, updatedAddress) => {
+    const newAddresses = [...farmAddresses];
+    newAddresses[index] = updatedAddress;
+    setFarmAddresses(newAddresses);
+  };
+
+  const handleDeleteFarmAddress = (index) => {
+    setFarmAddresses(farmAddresses.filter((_, i) => i !== index));
   };
 
   return (
@@ -96,7 +126,7 @@ const ProfileInfoModal = ({
             Lưu thông tin
           </Button>
         ]}
-        width={600}
+        width={700}
       >
         <Form
           form={form}
@@ -104,36 +134,39 @@ const ProfileInfoModal = ({
           requiredMark={false}
         >
           {fields.map((field) => {
-            // Location picker fields
-            if (field.type === 'location') {
+            // Farm addresses field
+            if (field.type === 'farm-addresses') {
               return (
-                <Form.Item
-                  key={field.id}
-                  name={field.id}
-                  label={field.label}
-                  rules={[
-                    {
-                      required: field.required,
-                      message: `${field.label} là bắt buộc`
-                    }
-                  ]}
-                  help={field.helperText}
-                >
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Input
-                      placeholder={field.placeholder}
-                      readOnly
-                      style={{ backgroundColor: '#f5f5f5', flex: 1 }}
-                    />
-                    <Button
-                      type="primary"
-                      icon={<EnvironmentOutlined />}
-                      onClick={handleOpenLocationPicker}
-                    >
-                      Chọn vị trí
-                    </Button>
+                <div key={field.id}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label className="block text-sm font-medium mb-2">{field.label}</label>
+                    <p className="text-xs text-gray-500 mb-3">{field.helperText}</p>
                   </div>
-                </Form.Item>
+
+                  {/* Farm Addresses List */}
+                  <div style={{ marginBottom: '16px' }}>
+                    {farmAddresses.map((address, index) => (
+                      <FarmAddressItem
+                        key={address.id}
+                        index={index}
+                        address={address}
+                        onUpdate={handleUpdateFarmAddress}
+                        onDelete={handleDeleteFarmAddress}
+                        form={form}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Add Address Button */}
+                  <Button
+                    type="dashed"
+                    block
+                    icon={<PlusOutlined />}
+                    onClick={handleAddFarmAddress}
+                  >
+                    Thêm địa chỉ canh tác
+                  </Button>
+                </div>
               );
             }
 
@@ -168,34 +201,6 @@ const ProfileInfoModal = ({
           })}
         </Form>
       </Modal>
-
-      {/* Location Picker Modal */}
-      <LocationPickerModal
-        open={locationPickerOpen}
-        onClose={() => setLocationPickerOpen(false)}
-        onConfirm={handleLocationConfirm}
-        initialLat={
-          (() => {
-            const coordinates = form.getFieldValue('coordinates');
-            if (coordinates) {
-              const [lat] = coordinates.split(',').map(v => parseFloat(v.trim()));
-              return lat;
-            }
-            return null;
-          })()
-        }
-        initialLng={
-          (() => {
-            const coordinates = form.getFieldValue('coordinates');
-            if (coordinates) {
-              const [, lng] = coordinates.split(',').map(v => parseFloat(v.trim()));
-              return lng;
-            }
-            return null;
-          })()
-        }
-        loading={locationPickerLoading}
-      />
     </>
   );
 };

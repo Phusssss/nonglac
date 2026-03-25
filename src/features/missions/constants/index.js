@@ -300,33 +300,11 @@ export const MISSIONS_CONSTANTS = {
       title: 'Nhập địa chỉ canh tác',
       fields: [
         {
-          id: 'farmAddress',
+          id: 'farmAddresses',
           label: 'Địa chỉ canh tác',
-          placeholder: 'Nhập địa chỉ khu vực canh tác của bạn',
+          type: 'farm-addresses',
           required: true,
-          helperText: 'Địa chỉ cụ thể nơi bạn canh tác hoặc kinh doanh'
-        },
-        {
-          id: 'farmType',
-          label: 'Loại hình canh tác',
-          placeholder: 'VD: Trồng lúa, chăn nuôi, thủy sản...',
-          required: true
-        },
-        {
-          id: 'coordinates',
-          label: 'Vị trí canh tác',
-          placeholder: 'Bấm nút để chọn vị trí trên bản đồ',
-          required: true,
-          type: 'location',
-          readOnly: true,
-          helperText: 'Bấm nút để chọn vị trí, hệ thống sẽ tự động lấy kinh độ và vĩ độ'
-        },
-        {
-          id: 'description',
-          label: 'Mô tả thêm',
-          placeholder: 'Mô tả thêm về hoạt động canh tác của bạn',
-          multiline: true,
-          rows: 3
+          helperText: 'Thêm một hoặc nhiều địa chỉ canh tác'
         }
       ]
     },

@@ -18,7 +18,8 @@ const LocationPickerModal = ({
   onConfirm, 
   initialLat = null, 
   initialLng = null,
-  loading = false 
+  loading = false,
+  readOnly = false
 }) => {
   const [latitude, setLatitude] = useState(initialLat || '');
   const [longitude, setLongitude] = useState(initialLng || '');
@@ -80,8 +81,10 @@ const LocationPickerModal = ({
       markerRef.current = L.marker([parseFloat(latitude), parseFloat(longitude)]).addTo(map);
     }
 
-    // Handle map click
+    // Handle map click (only if not readonly)
     const handleMapClick = (e) => {
+      if (readOnly) return;
+      
       const { lat, lng } = e.latlng;
       setLatitude(lat.toFixed(6));
       setLongitude(lng.toFixed(6));
@@ -102,7 +105,7 @@ const LocationPickerModal = ({
       map.remove();
       mapRef.current = null;
     };
-  }, [open]);
+  }, [open, readOnly, latitude, longitude, mapMode]);
 
   // Handle map mode change
   useEffect(() => {
@@ -119,11 +122,6 @@ const LocationPickerModal = ({
       maxZoom: 19,
     }).addTo(map);
   }, [mapMode]);
-
-  const handleLocationSelect = (lat, lng) => {
-    setLatitude(lat.toFixed(6));
-    setLongitude(lng.toFixed(6));
-  };
 
   const handleGetCurrentLocation = () => {
     setIsLocating(true);
@@ -231,40 +229,44 @@ const LocationPickerModal = ({
         </Row>
 
         {/* Get Current Location Button */}
-        <Button
-          type="default"
-          icon={<EnvironmentFilled />}
-          onClick={handleGetCurrentLocation}
-          loading={isLocating}
-          block
-        >
-          {isLocating ? 'Đang định vị...' : 'Lấy vị trí hiện tại'}
-        </Button>
+        {!readOnly && (
+          <Button
+            type="default"
+            icon={<EnvironmentFilled />}
+            onClick={handleGetCurrentLocation}
+            loading={isLocating}
+            block
+          >
+            {isLocating ? 'Đang định vị...' : 'Lấy vị trí hiện tại'}
+          </Button>
+        )}
 
         {/* Map Mode Selector */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button
-            type={mapMode === 'satellite' ? 'primary' : 'default'}
-            onClick={() => setMapMode('satellite')}
-            style={{ flex: 1 }}
-          >
-            🛰️ Vệ tinh
-          </Button>
-          <Button
-            type={mapMode === 'street' ? 'primary' : 'default'}
-            onClick={() => setMapMode('street')}
-            style={{ flex: 1 }}
-          >
-            🗺️ Bản đồ
-          </Button>
-          <Button
-            type={mapMode === 'terrain' ? 'primary' : 'default'}
-            onClick={() => setMapMode('terrain')}
-            style={{ flex: 1 }}
-          >
-            🏔️ Địa hình
-          </Button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              type={mapMode === 'satellite' ? 'primary' : 'default'}
+              onClick={() => setMapMode('satellite')}
+              style={{ flex: 1 }}
+            >
+              🛰️ Vệ tinh
+            </Button>
+            <Button
+              type={mapMode === 'street' ? 'primary' : 'default'}
+              onClick={() => setMapMode('street')}
+              style={{ flex: 1 }}
+            >
+              🗺️ Bản đồ
+            </Button>
+            <Button
+              type={mapMode === 'terrain' ? 'primary' : 'default'}
+              onClick={() => setMapMode('terrain')}
+              style={{ flex: 1 }}
+            >
+              🏔️ Địa hình
+            </Button>
+          </div>
+        )}
 
         {/* Map */}
         <div className="rounded-lg overflow-hidden border border-gray-200" style={{ height: '400px' }}>

@@ -7,3 +7,5 @@ export { default as FollowButton } from './FollowButton';
 export { default as StudentReferralSection } from './StudentReferralSection';
 export { default as ReferredUsersList } from './ReferredUsersList';
 export { default as SharedPostsContent } from './SharedPostsContent';
+export { default as FarmAddressesSection } from './FarmAddressesSection';
+export { default as FarmAddressesCompact } from './FarmAddressesCompact';

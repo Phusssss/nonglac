@@ -1,5 +1,6 @@
-import React from 'react';
-import { Card, Table, Tag, Select, Space, Button, Popconfirm, Typography } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Tag, Select, Space, Button, Popconfirm, Typography, Tooltip, Spin } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 
 const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, deleteUser }) => {
   // Sắp xếp users theo ngày tạo từ mới đến cũ
@@ -82,6 +83,78 @@ const UserManagement = ({ users, updateUserRole, verifyUser, unverifyUser, delet
       },
       defaultSortOrder: 'descend',
       render: (date) => <span className="text-gray-500 text-xs">{date?.toDate?.()?.toLocaleDateString() || 'N/A'}</span>,
+    },
+    {
+      title: 'Đồng ý Điều khoản',
+      key: 'termsAgreement',
+      width: 120,
+      render: (text, record) => {
+        const agreement = record.termsAgreement;
+        return agreement ? (
+          <Tag color="green" className="m-0">✅ Đã ký</Tag>
+        ) : (
+          <Tag color="red" className="m-0">❌ Chưa ký</Tag>
+        );
+      },
+    },
+    {
+      title: 'Thời gian ký',
+      key: 'termsTimestamp',
+      width: 140,
+      render: (text, record) => {
+        const agreement = record.termsAgreement;
+        if (!agreement || !agreement.agreedAt) return '-';
+        
+        // Handle both Timestamp object and Date object
+        let timestamp;
+        if (agreement.agreedAt.toDate && typeof agreement.agreedAt.toDate === 'function') {
+          timestamp = agreement.agreedAt.toDate();
+        } else if (agreement.agreedAt instanceof Date) {
+          timestamp = agreement.agreedAt;
+        } else {
+          timestamp = new Date(agreement.agreedAt);
+        }
+        
+        return (
+          <Tooltip title={timestamp.toLocaleString('vi-VN')}>
+            <span className="text-gray-600 text-xs cursor-help">
+              {timestamp.toLocaleDateString('vi-VN')}
+            </span>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: 'IP Address',
+      key: 'termsIp',
+      width: 130,
+      render: (text, record) => {
+        const agreement = record.termsAgreement;
+        if (!agreement) return '-';
+        
+        const ip = agreement.ipAddress || 'N/A';
+        return (
+          <Tooltip title={ip}>
+            <span className="text-gray-600 text-xs cursor-help font-mono">
+              {ip.length > 15 ? ip.substring(0, 15) + '...' : ip}
+            </span>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: 'Version',
+      key: 'termsVersion',
+      width: 100,
+      render: (text, record) => {
+        const agreement = record.termsAgreement;
+        if (!agreement || !agreement.version) return '-';
+        return (
+          <Tag color="blue" className="m-0 text-xs">
+            v{agreement.version}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Thao tác',

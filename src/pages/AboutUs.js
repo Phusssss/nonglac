@@ -307,8 +307,17 @@ const AboutUs = () => {
           </div>
 
           <div className="mx-auto mt-12 max-w-2xl border-t border-gray-100 pt-8">
-            <p className="mb-2 text-sm font-medium uppercase tracking-widest text-gray-500">Cố vấn Chiến lược</p>
-            <h4 className="text-xl font-bold">PGS.TS Đinh Tiên Minh</h4>
+            <div className="flex flex-col items-center justify-center gap-3">
+              <p className="text-sm font-medium uppercase tracking-widest text-gray-500">Cố vấn Chiến lược</p>
+              <div className="rounded-lg bg-[#2D3748] p-3">
+                <img 
+                  src="/dinhtienminh-logo-white.png" 
+                  alt="Logo PGS.TS Đinh Tiên Minh"
+                  className="h-16 w-auto"
+                />
+              </div>
+              <h4 className="text-xl font-bold">PGS.TS Đinh Tiên Minh</h4>
+            </div>
           </div>
         </div>
       </section>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, Modal } from 'antd';
 import { PhoneOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '../../firebase/config';
 import registrationService from '../../services/registrationService';
+import termsService from '../../services/termsService';
 import { authRedirectService } from '../../services/authRedirectService';
 import { ErrorDisplay } from '../common';
 import { normalizeVietnameseText } from '../../constants/errorMessages';
@@ -16,6 +18,7 @@ const PhoneLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loginMessage, setLoginMessage] = useState('');
+  const [termsData, setTermsData] = useState(null);
   const navigate = useNavigate();
 
   // Xóa toàn bộ dữ liệu đăng nhập khi truy cập trang đăng nhập
@@ -55,7 +58,56 @@ const PhoneLogin = () => {
       );
 
       if (result.success) {
-        authRedirectService.handlePostLoginRedirect(navigate);
+        // Check xem user đã đồng ý điều khoản chưa
+        const userDoc = await registrationService.getUserData(result.userId);
+        
+        if (!userDoc?.termsAgreement) {
+          // Hiển thị modal yêu cầu đồng ý điều khoản
+          Modal.confirm({
+            title: 'Đồng ý Điều khoản Sử dụng',
+            content: (
+              <div>
+                <p>Để tiếp tục sử dụng Nonglac.com, bạn cần đồng ý với:</p>
+                <ul style={{ marginTop: '10px' }}>
+                  <li>
+                    <a href="/terms-of-service" target="_blank" rel="noopener noreferrer">
+                      Điều khoản sử dụng
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">
+                      Chính sách bảo mật
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            ),
+            okText: 'Đồng ý',
+            cancelText: 'Từ chối',
+            onOk: async () => {
+              // Lấy IP và lưu vào user document
+              const ip = await termsService.getClientIpAddress();
+              await updateDoc(doc(db, 'users', result.userId), {
+                termsAgreement: {
+                  agreedAt: new Date(),
+                  ipAddress: ip,
+                  version: termsService.CURRENT_VERSION,
+                  userAgent: navigator.userAgent || 'unknown'
+                }
+              });
+              // Tiếp tục redirect
+              authRedirectService.handlePostLoginRedirect(navigate);
+            },
+            onCancel: () => {
+              // User từ chối, đăng xuất
+              signOut(auth);
+              setError('Bạn phải đồng ý với điều khoản sử dụng để tiếp tục');
+            }
+          });
+        } else {
+          // Đã đồng ý rồi, tiếp tục redirect
+          authRedirectService.handlePostLoginRedirect(navigate);
+        }
       } else {
         setError(normalizeVietnameseText(result.message));
       }

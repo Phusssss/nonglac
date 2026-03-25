@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs, addDoc, getDoc } from 'firebase/firestore';
 import phoneAuthService from './phoneAuthService';
 import { getErrorMessage } from '../constants/errorMessages';
 
@@ -180,7 +180,7 @@ class RegistrationService {
   }
 
   // Tạo tài khoản đơn giản với phone + password
-  async createSimpleAccount(password) {
+  async createSimpleAccount(password, termsData) {
     try {
       const { phoneNumber, personalInfo, studentInfo, referralCode } = this.registrationData;
 
@@ -240,6 +240,16 @@ class RegistrationService {
       // Thêm mã giới thiệu nếu có
       if (referralCode) {
         userData.referredBy = referralCode;
+      }
+
+      // Thêm thông tin đồng ý điều khoản nếu có
+      if (termsData) {
+        userData.termsAgreement = {
+          agreedAt: termsData.agreedAt,
+          ipAddress: termsData.ipAddress,
+          version: termsData.version,
+          userAgent: termsData.userAgent
+        };
       }
 
       await setDoc(doc(db, 'users', user.uid), userData);
@@ -462,6 +472,19 @@ class RegistrationService {
     if (!this.registrationData.personalInfo) return 3; // Thông tin cá nhân
     if (!this.registrationData.locationInfo) return 4; // Thông tin địa điểm
     return 5; // Tạo mật khẩu
+  }
+
+  async getUserData(userId) {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        return userDoc.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      return null;
+    }
   }
 }
 

@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Alert, Result } from 'antd';
+import React, { useState, useRef } from 'react';
+import { Form, Input, Button, Typography, Alert, Result, Checkbox, Space, Spin } from 'antd';
 import { LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import registrationService from '../../services/registrationService';
+import termsService from '../../services/termsService';
 
 const { Title, Text } = Typography;
 
 const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error }) => {
   const [success, setSuccess] = useState(false);
+  const [form] = Form.useForm();
+  const [fetchingIp, setFetchingIp] = useState(false);
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
@@ -15,7 +18,31 @@ const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error })
     setError('');
 
     try {
-      const result = await registrationService.createSimpleAccount(values.password);
+      // Validate form trước
+      await form.validateFields();
+      
+      // Lấy IP khi bấm nút hoàn tất
+      setFetchingIp(true);
+      console.log('📍 Fetching IP address...');
+      const ipAddress = await termsService.getClientIpAddress();
+      console.log('✓ IP obtained:', ipAddress);
+      setFetchingIp(false);
+
+      // Bắt buộc phải lấy được IP (không phải N/A)
+      if (!ipAddress || ipAddress === 'N/A') {
+        setError('Không thể lấy địa chỉ IP. Vui lòng kiểm tra kết nối mạng và thử lại.');
+        setLoading(false);
+        return;
+      }
+
+      const termsData = {
+        agreedAt: new Date(),
+        ipAddress: ipAddress,
+        version: termsService.CURRENT_VERSION,
+        userAgent: navigator.userAgent || 'unknown'
+      };
+
+      const result = await registrationService.createSimpleAccount(values.password, termsData);
       
       if (result.success) {
         setSuccess(true);
@@ -26,9 +53,11 @@ const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error })
         setError(result.message);
       }
     } catch (error) {
+      console.error('Error:', error);
       setError('Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       setLoading(false);
+      setFetchingIp(false);
     }
   };
 
@@ -62,10 +91,12 @@ const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error })
       )}
 
       <Form
+        form={form}
         name="password-step"
         onFinish={onFinish}
         layout="vertical"
         size="large"
+        validateTrigger="onBlur"
       >
         <Form.Item
           name="password"
@@ -107,11 +138,40 @@ const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error })
           />
         </Form.Item>
 
+        <Form.Item
+          name="termsAgreement"
+          valuePropName="checked"
+          rules={[
+            {
+              validator: (_, value) => {
+                if (value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('Vui lòng đồng ý với điều khoản sử dụng và chính sách bảo mật'));
+              },
+            },
+          ]}
+        >
+          <Checkbox>
+            <span className="text-sm">
+              Tôi đã đọc và đồng ý với{' '}
+              <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#4CAF50] hover:text-[#45a049]">
+                Điều khoản sử dụng
+              </a>
+              {' '}và{' '}
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#4CAF50] hover:text-[#45a049]">
+                Chính sách bảo mật
+              </a>
+              {' '}của Nonglac.com
+            </span>
+          </Checkbox>
+        </Form.Item>
+
         <Form.Item>
           <div className="flex justify-between">
             <Button
               onClick={onBack}
-              disabled={loading}
+              disabled={loading || fetchingIp}
               size="large"
             >
               Quay lại
@@ -120,7 +180,7 @@ const PasswordStep = ({ onBack, onReset, setLoading, setError, loading, error })
             <Button
               type="primary"
               htmlType="submit"
-              loading={loading}
+              loading={loading || fetchingIp}
               size="large"
               className="bg-[#4CAF50] hover:bg-[#45a049] border-[#4CAF50] hover:border-[#45a049]"
             >

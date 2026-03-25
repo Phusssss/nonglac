@@ -86,11 +86,19 @@ export const missionsService = {
           // Xử lý logic riêng cho từng nhiệm vụ
           if (missionId === 'add_farm_address' && additionalData) {
             // Lưu thông tin địa chỉ canh tác vào user profile
-            this.updateUserProfile(userId, {
-              farmAddress: additionalData.farmAddress,
-              farmType: additionalData.farmType,
-              farmDescription: additionalData.description
-            });
+            // Nếu có farmAddresses array, lưu nó; nếu không thì lưu các field cũ
+            if (additionalData.farmAddresses && Array.isArray(additionalData.farmAddresses)) {
+              this.updateUserProfile(userId, {
+                farmAddresses: additionalData.farmAddresses
+              });
+            } else {
+              // Fallback cho dữ liệu cũ
+              this.updateUserProfile(userId, {
+                farmAddress: additionalData.farmAddress,
+                farmType: additionalData.farmType,
+                farmDescription: additionalData.description
+              });
+            }
             
             return {
               ...mission,
