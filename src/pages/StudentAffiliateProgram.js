@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Card, Row, Col, Typography, Space, Divider, Checkbox, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo.demo.nontext.png';
 import '../styles/StudentAffiliateProgram.css';
 
 const { Title, Paragraph, Text } = Typography;
@@ -28,13 +27,14 @@ const StudentAffiliateProgram = () => {
       {/* Header Banner */}
       <div className="hero-section">
         <div className="hero-content">
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <img src={logo} alt="NongLac Logo" className="hero-logo" style={{ maxWidth: '80px', height: 'auto' }} />
-            <img src="https://dinhtienminh.net/wp-content/uploads/2022/04/dinhtienminh-logo-white.png" alt="Partner Logo" style={{ maxWidth: '120px', height: 'auto' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '16px' }}>
+              <img src="/logo-final-text.png" alt="Logo" style={{ maxWidth: '150px', height: 'auto', display: 'block' }} />
+            </div>
+            <Title level={1} className="hero-title" style={{ marginTop: 0 }}>
+              Nông Lạc - Số hóa niềm tin thị trường
+            </Title>
           </div>
-          <Title level={1} className="hero-title">
-            Nông Lạc - Số hóa niềm tin thị trường
-          </Title>
           <Title level={2} style={{ color: '#fff', fontWeight: 300, marginTop: '10px' }}>
             Chiến Dịch Mùa Gặt Số
           </Title>
