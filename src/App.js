@@ -154,6 +154,7 @@ function App() {
               <Route path="/phone-register" element={<Registration />} />
 
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/:tab" element={<AdminDashboard />} />
 
 
               <Route path="/plant-doctor" element={<PlantDoctor />} />

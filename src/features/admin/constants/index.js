@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Database,
   Wrench,
-  UserCheck
+  UserCheck,
+  Video
 } from 'lucide-react';
 
 export const ADMIN_CONSTANTS = {
@@ -18,16 +19,17 @@ export const ADMIN_CONSTANTS = {
 
   MENU_ITEMS: [
     { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard, path: '/admin' },
-    { id: 'users', label: 'Người dùng', icon: Users, path: '/admin?tab=users' },
-    { id: 'student-referral', label: 'Sinh viên & Giới thiệu', icon: UserCheck, path: '/admin?tab=student-referral' },
-    { id: 'posts', label: 'Bài viết', icon: FileText, path: '/admin?tab=posts' },
-    { id: 'products', label: 'Sản phẩm', icon: ShoppingBag, path: '/admin?tab=products' },
-    { id: 'prices', label: 'Giá nông sản', icon: DollarSign, path: '/admin?tab=prices' },
-    { id: 'crawler-data', label: 'Dữ liệu Crawler', icon: Database, path: '/admin?tab=crawler-data' },
-    { id: 'post-creator', label: 'Tạo bài thử', icon: Edit, path: '/admin?tab=post-creator' },
-    { id: 'analytics', label: 'Thống kê', icon: BarChart3, path: '/admin?tab=analytics' },
-    { id: 'version', label: 'Version & Cache', icon: RefreshCw, path: '/admin?tab=version' },
-    { id: 'badge-tools', label: 'Badge Tools', icon: Wrench, path: '/admin?tab=badge-tools' },
-    { id: 'settings', label: 'Cài đặt', icon: Settings, path: '/admin?tab=settings' }
+    { id: 'users', label: 'Người dùng', icon: Users, path: '/admin/users' },
+    { id: 'student-referral', label: 'Sinh viên & Giới thiệu', icon: UserCheck, path: '/admin/student-referral' },
+    { id: 'posts', label: 'Bài viết', icon: FileText, path: '/admin/posts' },
+    { id: 'products', label: 'Sản phẩm', icon: ShoppingBag, path: '/admin/products' },
+    { id: 'prices', label: 'Giá nông sản', icon: DollarSign, path: '/admin/prices' },
+    { id: 'crawler-data', label: 'Dữ liệu Crawler', icon: Database, path: '/admin/crawler-data' },
+    { id: 'auto-video', label: 'Video tự động', icon: Video, path: '/admin/auto-video' },
+    { id: 'post-creator', label: 'Tạo bài thử', icon: Edit, path: '/admin/post-creator' },
+    { id: 'analytics', label: 'Thống kê', icon: BarChart3, path: '/admin/analytics' },
+    { id: 'version', label: 'Version & Cache', icon: RefreshCw, path: '/admin/version' },
+    { id: 'badge-tools', label: 'Badge Tools', icon: Wrench, path: '/admin/badge-tools' },
+    { id: 'settings', label: 'Cài đặt', icon: Settings, path: '/admin/settings' }
   ]
 };

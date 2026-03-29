@@ -154,7 +154,7 @@ const GitHubImageUpload = forwardRef(({
           fileSize: uploaded.uploadedSize || file.size,
           originalFileSize: file.size,
           wasCompressed: Boolean(uploaded.wasCompressed),
-          thumbnailUrl
+          thumbnailUrl: thumbnailUrl || null
         };
 
         uploadedMedia.push(mediaItem);

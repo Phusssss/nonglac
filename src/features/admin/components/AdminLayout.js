@@ -17,9 +17,20 @@ const AdminLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path) => {
-    const currentTab = new URLSearchParams(location.search).get('tab') || 'dashboard';
-    const targetTab = new URLSearchParams(path.split('?')[1]).get('tab') || 'dashboard';
-    return location.pathname === '/admin' && currentTab === targetTab;
+    // Lấy tab từ query param (để hỗ trợ các link cũ)
+    const queryTab = new URLSearchParams(location.search).get('tab');
+    
+    // Lấy tab từ path (/admin/:tab)
+    const pathParts = location.pathname.split('/');
+    const currentTab = pathParts.length > 2 ? pathParts[2] : (queryTab || 'dashboard');
+    
+    // Lấy target tab từ path hoặc query của mục menu
+    const targetPathParts = path.split('?');
+    const targetBase = targetPathParts[0];
+    const targetQuery = targetPathParts[1] ? new URLSearchParams(targetPathParts[1]).get('tab') : null;
+    const targetTab = targetBase.split('/').length > 2 ? targetBase.split('/')[2] : (targetQuery || 'dashboard');
+    
+    return currentTab === targetTab;
   };
 
   const handleMenuClick = (path) => {

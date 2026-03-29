@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { message, Card } from 'antd';
 
 import AdminLayout from '../components/AdminLayout';
@@ -15,6 +15,7 @@ import AdminPostCreator from '../components/AdminPostCreator';
 import VersionManager from '../components/VersionManager';
 import CrawlerDataManagement from '../components/CrawlerDataManagement';
 import BadgeCleanupTool from '../components/BadgeCleanupTool';
+import AdminAutoPostVideo from '../components/AdminAutoPostVideo';
 
 import { useAdminData } from '../hooks/useAdminData';
 import { adminService } from '../services/adminService';
@@ -22,7 +23,8 @@ import subscriptionService from '../../../services/subscriptionService';
 
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'dashboard';
+  const { tab: pathTab } = useParams();
+  const activeTab = pathTab || searchParams.get('tab') || 'dashboard';
   
   const {
     loading,
@@ -129,6 +131,7 @@ const AdminDashboard = () => {
         return <SystemAnalytics analytics={analytics} totalPosts={stats.totalPosts} />;
       
       case 'post-creator': return <AdminPostCreator />;
+      case 'auto-video': return <AdminAutoPostVideo />;
       case 'version': return <VersionManager />;
       case 'crawler-data': return <CrawlerDataManagement />;
       case 'badge-tools': return <BadgeCleanupTool />;

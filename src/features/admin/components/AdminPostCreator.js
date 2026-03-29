@@ -18,6 +18,7 @@ import { auth, db } from '../../../firebase/config';
 import GitHubImageUpload from '../../../components/GitHubImageUpload';
 import PostCard from '../../../components/PostCard';
 import { FileEdit, Send } from 'lucide-react';
+import AdminAutoPostVideo from './AdminAutoPostVideo';
 
 const { Title, Text } = Typography;
 
@@ -164,6 +165,7 @@ const AdminPostCreator = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
+      <AdminAutoPostVideo />
       <Card
         bordered={false}
         className="shadow-sm rounded-2xl overflow-hidden"

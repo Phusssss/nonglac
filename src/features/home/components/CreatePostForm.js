@@ -42,12 +42,21 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
         uploadedMedia = await uploaderRef.current.uploadSelectedFiles();
       }
 
+      // Sanitize media: Firestore does not accept `undefined` field values
+      const sanitizedMedia = (uploadedMedia || []).map(item => {
+        const clean = {};
+        Object.entries(item).forEach(([key, value]) => {
+          clean[key] = value === undefined ? null : value;
+        });
+        return clean;
+      });
+
       const postData = {
         title: newPost.title.trim(),
         content: newPost.content.trim(),
         category: newPost.category || 'Khác',
-        media: uploadedMedia,
-        images: uploadedMedia.map((item) => item.url).filter(Boolean),
+        media: sanitizedMedia,
+        images: sanitizedMedia.map((item) => item.url).filter(Boolean),
         authorId: user.uid,
         authorName: userProfile?.displayName || user.displayName || 'Người dùng',
         authorAvatar: userProfile?.photoURL || user.photoURL || '',

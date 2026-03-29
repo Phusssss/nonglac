@@ -1,8 +1,49 @@
-import React from 'react';
-import { Card, Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Button, Spin } from 'antd';
 import { FireOutlined, TrophyOutlined } from '@ant-design/icons';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
 import WeatherWidget from '../../../components/WeatherWidget';
+
+const parsePriceRowsFromHtml = (tableHtml, limit = 3) => {
+  if (typeof window === 'undefined' || !tableHtml) return [];
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(tableHtml, 'text/html');
+  const table = doc.querySelector('table');
+  if (!table) return [];
+
+  const bodyRows = Array.from(table.querySelectorAll('tbody tr'));
+  const rows = bodyRows.length ? bodyRows : Array.from(table.querySelectorAll('tr'));
+
+  return rows
+    .map((row) => ({
+      row,
+      cells: Array.from(row.querySelectorAll('th,td')).map((cell) => cell.textContent?.trim() || ''),
+    }))
+    .filter(({ row, cells }) => {
+      if (!cells.length) return false;
+      if (row.classList.contains('group-title')) return false;
+      const hasOnlyHeader = row.querySelectorAll('th').length === cells.length;
+      return !hasOnlyHeader && cells.some((value) => value);
+    })
+    .slice(0, limit);
+};
+
+const inferTrend = (changeText = '') => {
+  const normalized = String(changeText).toLowerCase();
+  if (!normalized) return 'same';
+
+  const ascii = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (ascii.includes('-') || ascii.includes('giam')) {
+    return 'down';
+  }
+  if (ascii.includes('+') || ascii.includes('tang')) {
+    return 'up';
+  }
+  return 'same';
+};
 
 const RightSidebar = ({ 
   trendingTopics = [], 
@@ -10,11 +51,74 @@ const RightSidebar = ({
   selectedCategory,
   onCategoryChange 
 }) => {
-  const priceData = [
-    { name: 'Lúa OM 5451', price: '8.200 đ/kg', location: 'Hậu Giang', change: '+2.5%', trend: 'up' },
-    { name: 'Cà phê Robusta', price: '120.000 đ/kg', location: 'Đắk Lắk', change: '-4%', trend: 'down' },
-    { name: 'Tiêu đen', price: '92.500 đ/kg', location: 'Bình Phước', change: '0%', trend: 'same' }
-  ];
+  const [priceData, setPriceData] = useState([]);
+  const [loadingPrices, setLoadingPrices] = useState(true);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        setLoadingPrices(true);
+        const latestRef = doc(db, 'full_prices', 'current');
+        const latestSnap = await getDoc(latestRef);
+        
+        if (latestSnap.exists()) {
+          const payload = latestSnap.data();
+          const sections = Array.isArray(payload?.priceSections) ? payload.priceSections : [];
+
+          let formatted = [];
+          const summarySection = sections.find((section) => (
+            String(section?.tableClass || '').includes('bang-gia-nong-san')
+          )) || sections[0];
+
+          if (summarySection?.tableHtml) {
+            const parsedRows = parsePriceRowsFromHtml(summarySection.tableHtml, 3);
+            formatted = parsedRows.map(({ cells }) => {
+              const name = cells[0] || 'N/A';
+              const location = cells[1] || 'N/A';
+              const price = cells[2] || cells[1] || 'N/A';
+              const change = cells[3] || '';
+
+              return {
+                name,
+                price,
+                location,
+                change: change || '0%',
+                trend: inferTrend(change)
+              };
+            });
+          }
+
+          if (formatted.length === 0 && payload?.prices) {
+            const changes = payload?.changes || {};
+            formatted = Object.entries(payload.prices)
+              .slice(0, 3)
+              .map(([name, price]) => {
+                const change = changes?.[name] || '';
+                return {
+                  name,
+                  price: price || 'N/A',
+                  location: 'Tây Nguyên',
+                  change: change || '0%',
+                  trend: inferTrend(change)
+                };
+              });
+          }
+
+          if (formatted.length > 0) {
+            setPriceData(formatted);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching prices:', error);
+      } finally {
+        setLoadingPrices(false);
+      }
+    };
+
+    fetchPrices();
+  }, []);
+
+  const displayPrices = priceData;
 
   const getTrendIcon = (trend) => {
     switch (trend) {
@@ -48,21 +152,31 @@ const RightSidebar = ({
         </div>
         
         <div className="space-y-3">
-          {priceData.map((item, idx) => (
-            <div key={idx} className="p-3 hover:bg-gray-50 transition-colors cursor-pointer rounded-lg border border-gray-100">
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-medium text-gray-900 text-sm">{item.name}</span>
-                <span className="font-bold text-gray-900 text-sm">{item.price}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">{item.location}</span>
-                <span className={`px-2 py-1 rounded-full flex items-center gap-1 ${getTrendColor(item.trend)}`}>
-                  {getTrendIcon(item.trend)}
-                  {item.change}
-                </span>
-              </div>
+          {loadingPrices ? (
+            <div className="flex justify-center py-4">
+              <Spin size="small" />
             </div>
-          ))}
+          ) : displayPrices.length > 0 ? (
+            displayPrices.map((item, idx) => (
+              <div key={idx} className="p-3 hover:bg-gray-50 transition-colors cursor-pointer rounded-lg border border-gray-100">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium text-gray-900 text-sm">{item.name}</span>
+                  <span className="font-bold text-gray-900 text-sm">{item.price}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500">{item.location}</span>
+                  <span className={`px-2 py-1 rounded-full flex items-center gap-1 ${getTrendColor(item.trend)}`}>
+                    {getTrendIcon(item.trend)}
+                    {item.change}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4">
+              <span className="text-gray-500 text-sm italic">Chưa có dữ liệu giá nông sản</span>
+            </div>
+          )}
         </div>
         
         <div className="mt-4 pt-3 border-t border-gray-100 text-center">

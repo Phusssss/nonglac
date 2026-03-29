@@ -11,6 +11,7 @@ import LocationPickerModal from './LocationPickerModal';
 import FarmAddressItem from './FarmAddressItem';
 
 const { TextArea } = Input;
+const EMPTY_ARRAY = [];
 
 /**
  * Modal bổ sung thông tin profile - Dùng chung cho missions và profile page
@@ -22,27 +23,52 @@ const ProfileInfoModal = ({
   title = "Bổ sung thông tin",
   fields = [],
   loading = false,
-  initialFarmAddresses = []
+  initialFarmAddresses = EMPTY_ARRAY
 }) => {
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationPickerLoading, setLocationPickerLoading] = useState(false);
   const [farmAddresses, setFarmAddresses] = useState([]);
+  const lastOpenRef = React.useRef(false);
 
   // Initialize form fields when modal opens
   React.useEffect(() => {
-    if (open) {
+    // Chỉ khởi tạo khi trạng thái open chuyển từ false -> true
+    if (open && !lastOpenRef.current) {
+      lastOpenRef.current = true;
       const initialValues = {};
+      let hasFarmAddressField = false;
+      
       fields.forEach(field => {
         if (field.type === 'farm-addresses') {
-          // Nếu có initialFarmAddresses, sử dụng nó; nếu không thì khởi tạo rỗng
-          setFarmAddresses(initialFarmAddresses && initialFarmAddresses.length > 0 ? initialFarmAddresses : []);
+          hasFarmAddressField = true;
+          // Nếu có initialFarmAddresses, sử dụng nó; nếu không thì khởi tạo ít nhất 1 ô nhập liệu
+          if (initialFarmAddresses && initialFarmAddresses.length > 0) {
+            setFarmAddresses(initialFarmAddresses);
+          } else {
+            setFarmAddresses([{
+              id: Date.now(),
+              address: '',
+              farmType: '',
+              coordinates: '',
+              description: ''
+            }]);
+          }
         } else {
           initialValues[field.id] = '';
         }
       });
+      
       form.setFieldsValue(initialValues);
+      
+      // Cleanup nếu không có field farm-addresses
+      if (!hasFarmAddressField) {
+        setFarmAddresses([]);
+      }
+    } else if (!open && lastOpenRef.current) {
+      // Khi đóng modal, reset ref để có thể khởi tạo lại ở lần mở sau
+      lastOpenRef.current = false;
     }
   }, [open, fields, form, initialFarmAddresses]);
 

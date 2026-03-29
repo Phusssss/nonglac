@@ -4,6 +4,7 @@
  */
 
 const functions = require('firebase-functions');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const cors = require('cors')({ origin: true });
 const SERVICE_ACCOUNT = 'nonglac-2026@appspot.gserviceaccount.com';
@@ -15,6 +16,7 @@ admin.initializeApp();
 const { crawlCoffeePricesSimple } = require('./crawler/simpleCrawler');
 const { getCoffeePrices, getLatestPrices, getPriceHistory } = require('./api/priceApi');
 const { scheduledCrawl } = require('./scheduler/cronJobs');
+const { autoPostVideosFromSheet, postSingleVideoFromDrive } = require('./scheduler/videoAutoPoster');
 
 /**
  * API: Get client IP address
@@ -140,6 +142,46 @@ exports.crawlCoffeeManual = functions
     });
   });
 
+/**
+ * Trigger: When a new post request is created in Firestore
+ * Processes video sync (single or all) in the background
+ */
+exports.onPostRequestCreated = functions
+  .region('asia-southeast1')
+  .runWith({
+    timeoutSeconds: 300,
+    memory: '2GB'
+  })
+  .firestore.document('post_requests/{requestId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    if (data.status !== 'pending') return null;
+    
+    console.log(`Processing post request: ${context.params.requestId}, type: ${data.type}`);
+    
+    try {
+      let result;
+      if (data.type === 'sync_all') {
+        result = await autoPostVideosFromSheet();
+      } else {
+        result = await postSingleVideoFromDrive(data.driveId, data.date, data.title, data.content);
+      }
+      
+      return snap.ref.update({
+        status: result.success ? 'completed' : 'failed',
+        result: result,
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error processing post request:', error);
+      return snap.ref.update({
+        status: 'failed',
+        error: error.message,
+        failedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  });
+
 // ============================================
 // ⏰ SCHEDULED FUNCTIONS - Cron Jobs
 // ============================================
@@ -158,6 +200,22 @@ exports.scheduledCoffeeCrawl = functions
   .pubsub.schedule('every 30 minutes')
   .timeZone('Asia/Ho_Chi_Minh')
   .onRun(scheduledCrawl);
+
+/**
+ * Scheduled: Auto post videos from Google Sheet every day at 8 AM
+ * Runs: 08:00 every day
+ */
+exports.autoPostVideosDaily = functions
+  .region('asia-southeast1')
+  .runWith({
+    timeoutSeconds: 300,
+    memory: '1GB'
+  })
+  .pubsub.schedule('0 8 * * *')
+  .timeZone('Asia/Ho_Chi_Minh')
+  .onRun(async (context) => {
+    return await autoPostVideosFromSheet();
+  });
 
 /**
  * Scheduled: Daily summary at 6 AM

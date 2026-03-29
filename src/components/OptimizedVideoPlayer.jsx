@@ -117,6 +117,18 @@ const OptimizedVideoPlayer = ({
     return 'metadata';
   }, [isVisible]);
 
+  const isDrive = useMemo(() => {
+    if (!src) return false;
+    return src.includes('drive.google.com') || src.includes('docs.google.com/file');
+  }, [src]);
+
+  const driveEmbedUrl = useMemo(() => {
+    if (!isDrive) return null;
+    const driveId = src.match(/[?&]id=([^&]+)/)?.[1] || src.match(/\/d\/([^/]+)/)?.[1];
+    if (!driveId) return src; // fallback
+    return `https://drive.google.com/file/d/${driveId}/preview`;
+  }, [src, isDrive]);
+
   // Handle video load start
   const handleLoadStart = useCallback(() => {
     setIsLoading(true);
@@ -319,31 +331,46 @@ const OptimizedVideoPlayer = ({
       {isVisible ? (
         <>
           {/* Video Element */}
-          <video
-            ref={videoRef}
-            src={src}
-            poster={poster}
-            preload={preloadMode}
-            playsInline
-            autoPlay={autoPlay}
-            muted={isMuted}
-            loop={loop}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'block',
-              objectFit: 'contain'
-            }}
-            onLoadStart={handleLoadStart}
-            onLoadedData={handleLoadedData}
-            onCanPlay={handleCanPlay}
-            onWaiting={handleWaiting}
-            onProgress={handleProgress}
-            onError={handleError}
-            onTimeUpdate={handleTimeUpdate}
-            onPlay={handlePlay}
-            onPause={handlePause}
-          />
+          {isDrive ? (
+            <iframe
+              src={driveEmbedUrl}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                display: 'block'
+              }}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              onLoad={() => setIsLoading(false)}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              src={src}
+              poster={poster}
+              preload={preloadMode}
+              playsInline
+              autoPlay={autoPlay}
+              muted={isMuted}
+              loop={loop}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                objectFit: 'contain'
+              }}
+              onLoadStart={handleLoadStart}
+              onLoadedData={handleLoadedData}
+              onCanPlay={handleCanPlay}
+              onWaiting={handleWaiting}
+              onProgress={handleProgress}
+              onError={handleError}
+              onTimeUpdate={handleTimeUpdate}
+              onPlay={handlePlay}
+              onPause={handlePause}
+            />
+          )}
 
           {/* Loading Overlay */}
           {isLoading && (
@@ -436,7 +463,7 @@ const OptimizedVideoPlayer = ({
           )}
 
           {/* Controls */}
-          {controls && !error && (
+          {controls && !error && !isDrive && (
             <div
               style={{
                 position: 'absolute',
