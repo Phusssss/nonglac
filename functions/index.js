@@ -142,6 +142,7 @@ exports.crawlCoffeeManual = functions
     });
   });
 
+
 /**
  * Trigger: When a new post request is created in Firestore
  * Processes video sync (single or all) in the background

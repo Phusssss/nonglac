@@ -35,6 +35,10 @@ const toMillis = (value) => {
   if (typeof value?.toDate === 'function') return value.toDate().getTime();
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'number') return value;
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    const nanos = typeof value.nanoseconds === 'number' ? value.nanoseconds : 0;
+    return value.seconds * 1000 + Math.floor(nanos / 1e6);
+  }
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
 };
@@ -131,17 +135,33 @@ const HomePage = () => {
   }, [products, isAllCategory, isSearchMode, searchTerm]);
 
   const feedItems = useMemo(() => {
+    const resolvePostTime = (post) => (
+      toMillis(
+        post?.createdAtServer
+        || post?.createdAt
+        || post?.updatedAtServer
+        || post?.updatedAt
+      )
+    );
+
+    const resolveProductTime = (product) => (
+      toMillis(
+        product?.createdAt
+        || product?.updatedAt
+      )
+    );
+
     const postItems = filteredPosts.map((post) => ({
       type: 'post',
       id: post.id,
-      createdAtMs: toMillis(post?.createdAt),
+      createdAtMs: resolvePostTime(post),
       data: post
     }));
 
     const productItems = filteredProducts.map((product) => ({
       type: 'product',
       id: product.id,
-      createdAtMs: toMillis(product?.createdAt),
+      createdAtMs: resolveProductTime(product),
       data: product
     }));
 
