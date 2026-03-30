@@ -103,82 +103,100 @@ const MissionCard = ({
 
   return (
     <>
-      <Card 
-        hoverable={canExecute || canClaim}
-        className="h-full transition-all duration-200 hover:shadow-lg" 
-        style={{ 
-          opacity: mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED ? 0.6 : 1,
-          borderColor: canClaim ? MISSIONS_CONSTANTS.COLORS.SUCCESS : undefined
-        }}
+      <div 
+        onClick={canExecute || canClaim ? handleButtonClick : undefined}
+        className={`relative h-full bg-white rounded-2xl border transition-all duration-300 flex flex-col p-5 overflow-hidden group ${
+          canExecute || canClaim ? 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.12)]' : ''
+        } ${
+          mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED 
+            ? 'opacity-60 grayscale-[20%]' 
+            : canClaim
+            ? 'border-[#4CAF50]/50 shadow-[0_4px_16px_-4px_rgba(76,175,80,0.2)] bg-gradient-to-br from-green-50/50 to-white'
+            : 'border-slate-100 shadow-sm'
+        }`}
       >
+        {/* Claim Ready Glow */}
+        {canClaim && (
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#4CAF50]/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+        )}
+
         {/* Mission Icon */}
-        <div className="text-center mb-4">
-          <div style={{ fontSize: window.innerWidth < 768 ? '36px' : '48px' }}>
+        <div className="flex justify-between items-start mb-4">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm ${canClaim ? 'bg-[#4CAF50]/10' : 'bg-slate-50 border border-slate-100'}`}>
             {missionsUtils.getMissionIcon(mission.icon)}
+          </div>
+          
+          {/* Reward Badge */}
+          <div className="flex items-center gap-1 bg-green-50 text-[#4CAF50] px-2.5 py-1 rounded-full font-bold text-[13px] border border-[#4CAF50]/20 shadow-sm">
+            <span className="text">🔥</span> +{missionsUtils.formatScore(mission.reward)}
           </div>
         </div>
         
         {/* Mission Info */}
-        <Title level={5} className="text-base md:text-lg mb-2">
-          {mission.title}
-        </Title>
-        <Text type="secondary" className="text-sm">
-          {mission.description}
-        </Text>
-        
-        {/* Reward Badge */}
-        <div className="my-4">
-          <Badge 
-            count={`+${missionsUtils.formatScore(mission.reward)}`} 
-            style={{ backgroundColor: MISSIONS_CONSTANTS.COLORS.SUCCESS }} 
-          />
+        <div className="flex-1">
+          <h4 className={`text-[17px] font-bold mb-1.5 leading-tight ${canClaim ? 'text-slate-800' : 'text-slate-700'}`}>
+            {mission.title}
+          </h4>
+          <p className="text-slate-500 text-sm leading-relaxed mb-4 min-h-[44px]">
+            {mission.description}
+          </p>
         </div>
 
-        {/* Progress Bar */}
-        {mission.status !== MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED && 
-         mission.status !== MISSIONS_CONSTANTS.MISSION_STATUS.LOCKED && (
-          <div className="mb-4">
-            <Text strong className="text-sm">
-              Tiến độ: {mission.currentProgress}/{mission.maxProgress}
-            </Text>
-            <Progress 
-              percent={progressPercent} 
-              size="small" 
-              strokeColor={statusColor}
-              showInfo={false}
-            />
+        {/* Status Indicator Top Right */}
+        {canClaim && (
+          <div className="absolute top-3 right-3">
+            <span className="inline-flex w-2.5 h-2.5 bg-[#4CAF50] rounded-full animate-pulse shadow-[0_0_8px_rgba(76,175,80,0.8)]"></span>
           </div>
         )}
 
-        {/* Action Button */}
-        {!mission.noButton && (
-          <div className="w-full">
-            <Button {...getButtonProps()}>
+        <div className="mt-auto">
+          {/* Progress Bar */}
+          {mission.status !== MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED && 
+           mission.status !== MISSIONS_CONSTANTS.MISSION_STATUS.LOCKED && (
+            <div className="mb-4">
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-[13px] font-semibold text-slate-600">Tiến độ</span>
+                <span className="text-[13px] font-bold text-slate-800 bg-slate-100 px-2 rounded">
+                  {mission.currentProgress} <span className="text-slate-400 font-medium">/ {mission.maxProgress}</span>
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    canClaim ? 'bg-[#4CAF50]' : 'bg-slate-300'
+                  }`}
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          {!mission.noButton && (
+            <Button 
+              {...getButtonProps()} 
+              className={`w-full rounded-xl h-10 font-semibold border-none shadow-sm transition-all ${
+                mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.COMPLETED
+                  ? 'bg-[#4CAF50] text-white hover:bg-[#388E3C] hover:shadow-[#4CAF50]/30 hover:-translate-y-0.5'
+                  : mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.CLAIMED || mission.status === MISSIONS_CONSTANTS.MISSION_STATUS.LOCKED
+                  ? 'bg-slate-100 text-slate-400'
+                  : 'bg-green-50 text-[#388E3C] hover:bg-[#4CAF50] hover:text-white'
+              }`}
+            >
               {getButtonText()}
             </Button>
-          </div>
-        )}
-        
-        {/* Thông tin tự động cho mission không có button */}
-        {mission.noButton && (
-          <div className="w-full text-center">
-            <Text type="secondary" className="text-xs">
-              🔄 Tự động cập nhật
-            </Text>
-          </div>
-        )}
-
-        {/* Status Indicator */}
-        {canClaim && (
-          <div className="absolute top-2 right-2">
-            <Badge 
-              status="success" 
-              text="Sẵn sàng nhận thưởng" 
-              className="text-xs"
-            />
-          </div>
-        )}
-      </Card>
+          )}
+          
+          {/* Auto update info */}
+          {mission.noButton && (
+            <div className="w-full text-center py-2 bg-slate-50 rounded-xl border border-slate-100">
+              <span className="text-slate-500 text-xs font-medium flex items-center justify-center gap-1.5">
+                <span className="animate-spin-slow">🔄</span> Tự động cập nhật
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Modal bổ sung thông tin */}
       {modalConfig && (

@@ -99,14 +99,14 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
     return (
       <>
         {contextHolder}
-        <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
-          <div className="flex gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex gap-3 sm:gap-4">
             <div className="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold shadow-md flex-shrink-0">
               {user ? (userProfile?.displayName?.charAt(0) || 'U') : 'G'}
             </div>
             <div className="flex-1">
               <input
-                className="w-full bg-gray-50 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-[#4CAF50]/50 transition-shadow mb-3 cursor-pointer"
+                className="w-full bg-gray-50 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#4CAF50]/50 transition-shadow mb-2 cursor-pointer"
                 placeholder="Chia sẻ kinh nghiệm nông nghiệp của bạn..."
                 type="text"
                 onClick={() => {
@@ -118,10 +118,10 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                 }}
                 readOnly
               />
-              <div className="flex justify-between items-center border-t border-gray-100 pt-3">
-                <div className="flex gap-2">
+              <div className="flex justify-between items-center pt-1 border-t border-gray-100 mt-2">
+                <div className="flex gap-1 sm:gap-2">
                   <button
-                    className="p-2 rounded-full hover:bg-green-50 text-green-600 transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="p-2 sm:p-2.5 rounded-full hover:bg-green-50 text-[#4CAF50] transition-colors bg-gray-50 border border-gray-100"
                     title="Thêm ảnh"
                     onClick={() => {
                       if (user) {
@@ -134,7 +134,7 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                     <PictureOutlined className="text-xl" />
                   </button>
                   <button
-                    className="p-2 rounded-full hover:bg-blue-50 text-blue-500 transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="p-2 sm:p-2.5 rounded-full hover:bg-blue-50 text-blue-500 transition-colors bg-gray-50 border border-gray-100"
                     title="Thêm video"
                     onClick={() => {
                       if (user) {
@@ -147,7 +147,7 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                     <VideoCameraOutlined className="text-xl" />
                   </button>
                   <button
-                    className="p-2 rounded-full hover:bg-orange-50 text-orange-500 transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="p-2 sm:p-2.5 rounded-full hover:bg-orange-50 text-orange-500 transition-colors bg-gray-50 border border-gray-100"
                     title="Thêm cảm xúc"
                     onClick={() => {
                       if (user) {
@@ -160,7 +160,7 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                     <SmileOutlined className="text-xl" />
                   </button>
                 </div>
-                <Button
+                  <Button
                   type="primary"
                   onClick={() => {
                     if (user) {
@@ -169,7 +169,7 @@ const CreatePostForm = ({ onPostCreated, setShowLoginModal }) => {
                       setShowLoginModal(true);
                     }
                   }}
-                  className="bg-[#4CAF50] hover:bg-[#388E3C] border-[#4CAF50] hover:border-[#388E3C] shadow-sm hover:shadow-md transition-all duration-200 opacity-90 hover:opacity-100 hover:scale-105 active:scale-95"
+                  className="bg-[#4CAF50] hover:bg-[#388E3C] border-none shadow-md shadow-[#4CAF50]/20 transition-all duration-300 rounded-xl px-5 py-[18px] text-[14px] font-semibold"
                 >
                   Đăng bài
                 </Button>

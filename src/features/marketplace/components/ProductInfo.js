@@ -19,9 +19,9 @@ const ProductInfo = ({ product, seller, onContactClick, onShare }) => {
   };
 
   return (
-    <Card>
-      <div style={{ marginBottom: 16 }}>
-        <Title level={2} style={{ margin: 0, color: '#262626' }}>
+    <Card className="elegant-detail-card">
+      <div style={{ marginBottom: 20 }}>
+        <Title level={2} className="elegant-title" style={{ margin: 0 }}>
           {product.name}
         </Title>
         <Text type="secondary">
@@ -29,37 +29,37 @@ const ProductInfo = ({ product, seller, onContactClick, onShare }) => {
         </Text>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <Title level={1} style={{ color: '#52c41a', margin: 0 }}>
+      <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
+        <Title level={1} className="elegant-price" style={{ margin: 0 }}>
           {formatPrice(product.price)}
-          <Text style={{ fontSize: 16, color: '#666', fontWeight: 'normal' }}>/{product.unit}</Text>
+          <Text style={{ fontSize: 16, color: '#64748b', fontWeight: 500, marginLeft: 4 }}>/{product.unit}</Text>
         </Title>
       </div>
 
       {/* Product Tags */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24 }}>
         {product.certification && product.certification.length > 0 && (
-          <div style={{ marginBottom: 8 }}>
+          <div style={{ marginBottom: 12 }}>
             {product.certification.map((cert, index) => (
-              <Tag key={index} color="green" style={{ marginBottom: 4 }}>
+              <Tag key={index} className="elegant-tag elegant-tag-success" style={{ marginBottom: 8, padding: '2px 12px' }}>
                 ✓ {cert}
               </Tag>
             ))}
           </div>
         )}
         
-        <div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {product.organic && (
-            <Tag color="green">🌱 Hữu cơ</Tag>
+            <Tag className="elegant-tag elegant-tag-success">🌱 Hữu cơ</Tag>
           )}
           {product.packaging && (
-            <Tag color="blue">📦 {product.packaging}</Tag>
+            <Tag className="elegant-tag">📦 {product.packaging}</Tag>
           )}
           {product.freshness && (
-            <Tag color="orange">⏰ {product.freshness}</Tag>
+            <Tag className="elegant-tag elegant-tag-warning">⏰ {product.freshness}</Tag>
           )}
           {product.stockStatus && (
-            <Tag color={product.stockStatus === 'in_stock' ? 'green' : 'orange'}>
+            <Tag className={`elegant-tag ${product.stockStatus === 'in_stock' ? 'elegant-tag-success' : 'elegant-tag-warning'}`}>
               {product.stockStatus === 'in_stock' ? '✅ Có sẵn' : '⏳ Đặt trước'}
             </Tag>
           )}
@@ -68,34 +68,33 @@ const ProductInfo = ({ product, seller, onContactClick, onShare }) => {
 
       {/* Quantity Available */}
       {product.quantity && (
-        <div style={{ marginBottom: 16, padding: '12px 16px', background: '#f6ffed', borderRadius: 8 }}>
-          <Text strong style={{ color: '#52c41a' }}>
-            📦 Còn lại: {product.quantity} {product.unit}
+        <div style={{ marginBottom: 24, padding: '12px 20px', background: '#f8fafc', borderLeft: '4px solid #b45309', borderRadius: '0 8px 8px 0' }}>
+          <Text strong style={{ color: '#475569', fontSize: 15 }}>
+            📦 Số lượng kho: <span style={{ color: '#b45309', fontWeight: 700 }}>{product.quantity} {product.unit}</span>
           </Text>
         </div>
       )}
 
       {/* Action Buttons */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
         <Col span={24}>
           <Button 
             type="primary" 
             size="large" 
             block
             onClick={onContactClick}
-            style={{
-              background: 'linear-gradient(135deg, #52c41a, #389e0d)',
-              border: 'none',
-              height: 48
-            }}
+            className="elegant-button-primary"
+            style={{ height: 50, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
-            💬 Liên hệ người bán
+            💬 Liên hệ ngay
           </Button>
         </Col>
         <Col span={12}>
           <Button 
             icon={<HeartOutlined />} 
             block
+            size="large"
+            className="elegant-button-secondary"
           >
             Yêu thích
           </Button>
@@ -105,6 +104,8 @@ const ProductInfo = ({ product, seller, onContactClick, onShare }) => {
             icon={<ShareAltOutlined />} 
             onClick={onShare}
             block
+            size="large"
+            className="elegant-button-secondary"
           >
             Chia sẻ
           </Button>
@@ -112,36 +113,33 @@ const ProductInfo = ({ product, seller, onContactClick, onShare }) => {
       </Row>
 
       {/* Seller Info */}
-      <Card size="small" style={{ background: '#f6ffed' }}>
-        <Title level={5} style={{ margin: '0 0 12px 0' }}>
-          👤 Thông tin người bán
-        </Title>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-          <Avatar icon={<UserOutlined />} style={{ marginRight: 12 }} />
+      <div className="elegant-seller-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <Avatar size={48} icon={<UserOutlined />} style={{ marginRight: 16, background: '#15803d' }} />
           <div>
-            <Text strong>{product.supplier || seller?.displayName || 'Người bán'}</Text>
+            <Text strong style={{ fontSize: 16, color: '#1e293b' }}>{product.supplier || seller?.displayName || 'Nhà cung cấp ẩn danh'}</Text>
             <br />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {product.userRole === 'farmer' ? '🌾 Nông dân' :
-               product.userRole === 'trader' ? '🏪 Thương lái' : '👤 Người bán'}
+            <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>
+              {product.userRole === 'farmer' ? '🌾 Đối tác Nông dân' :
+               product.userRole === 'trader' ? '🏪 Nhà nhập khẩu/phân phối' : '👤 Đối tác bán hàng'}
             </Text>
           </div>
         </div>
         
         {product.location && (
-          <div style={{ marginBottom: 4 }}>
-            <EnvironmentOutlined style={{ marginRight: 8, color: '#52c41a' }} />
-            <Text>{product.location}</Text>
+          <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+            <EnvironmentOutlined style={{ marginRight: 10, color: '#15803d', fontSize: 16 }} />
+            <Text style={{ color: '#475569' }}>{product.location}</Text>
           </div>
         )}
         
         {product.createdAt && (
-          <div>
-            <CalendarOutlined style={{ marginRight: 8, color: '#52c41a' }} />
-            <Text type="secondary">Ngày đăng: {formatDate(product.createdAt)}</Text>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <CalendarOutlined style={{ marginRight: 10, color: '#15803d', fontSize: 16 }} />
+            <Text style={{ color: '#475569' }}>Đăng ngày: {formatDate(product.createdAt)}</Text>
           </div>
         )}
-      </Card>
+      </div>
     </Card>
   );
 };

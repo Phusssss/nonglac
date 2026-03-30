@@ -8,7 +8,7 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
   return (
     <Card style={{ marginBottom: 16 }}>
       {images && images.length > 0 ? (
-        <div className="product-detail-carousel" style={{ position: 'relative' }}>
+        <div className="product-detail-carousel" style={{ position: 'relative', touchAction: 'pan-y' }}>
           <Carousel 
             ref={carouselRef}
             dots={true}
@@ -16,6 +16,7 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
             autoplay={false}
             style={{ borderRadius: 8, overflow: 'hidden' }}
             dotPosition="bottom"
+            lazyLoad="ondemand"
           >
             {images.map((image, index) => (
               <div key={index}>
@@ -38,7 +39,15 @@ const ProductImageCarousel = ({ images, productName, onGalleryOpen }) => {
                       width: '100%', 
                       height: '100%', 
                       objectFit: 'cover',
-                      borderRadius: 8
+                      borderRadius: 8,
+                      backgroundColor: '#e2e8f0',
+                      transition: 'opacity 0.3s ease-in-out'
+                    }}
+                    onLoad={(e) => {
+                      e.target.style.opacity = 1;
+                    }}
+                    onError={(e) => {
+                      e.target.style.opacity = 0.5;
                     }}
                   />
                   <div style={{

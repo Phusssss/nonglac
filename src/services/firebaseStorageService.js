@@ -13,10 +13,10 @@ const DEFAULT_ALLOWED_VIDEO_TYPES = [
 const DEFAULT_OPTIONS = {
   folder: 'images',
   maxSizeMB: 10,
-  maxWidth: 1600,
-  maxHeight: 1600,
-  quality: 0.82,
-  outputType: 'image/jpeg',
+  maxWidth: 1200,
+  maxHeight: 1200,
+  quality: 0.80,
+  outputType: 'image/webp',
   keepOriginalFormat: false
 };
 

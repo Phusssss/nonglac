@@ -1,4 +1,68 @@
-/* Product Detail Styles */
+/* Product Detail Styles - Classic & Luxurious Setup */
+.elegant-title {
+  font-family: 'Playfair Display', 'Merriweather', 'Lora', serif;
+  color: #1a202c !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+}
+
+.elegant-price {
+  font-family: 'Inter', sans-serif;
+  color: #b45309 !important; /* Gold/Bronze */
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+}
+
+.elegant-detail-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01) !important;
+}
+
+.elegant-tag {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  border-radius: 16px !important;
+  padding: 0 10px !important;
+  font-weight: 500;
+}
+
+.elegant-tag-success {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+.elegant-tag-warning {
+  background: #fffbeb !important;
+  border: 1px solid #fef08a !important;
+  color: #92400e !important;
+}
+
+.elegant-seller-card {
+  background: #fafafa !important;
+  border: 1px solid #f0f0f0 !important;
+  border-radius: 8px !important;
+}
+
+.elegant-button-primary {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(21, 128, 61, 0.2) !important;
+}
+
+.elegant-button-secondary {
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+/* Original styles below */
+
 .product-detail-carousel .ant-carousel .ant-carousel-dots {
   bottom: 10px;
 }

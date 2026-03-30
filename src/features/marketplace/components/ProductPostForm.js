@@ -15,11 +15,20 @@ import {
   Checkbox,
   Spin
 } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
+import { 
+  UploadOutlined, 
+  InfoCircleOutlined, 
+  DollarCircleOutlined, 
+  ContactsOutlined, 
+  PictureOutlined,
+  PlusOutlined
+} from '@ant-design/icons';
+import ProfileInfoModal from '../../../components/ProfileInfoModal';
+import { MISSIONS_CONSTANTS } from '../../missions/constants';
 import { firebaseStorageService } from '../../../services/firebaseStorageService';
 import { MARKETPLACE_CONSTANTS } from '../constants';
 import { useAuth } from '../../../hooks/useAuth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 const { Title } = Typography;
@@ -27,36 +36,46 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const ProductPostForm = ({ onSubmit, onCancel }) => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [imageUrls, setImageUrls] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
   const [farmAddresses, setFarmAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [addressModalLoading, setAddressModalLoading] = useState(false);
 
   // Load farm addresses từ user profile
   useEffect(() => {
-    const loadFarmAddresses = async () => {
-      if (!user?.uid) {
-        setLoadingAddresses(false);
-        return;
-      }
+    if (!user?.uid) {
+      setLoadingAddresses(false);
+      return;
+    }
 
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setFarmAddresses(data.farmAddresses || []);
-        }
-      } catch (error) {
-        console.error('Error loading farm addresses:', error);
-      } finally {
-        setLoadingAddresses(false);
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setFarmAddresses(data.farmAddresses || []);
       }
-    };
+      setLoadingAddresses(false);
+    });
 
-    loadFarmAddresses();
+    return () => unsub();
   }, [user?.uid]);
+
+  // Auto-fill phone and supplier
+  useEffect(() => {
+    if (userProfile || user) {
+      const currentValues = form.getFieldsValue(['supplier', 'phone', 'contactMethods']);
+      if (!form.isFieldsTouched(['supplier', 'phone'])) {
+        form.setFieldsValue({
+          supplier: currentValues.supplier || userProfile?.displayName || user?.displayName || '',
+          phone: currentValues.phone || userProfile?.phone || user?.phoneNumber || userProfile?.phoneNumber || '',
+          contactMethods: currentValues.contactMethods || ['phone']
+        });
+      }
+    }
+  }, [userProfile, user, form]);
 
   const getCurrentCoordinates = () => {
     return new Promise((resolve) => {
@@ -130,7 +149,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
     'kg', 'tấn', 'cây', 'cành', 'bó', 'thùng', 'bao', 'lít', 'chai', 'hộp'
   ];
 
-  const handleImageUpload = async (file) => {
+  const handleImageUpload = (file) => {
     if (file.size > 15 * 1024 * 1024) {
       message.error('Kích thước ảnh không được vượt quá 15MB');
       return false;
@@ -141,37 +160,18 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
       return false;
     }
 
-    try {
-      const uploadResult = await firebaseStorageService.uploadImage(file, {
-        folder: 'marketplace-products',
-        maxSizeMB: 10,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.82,
-        outputType: 'image/jpeg'
-      });
-      const imageUrl = uploadResult.url;
-      setImageUrls((prev) => [...prev, imageUrl]);
-      message.success(`Upload ảnh ${file.name} thành công`);
-      return false;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      if (error.code === 'storage/unauthorized') {
-        message.error('Không có quyền upload ảnh. Vui lòng đăng nhập lại.');
-      } else if (error.code === 'storage/quota-exceeded') {
-        message.error('Vượt quá dung lượng lưu trữ. Vui lòng thử lại sau.');
-      } else if (error.message) {
-        message.error(`Upload thất bại: ${error.message}`);
-      } else {
-        message.error('Upload ảnh thất bại. Vui lòng thử lại.');
-      }
-      return false;
-    }
+    const newImage = {
+      file,
+      previewUrl: URL.createObjectURL(file)
+    };
+    
+    setImageFiles((prev) => [...prev, newImage]);
+    return false; // Prevent automatic upload
   };
 
   const handleSubmit = async (values) => {
-    if (imageUrls.length === 0) {
-      message.error('Vui lòng upload ít nhất 1 ảnh sản phẩm');
+    if (imageFiles.length === 0) {
+      message.error('Vui lòng chọn ít nhất 1 ảnh sản phẩm');
       return;
     }
 
@@ -186,9 +186,19 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
         message.warning('Không lấy được vị trí hiện tại. Sản phẩm vẫn được đăng bình thường.');
       }
 
+      // Upload images concurrently
+      const uploadPromises = imageFiles.map((img) => 
+        firebaseStorageService.uploadImage(img.file, {
+          folder: 'marketplace-products',
+          maxSizeMB: 10
+        })
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      const finalImageUrls = uploadResults.map(res => res.url);
+
       const productData = {
         ...values,
-        images: imageUrls,
+        images: finalImageUrls,
         locationCoords,
         locationResolved,
         locationLabel: locationResolved?.displayName || values.address || null,
@@ -198,7 +208,10 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
 
       await onSubmit(productData);
       form.resetFields();
-      setImageUrls([]);
+      
+      // Cleanup preview URLs
+      imageFiles.forEach(img => URL.revokeObjectURL(img.previewUrl));
+      setImageFiles([]);
       message.success('Đăng sản phẩm thành công!');
     } catch (error) {
       console.error('Product submission error:', error);
@@ -225,17 +238,19 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
 
   return (
     <div style={{ width: '100%', padding: '8px 0' }}>
-      <Card style={{ width: '100%' }}>
-        <Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-          🌾 Đăng bán sản phẩm
-        </Title>
 
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
           requiredMark={false}
+          className="marketplace-form"
         >
+          <div className="marketplace-form-section-title">
+            <InfoCircleOutlined style={{ marginRight: 8 }} />
+            Thông tin cơ bản
+          </div>
+
           <Form.Item
             name="name"
             label="Tên sản phẩm"
@@ -248,7 +263,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="category"
                 label="Danh mục"
@@ -261,7 +276,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="unit"
                 label="Đơn vị"
@@ -276,8 +291,14 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
+          <div className="marketplace-form-section-title">
+            <DollarCircleOutlined style={{ marginRight: 8 }} />
+            Giá & Số lượng
+          </div>
+
+
           <Row gutter={16}>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="price"
                 label="Giá bán"
@@ -293,7 +314,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="quantity"
                 label="Số lượng có sẵn"
@@ -308,6 +329,7 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
+
           <Form.Item
             name="description"
             label="Mô tả sản phẩm"
@@ -319,8 +341,13 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             />
           </Form.Item>
 
+          <div className="marketplace-form-section-title">
+            <ContactsOutlined style={{ marginRight: 8 }} />
+            Nhà cung cấp & Liên hệ
+          </div>
           <Row gutter={16}>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
+
               <Form.Item
                 name="supplier"
                 label="Tên người bán/Cơ sở"
@@ -329,7 +356,8 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 <Input placeholder="Tên của bạn hoặc tên cơ sở" size="large" />
               </Form.Item>
             </Col>
-            <Col span={24}>
+            <Col xs={24} sm={12}>
+
               <Form.Item
                 name="phone"
                 label="Số điện thoại"
@@ -349,13 +377,13 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
               >
                 <Checkbox.Group>
                   <Row gutter={[16, 8]}>
-                    <Col span={24}>
-                      <Checkbox value="phone">📞 Gọi điện thoại</Checkbox>
+                    <Col xs={12} sm={8}>
+                      <Checkbox value="phone">📞 Gọi điện</Checkbox>
                     </Col>
-                    <Col span={24}>
-                      <Checkbox value="sms">💬 Nhắn tin SMS</Checkbox>
+                    <Col xs={12} sm={8}>
+                      <Checkbox value="sms">💬 SMS</Checkbox>
                     </Col>
-                    <Col span={24}>
+                    <Col xs={12} sm={8}>
                       <Checkbox value="zalo">👥 Zalo</Checkbox>
                     </Col>
                   </Row>
@@ -364,20 +392,66 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Col>
           </Row>
 
+          <div className="marketplace-form-section-title">
+            <PictureOutlined style={{ marginRight: 8 }} />
+            Hình ảnh & Địa chỉ
+          </div>
+
+
           <Form.Item
             name="address"
-            label="Địa chỉ canh tác"
+            label={
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <span>Địa chỉ canh tác</span>
+                <Button 
+                  type="link" 
+                  size="small" 
+                  icon={<PlusOutlined />} 
+                  onClick={() => setAddressModalOpen(true)}
+                  style={{ padding: 0, height: 'auto', fontSize: '13px' }}
+                >
+                  Thêm mới
+                </Button>
+              </div>
+            }
             rules={[{ required: true, message: 'Vui lòng chọn địa chỉ' }]}
           >
             <Select 
               placeholder="Chọn địa chỉ canh tác" 
               size="large"
               loading={loadingAddresses}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div style={{ borderTop: '1px solid #f1f5f9', padding: '8px' }}>
+                    <Button 
+                      type="text" 
+                      block 
+                      icon={<PlusOutlined />} 
+                      onClick={() => setAddressModalOpen(true)}
+                      style={{ textAlign: 'left', color: '#4CAF50', fontWeight: 500 }}
+                    >
+                      Thêm địa chỉ mới
+                    </Button>
+                  </div>
+                </>
+              )}
               notFoundContent={
                 loadingAddresses ? <Spin size="small" /> : 
                 farmAddresses.length === 0 ? 
-                  <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>
-                    Chưa có địa chỉ canh tác. Vui lòng thêm địa chỉ trong profile trước.
+                  <div style={{ padding: '20px 10px', textAlign: 'center' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '12px' }}>
+                      Bạn chưa có địa chỉ canh tác nào
+                    </div>
+                    <Button 
+                      type="primary" 
+                      ghost 
+                      size="small" 
+                      icon={<PlusOutlined />}
+                      onClick={() => setAddressModalOpen(true)}
+                    >
+                      Tạo địa chỉ ngay
+                    </Button>
                   </div> : 
                   undefined
               }
@@ -400,28 +474,35 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Hình ảnh sản phẩm" required>
+          <Form.Item label="Hình ảnh sản phẩm (Tối đa 5 ảnh)" required>
             <Upload {...uploadProps}>
-              <Button icon={<UploadOutlined />} size="large" block>
-                Chọn ảnh ({imageUrls.length} ảnh đã chọn)
-              </Button>
+              <div className="marketplace-upload-zone">
+                <UploadOutlined style={{ fontSize: 28, color: '#4CAF50', marginBottom: 12 }} />
+                <div style={{ fontWeight: 600, color: '#334155' }}>
+                  {imageFiles.length === 0 ? 'Tải ảnh lên hoặc kéo thả' : `${imageFiles.length} ảnh đã chọn`}
+                </div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                  Chấp nhận JPG, PNG (Tối đa 15MB)
+                </div>
+              </div>
             </Upload>
 
-            {imageUrls.length > 0 && (
+
+            {imageFiles.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <Row gutter={[8, 8]}>
-                  {imageUrls.map((url, index) => (
+                  {imageFiles.map((img, index) => (
                     <Col key={index} span={6}>
                       <div style={{ position: 'relative' }}>
                         <img
-                          src={url}
+                          src={img.previewUrl}
                           alt={`Product ${index + 1}`}
                           style={{
                             width: '100%',
                             height: 80,
                             objectFit: 'cover',
                             borderRadius: 8,
-                            border: '2px solid #52c41a'
+                            border: '2px solid #4CAF50'
                           }}
                         />
                         <Button
@@ -438,7 +519,8 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                             minWidth: 20
                           }}
                           onClick={() => {
-                            setImageUrls((prev) => prev.filter((_, i) => i !== index));
+                            URL.revokeObjectURL(img.previewUrl);
+                            setImageFiles((prev) => prev.filter((_, i) => i !== index));
                           }}
                         >
                           ×
@@ -451,9 +533,9 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
             )}
           </Form.Item>
 
-          <Form.Item style={{ marginTop: 32, marginBottom: 0 }}>
-            <Space style={{ width: '100%', justifyContent: 'center' }}>
-              <Button size="large" onClick={onCancel}>
+          <Form.Item style={{ marginTop: 40, marginBottom: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+              <Button size="large" onClick={onCancel} style={{ borderRadius: 8 }}>
                 Hủy
               </Button>
               <Button
@@ -462,17 +544,49 @@ const ProductPostForm = ({ onSubmit, onCancel }) => {
                 loading={loading}
                 size="large"
                 style={{
-                  background: 'linear-gradient(135deg, #52c41a, #389e0d)',
+                  background: '#4CAF50',
                   border: 'none',
-                  minWidth: 120
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 16
                 }}
               >
-                Đăng sản phẩm
+                Đăng sản phẩm ngay
               </Button>
-            </Space>
+            </div>
           </Form.Item>
         </Form>
-      </Card>
+
+
+      <ProfileInfoModal
+        open={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        onSubmit={async (formData) => {
+          setAddressModalLoading(true);
+          try {
+            if (formData.farmAddresses && Array.isArray(formData.farmAddresses)) {
+              await updateDoc(doc(db, 'users', user.uid), {
+                farmAddresses: formData.farmAddresses,
+                updatedAt: new Date()
+              });
+              message.success('Đã cập nhật địa chỉ canh tác!');
+              setAddressModalOpen(false);
+            }
+          } catch (error) {
+            console.error('Error updating addresses:', error);
+            message.error('Không thể lưu địa chỉ. Vui lòng thử lại.');
+          } finally {
+            setAddressModalLoading(false);
+          }
+        }}
+        title="Quản lý địa chỉ canh tác"
+        fields={[{
+          ...MISSIONS_CONSTANTS.MODAL_CONFIGS.FARM_ADDRESS.fields[0],
+          initialValue: farmAddresses
+        }]}
+        loading={addressModalLoading}
+        initialFarmAddresses={farmAddresses}
+      />
     </div>
   );
 };

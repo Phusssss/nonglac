@@ -218,7 +218,7 @@ const MissionsPage = () => {
   const currentLevel = missionsUtils.getAgriTrustLevel(missionsData.score);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="px-4 py-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
@@ -237,42 +237,33 @@ const MissionsPage = () => {
         </div>
 
         {/* AgriTrust Level Card */}
-        <Card
-          className="mb-6"
-          style={{
-            background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
-            border: 'none',
-            color: 'white'
-          }}
-        >
-          <div className="text-center">
-            <div style={{ marginBottom: '12px' }}>
+        <div className="mb-8 relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#4CAF50] to-[#388E3C] shadow-[0_8px_30px_-4px_rgba(76,175,80,0.3)] text-white p-8">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-black/10 rounded-full blur-2xl"></div>
+          
+          <div className="relative z-10 text-center">
+            <div className="mb-4">
               {isImageIcon(currentLevel.icon) ? (
                 <img
                   src={currentLevel.icon}
                   alt={currentLevel.name}
-                  style={{
-                    width: window.innerWidth < 768 ? 72 : 96,
-                    height: window.innerWidth < 768 ? 72 : 96,
-                    objectFit: 'contain',
-                    margin: '0 auto'
-                  }}
+                  className="w-20 h-20 md:w-24 md:h-24 object-contain mx-auto drop-shadow-md"
                 />
               ) : (
-                <span style={{ fontSize: '48px' }}>{currentLevel.icon}</span>
+                <span className="text-[56px] drop-shadow-md">{currentLevel.icon}</span>
               )}
             </div>
-            <Title level={3} style={{ color: 'white', margin: 0 }}>
+            <h3 className="text-2xl font-bold text-white mb-1">
               {currentLevel.name}
-            </Title>
-            <Title level={1} style={{ color: 'white', margin: '8px 0' }}>
-              {missionsUtils.formatScore(missionsData.score)} điểm
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.9)' }}>
+            </h3>
+            <div className="text-4xl md:text-5xl font-extrabold text-white my-3 drop-shadow-sm">
+              {missionsUtils.formatScore(missionsData.score)} <span className="text-2xl font-semibold opacity-90">điểm</span>
+            </div>
+            <p className="text-green-50 font-medium tracking-wide">
               AgriTrust-Score của bạn
-            </Text>
+            </p>
           </div>
-        </Card>
+        </div>
 
         {/* Ultimate Reward Card */}
         <UltimateRewardCard
@@ -285,7 +276,7 @@ const MissionsPage = () => {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          className="bg-white rounded-lg p-4"
+          className="bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] border border-slate-200/50 p-2 md:p-6"
           items={[
             {
               key: 'missions',

@@ -9,7 +9,7 @@ import { marketplaceService } from '../../marketplace/services';
 const FeedSkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3].map((item) => (
-      <div key={item} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm animate-pulse">
+      <div key={item} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm animate-pulse">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-gray-200" />
           <div className="flex-1 space-y-2">
@@ -35,45 +35,43 @@ const HomeProductCard = ({ product, onClick }) => {
     <button
       type="button"
       onClick={() => onClick(product)}
-      className="w-full text-left bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all"
+      className="w-full h-full text-left bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:border-[#4CAF50] transition-colors flex flex-col"
     >
-      <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
+      <div className="relative w-full aspect-square bg-slate-50 flex-shrink-0 overflow-hidden">
         {coverImage ? (
           <img
             src={coverImage}
             alt={product.name || 'Sản phẩm'}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center text-5xl">🌿</div>
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center text-4xl">🌿</div>
         )}
 
-        <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-black/65 px-2.5 py-1 text-xs text-white">
+        <div className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
           Sản phẩm
         </div>
-        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-xs text-white">
+        <div className="absolute right-2 top-2 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
           <EyeOutlined />
           {viewCount}
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="font-bold text-gray-900 line-clamp-2">{product.name || 'Sản phẩm nông nghiệp'}</div>
-        <div className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description || 'Nhấn để xem chi tiết sản phẩm.'}</div>
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="text-base font-bold text-[#2f8f3a]">
+      <div className="p-3 flex-1 flex flex-col">
+        <div className="font-semibold text-slate-800 text-[13px] line-clamp-2 leading-snug h-[38px]">{product.name || 'Sản phẩm nông nghiệp'}</div>
+        
+        <div className="mt-auto pt-2">
+          <div className="text-[15px] font-bold text-orange-600">
             {marketplaceService.formatPrice(product.price || 0)}
-            <span className="ml-1 text-xs font-medium text-gray-500">/{product.unit || 'kg'}</span>
+            <span className="text-[11px] font-medium text-slate-500 ml-0.5">/{product.unit || 'kg'}</span>
           </div>
-          <ShareProductButton product={product} size="small" variant="text" />
-        </div>
-
-        <div className="mt-3 text-xs text-gray-600 inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1">
-          <EnvironmentOutlined />
-          {product.address || product.location || 'Việt Nam'}
+          
+          <div className="mt-2 text-[11px] text-slate-500 inline-flex items-center gap-1 w-full truncate">
+            <EnvironmentOutlined className="text-emerald-500 flex-shrink-0" />
+            <span className="truncate">{product.address || product.location || 'Việt Nam'}</span>
+          </div>
         </div>
       </div>
     </button>
@@ -92,7 +90,28 @@ const PostsList = ({
   onProductClick
 }) => {
   const totalPosts = useMemo(() => items.filter((item) => item.type === 'post').length, [items]);
-  const totalProducts = useMemo(() => items.filter((item) => item.type === 'product').length, [items]);
+  const groupedItems = useMemo(() => {
+    const list = [];
+    let tempProducts = [];
+    
+    items.forEach(item => {
+      if (item.type === 'product') {
+        tempProducts.push(item);
+      } else {
+        if (tempProducts.length > 0) {
+          list.push({ type: 'product-group', products: tempProducts });
+          tempProducts = [];
+        }
+        list.push(item);
+      }
+    });
+    
+    if (tempProducts.length > 0) {
+      list.push({ type: 'product-group', products: tempProducts });
+    }
+    
+    return list;
+  }, [items]);
 
   if (loading) {
     return <FeedSkeleton />;
@@ -122,48 +141,48 @@ const PostsList = ({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-500">
-          {searchTerm ? (
-            <>
-              Tìm thấy <span className="font-medium">{items.length}</span> kết quả cho "{searchTerm}"
-            </>
-          ) : (
-            <>
-              Hiển thị <span className="font-medium">{items.length}</span> nội dung
-            </>
-          )}
-          <span className="ml-2">({totalPosts} bài viết, {totalProducts} sản phẩm)</span>
+    <div className="space-y-4">
+      {searchTerm && (
+        <div className="flex justify-between items-center px-1">
+          <div className="text-[13px] font-medium text-slate-500 flex items-center gap-2">
+            Tìm thấy <span className="text-slate-800 font-bold">{items.length}</span> kết quả cho "{searchTerm}"
+          </div>
+          <button
+            onClick={onRefresh}
+            className="text-slate-400 hover:text-[#4CAF50] hover:bg-green-50 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-white shadow-sm border border-slate-100"
+            title="Làm mới"
+          >
+            <ReloadOutlined className="text-[13px]" />
+          </button>
         </div>
-        <Button
-          type="text"
-          icon={<ReloadOutlined />}
-          onClick={onRefresh}
-          className="text-gray-500 hover:text-[#4CAF50]"
-          size="small"
-        >
-          Làm mới
-        </Button>
-      </div>
+      )}
 
       <div className="space-y-4">
-        {items.map((item) => (
-          item.type === 'post' ? (
-            <PostCard
-              key={`${item.type}-${item.id}`}
-              post={item.data}
-              onCardClick={() => onPostClick?.(item.data)}
-              viewCount={item.data?.views || 0}
-            />
-          ) : (
-            <HomeProductCard
-              key={`${item.type}-${item.id}`}
-              product={item.data}
-              onClick={onProductClick}
-            />
-          )
-        ))}
+        {groupedItems.map((group, index) => {
+          if (group.type === 'post') {
+            return (
+              <PostCard
+                key={`post-${group.data.id || index}`}
+                post={group.data}
+                onCardClick={() => onPostClick?.(group.data)}
+                viewCount={group.data?.views || 0}
+              />
+            );
+          } else if (group.type === 'product-group') {
+            return (
+              <div key={`product-group-${index}`} className="grid grid-cols-2 gap-3 mx-1">
+                {group.products.map(prod => (
+                  <HomeProductCard
+                    key={`prod-${prod.data.id}`}
+                    product={prod.data}
+                    onClick={onProductClick}
+                  />
+                ))}
+              </div>
+            );
+          }
+          return null;
+        })}
       </div>
 
       {!searchTerm && hasMore && (

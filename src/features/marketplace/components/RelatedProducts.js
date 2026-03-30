@@ -13,8 +13,8 @@ const RelatedProducts = ({ products, loading, onProductClick }) => {
 
   if (loading) {
     return (
-      <Card style={{ marginTop: 24 }}>
-        <Title level={3} style={{ marginBottom: 24 }}>Sản phẩm liên quan</Title>
+      <Card className="elegant-detail-card" style={{ marginTop: 24, padding: '12px 4px' }}>
+        <Title level={3} className="elegant-title" style={{ marginBottom: 24 }}>Sản phẩm liên quan</Title>
         <Row gutter={[16, 16]}>
           {Array.from({ length: 4 }).map((_, index) => (
             <Col xs={12} sm={12} md={8} lg={6} key={index}>
@@ -34,13 +34,16 @@ const RelatedProducts = ({ products, loading, onProductClick }) => {
   }
 
   return (
-    <Card style={{ marginTop: 24 }}>
-      <Title level={3} style={{ marginBottom: 24 }}>Sản phẩm liên quan</Title>
+    <Card className="elegant-detail-card" style={{ marginTop: 24, padding: '12px 4px' }}>
+      <Title level={3} className="elegant-title" style={{ marginBottom: 24 }}>Sản phẩm liên quan</Title>
       <Row gutter={[16, 16]}>
         {products.map((product) => (
           <Col xs={12} sm={12} md={8} lg={6} key={product.id}>
             <Card
               hoverable
+              className="elegant-seller-card"
+              style={{ overflow: 'hidden' }}
+              bodyStyle={{ padding: 16 }}
               onClick={() => onProductClick(product.id)}
               cover={
                 <div style={{ height: 150, overflow: 'hidden' }}>
@@ -80,7 +83,7 @@ const RelatedProducts = ({ products, loading, onProductClick }) => {
                       {product.supplier}
                     </Text>
                     <br />
-                    <Text strong style={{ color: '#52c41a', fontSize: 14 }}>
+                    <Text className="elegant-price" style={{ fontSize: 15, display: 'block', marginTop: 8 }}>
                       {formatPrice(product.price)}
                     </Text>
                   </div>

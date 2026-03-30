@@ -16,7 +16,8 @@ import {
   ChatRounded,
   MedicalServicesRounded,
   TrendingUpRounded,
-  MapRounded
+  MapRounded,
+  LogoutRounded
 } from '@mui/icons-material';
 
 const ResponsiveNavbar = () => {
@@ -256,9 +257,11 @@ const ResponsiveNavbar = () => {
                   
                   <button
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-red-500 transition-colors text-xs font-medium hidden sm:block"
+                    className="text-gray-600 hover:text-red-500 transition-colors text-xs font-medium flex items-center gap-1 p-1 hover:bg-gray-100 rounded-lg sm:bg-transparent"
+                    title="Đăng xuất"
                   >
-                    Đăng xuất
+                    <LogoutRounded sx={{ fontSize: 20 }} className="sm:hidden" />
+                    <span className="hidden sm:inline">Đăng xuất</span>
                   </button>
                 </>
               ) : (

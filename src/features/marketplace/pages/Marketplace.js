@@ -142,7 +142,7 @@ const Marketplace = () => {
         footer={null}
         width="min(96vw, 920px)"
         centered
-        className="rounded-2xl overflow-hidden"
+        className="marketplace-modal rounded-xl overflow-hidden"
         destroyOnHidden
       >
         <Suspense fallback={<div className="py-12 text-center"><Spin /></div>}>

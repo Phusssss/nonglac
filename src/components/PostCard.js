@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { doc, updateDoc, increment, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, increment, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthGuard } from '../hooks/useAuthGuard';
@@ -26,16 +26,28 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
   const navigate = useNavigate();
   const [userReaction, setUserReaction] = useState(null);
   
-  // Load user's like status
+  // Load user's like status (one-time fetch to prevent memory leaks)
   useEffect(() => {
     if (!user || !post.id) return;
     
-    const likeDoc = doc(db, 'likes', `${user.uid}_${post.id}`);
-    const unsubscribe = onSnapshot(likeDoc, (doc) => {
-      setUserReaction(doc.exists() ? 'like' : null);
-    });
+    let isMounted = true;
+    const checkLikeStatus = async () => {
+      try {
+        const likeDocRef = doc(db, 'likes', `${user.uid}_${post.id}`);
+        const likeSnap = await getDoc(likeDocRef);
+        if (isMounted) {
+          setUserReaction(likeSnap.exists() ? 'like' : null);
+        }
+      } catch (error) {
+        console.warn('Error checking like status:', error);
+      }
+    };
     
-    return unsubscribe;
+    checkLikeStatus();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, post.id]);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments || 0);
@@ -100,7 +112,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
 
   return (
     <div
-      className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans"
+      className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans"
       onClickCapture={() => {
         if (typeof onCardClick === 'function') onCardClick(post);
       }}
@@ -120,7 +132,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
             />
             <div>
               <h4 
-                className="font-bold text-gray-900 text-sm cursor-pointer hover:text-[#4CAF50] transition-colors leading-tight flex items-center gap-1"
+                className="font-bold text-slate-800 text-[15px] cursor-pointer hover:text-[#388E3C] transition-colors leading-tight flex items-center gap-1"
                 onClick={() => navigate(`/user/${post.authorId}`)}
               >
                 {post.authorName}
@@ -156,7 +168,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
         
         {/* Post Content */}
         {post.title && (
-          <h3 className="text-lg font-bold text-gray-800 mb-2 leading-tight">
+          <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">
             {post.title}
           </h3>
         )}
@@ -167,7 +179,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
           {shouldTruncate && (
             <button 
               onClick={() => setShowFullContent(!showFullContent)}
-              className="ml-1 text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
+              className="ml-1 text-[#388E3C] hover:text-[#2E7D32] font-medium text-sm transition-colors"
             >
               {showFullContent ? 'Thu gọn' : 'Xem thêm'}
             </button>
@@ -178,93 +190,75 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
         {((post.media && post.media.length > 0) || (post.images && post.images.length > 0) || post.imageUrl) && (
           <div className="mb-4 rounded-lg overflow-hidden">
             {post.media && post.media.length > 0 ? (
-              // New media structure - supports both images and videos
               <div className="media-gallery">
-                {post.media.map((mediaItem, index) => (
-                  <div key={index} className="media-item mb-2">
-                    {mediaItem.type === 'image' ? (
-                      <OptimizedImage
-                        src={mediaItem.url}
-                        alt={`Media ${index + 1}`}
-                        width={600}
-                        height={300}
-                        className="w-full h-64 object-cover rounded-lg"
-                      />
-                    ) : mediaItem.type === 'video' ? (
-                      <div 
-                        key={index} 
-                        className="video-item mb-2 relative" 
-                        style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
-                      >
-                        <div
-                          className="cursor-pointer hover:opacity-90 transition-opacity absolute top-0 left-0 right-0 z-10"
-                          onClick={() => navigate(`/reels?reelId=${post.id}`)}
-                          style={{ width: '100%', height: '60%' }}
-                        />
-                        <OptimizedVideoPlayer
-                          src={mediaItem.url}
-                          poster={mediaItem.thumbnailUrl}
-                          controls={true}
-                          autoPlay={true}
-                          muted={true}
-                          lazy={true}
-                          style={{ width: '100%', height: '100%' }}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : post.images && post.images.length > 0 ? (
-              // Backward compatibility - old images structure (may contain videos)
-              <div className="media-gallery">
-                {post.images.map((imageUrl, index) => {
-                  // Check if URL is a video based on file extension
-                  const isVideo = /\.(mp4|mov|avi|wmv|mkv)$/i.test(imageUrl);
-                  
+                {(() => {
+                  const videos = post.media.filter(m => m.type === 'video');
+                  const images = post.media.filter(m => m.type === 'image').map(m => m.url);
                   return (
-                    <div key={index} className="media-item mb-2">
-                      {isVideo ? (
+                    <>
+                      {videos.map((mediaItem, index) => (
                         <div 
-                          className="relative"
-                          style={{ aspectRatio: '9/16', overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
+                          key={`video-${index}`} 
+                          className="video-item mb-2 relative bg-black" 
+                          style={{ overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
                         >
                           <div
                             className="cursor-pointer hover:opacity-90 transition-opacity absolute top-0 left-0 right-0 z-10"
                             onClick={() => navigate(`/reels?reelId=${post.id}`)}
-                            style={{ width: '100%', height: '60%' }}
+                            style={{ width: '100%', height: '75%' }}
                           />
                           <OptimizedVideoPlayer
-                            src={imageUrl}
+                            src={mediaItem.url}
+                            poster={mediaItem.thumbnailUrl}
                             controls={true}
-                            autoPlay={true}
+                            autoPlay={false}
                             muted={true}
                             lazy={true}
-                            style={{ width: '100%', height: '100%' }}
+                            style={{ width: '100%', maxHeight: '600px', objectFit: 'contain' }}
                           />
                         </div>
-                      ) : (
-                        <OptimizedImage
-                          src={imageUrl}
-                          alt={`Media ${index + 1}`}
-                          width={600}
-                          height={300}
-                          className="w-full h-64 object-cover rounded-lg"
-                        />
-                      )}
-                    </div>
+                      ))}
+                      {images.length > 0 && <ImageGallery images={images} />}
+                    </>
                   );
-                })}
+                })()}
+              </div>
+            ) : post.images && post.images.length > 0 ? (
+              <div className="media-gallery">
+                {(() => {
+                  const videos = post.images.filter(url => /\.(mp4|mov|avi|wmv|mkv)$/i.test(url));
+                  const images = post.images.filter(url => !/\.(mp4|mov|avi|wmv|mkv)$/i.test(url));
+                  
+                  return (
+                    <>
+                      {videos.map((url, index) => (
+                        <div 
+                          key={`video-legacy-${index}`}
+                          className="relative bg-black mb-2"
+                          style={{ overflow: 'hidden', borderRadius: '8px', maxHeight: '600px', width: '100%' }}
+                        >
+                          <div
+                            className="cursor-pointer hover:opacity-90 transition-opacity absolute top-0 left-0 right-0 z-10"
+                            onClick={() => navigate(`/reels?reelId=${post.id}`)}
+                            style={{ width: '100%', height: '75%' }}
+                          />
+                          <OptimizedVideoPlayer
+                            src={url}
+                            controls={true}
+                            autoPlay={false}
+                            muted={true}
+                            lazy={true}
+                            style={{ width: '100%', maxHeight: '600px', objectFit: 'contain' }}
+                          />
+                        </div>
+                      ))}
+                      {images.length > 0 && <ImageGallery images={images} />}
+                    </>
+                  );
+                })()}
               </div>
             ) : post.imageUrl ? (
-              // Backward compatibility - single image URL
-              <OptimizedImage
-                src={post.imageUrl}
-                alt={post.title}
-                width={600}
-                height={300}
-                className="w-full h-64 object-cover rounded-lg"
-              />
+              <ImageGallery images={[post.imageUrl]} />
             ) : null}
           </div>
         )}
@@ -289,15 +283,15 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
         {/* Category Tags */}
         {post.category && (
           <div className="flex flex-wrap gap-2 mb-4">
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-medium">#{post.category}</span>
+            <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-medium tracking-wide">#{post.category}</span>
             {post.source && (
-              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-md font-medium">{post.source}</span>
+              <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg font-medium tracking-wide">{post.source}</span>
             )}
           </div>
         )}
 
         {/* Post Actions */}
-        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+        <div className="flex items-center justify-between border-t border-slate-100 pt-4 pb-1">
           <div className="flex gap-4">
             <ReactionButton
               onReaction={handleReaction}
@@ -307,7 +301,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
             <button 
               onClick={() => requireAuthForComment(() => setShowComments(!showComments))}
               aria-label={showComments ? "Ẩn bình luận" : "Hiển thị bình luận"}
-              className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors text-sm font-medium"
+              className="flex items-center gap-1.5 text-slate-500 hover:text-[#4CAF50] hover:bg-green-50 px-2 py-1.5 rounded-lg transition-colors text-sm font-medium"
             >
               <MessageCircle className="w-5 h-5" />
               {commentCount > 0 && commentCount}
@@ -320,7 +314,7 @@ const PostCard = ({ post, isDetailView = false, onCardClick, viewCount }) => {
                 logUserAction(user?.uid, userProfile?.displayName || user?.email, ACTIONS.VIEW_POST, { postId: post.id, postTitle: post.title });
                 navigate(`/post/${post.id}`);
               }}
-              className="text-xs text-gray-500 hover:text-[#4CAF50] transition-colors font-medium"
+              className="text-xs text-slate-400 hover:text-[#4CAF50] transition-colors font-semibold tracking-wide uppercase px-2 py-1"
             >
               Chi tiết
             </button>

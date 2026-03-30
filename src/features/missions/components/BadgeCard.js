@@ -28,79 +28,75 @@ const BadgeCard = ({
   const isSelectable = badge.requiresSelection && currentScore >= badge.minScore && !isUnlocked;
 
   return (
-    <Card
-      className="text-center h-full"
-      style={{
-        opacity: isUnlocked ? 1 : (isSelectable ? 0.8 : 0.5),
-        background: isUnlocked ? '#f6ffed' : (isSelectable ? '#fffbe6' : '#f5f5f5'),
-        borderColor: isUnlocked ? badgeColor : (isSelectable ? '#faad14' : undefined)
-      }}
+    <div
+      className={`relative h-full rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all duration-300 ${
+        isUnlocked
+          ? 'bg-gradient-to-br from-green-50/50 to-white border border-[#4CAF50]/30 shadow-[0_2px_12px_-4px_rgba(76,175,80,0.15)] ring-1 ring-[#4CAF50]/10'
+          : isSelectable
+          ? 'bg-gradient-to-br from-amber-50/50 to-white border border-amber-300/50 shadow-sm'
+          : 'bg-white border border-slate-100 shadow-sm opacity-60 grayscale-[40%]'
+      }`}
     >
       <div
-        style={{
-          fontSize: window.innerWidth < 768 ? '36px' : '48px',
-          marginBottom: '12px',
-          filter: isUnlocked ? 'none' : (isSelectable ? 'none' : 'grayscale(100%)')
-        }}
+        className={`relative w-24 h-24 rounded-full flex items-center justify-center mb-4 ${
+          isUnlocked
+            ? 'bg-green-100/50 shadow-sm'
+            : isSelectable
+            ? 'bg-amber-100/50 shadow-sm'
+            : 'bg-slate-50'
+        }`}
       >
-        {isImageIcon(badge.icon) ? (
-          <img
-            src={badge.icon}
-            alt={badge.label}
-            style={{
-              width: window.innerWidth < 768 ? 56 : 72,
-              height: window.innerWidth < 768 ? 56 : 72,
-              objectFit: 'contain',
-              margin: '0 auto'
-            }}
-          />
-        ) : (
-          badge.icon
-        )}
-      </div>
-
-      <Title level={5} className="text-sm md:text-base mb-2">
-        {badge.label}
-      </Title>
-      <Text type="secondary" className="text-xs md:text-sm">
-        {badge.description}
-      </Text>
-
-      <div className="mt-3">
-        {isUnlocked ? (
-          <Badge
-            status="success"
-            text="Đã đạt"
-            style={{ color: MISSIONS_CONSTANTS.COLORS.SUCCESS }}
-          />
-        ) : isSelectable ? (
-          <Badge
-            status="warning"
-            text="Có thể chọn"
-            style={{ color: MISSIONS_CONSTANTS.COLORS.WARNING }}
-          />
-        ) : (
-          <Badge
-            status="default"
-            text={`Cần ${missionsUtils.formatScore(pointsNeeded)} điểm nữa`}
-            style={{ color: '#999' }}
-          />
-        )}
-      </div>
-
-      <div className="mt-2">
-        <div
-          className="inline-block px-2 py-1 rounded text-xs font-medium"
-          style={{
-            backgroundColor: `${badgeColor}20`,
-            color: badgeColor,
-            border: `1px solid ${badgeColor}40`
-          }}
-        >
-          {badge.type.toUpperCase()}
+        <div className={`text-[48px] ${!isUnlocked && !isSelectable ? 'grayscale opacity-60' : ''}`}>
+          {isImageIcon(badge.icon) ? (
+            <img
+              src={badge.icon}
+              alt={badge.label}
+              className="w-16 h-16 object-contain drop-shadow-sm"
+            />
+          ) : (
+            badge.icon
+          )}
         </div>
       </div>
-    </Card>
+
+      <div className="flex-1 w-full">
+        <h4 className="font-bold text-slate-800 text-base mb-1">
+          {badge.label}
+        </h4>
+        <p className="text-slate-500 text-[13px] leading-tight mb-4 min-h-[40px]">
+          {badge.description}
+        </p>
+      </div>
+
+      <div className="w-full space-y-3">
+        {isUnlocked ? (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4CAF50]/10 text-[#388E3C] rounded-full text-xs font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4CAF50]"></span> Đã đạt
+          </div>
+        ) : isSelectable ? (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-xs font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Có thể chọn
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-medium border border-slate-100">
+            Nỗ lực thêm {missionsUtils.formatScore(pointsNeeded)} điểm
+          </div>
+        )}
+
+        <div>
+          <span
+            className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase border"
+            style={{
+              backgroundColor: `${badgeColor}15`,
+              color: badgeColor,
+              borderColor: `${badgeColor}30`
+            }}
+          >
+            {badge.type}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 

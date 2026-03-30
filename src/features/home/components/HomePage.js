@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Row, Col, Button } from 'antd';
+import { Sparkles, Stethoscope, LineChart, Map, Flame } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   collection,
@@ -392,8 +393,8 @@ const HomePage = () => {
         url="/"
       />
 
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-slate-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <Row gutter={[16, 16]}>
             <Col xs={{ span: 24, order: 2 }} lg={{ span: 6, order: 1 }}>
               <div className="space-y-6">
@@ -406,41 +407,91 @@ const HomePage = () => {
                 </div>
 
                 <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-4 border-b border-gray-100 bg-blue-50/50">
-                    <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                      <span className="text-blue-500">🤖</span>
-                      Công cụ AI
+                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/80 to-indigo-50/50">
+                    <h3 className="font-bold text-[15px] text-gray-900 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-blue-100/80 flex items-center justify-center text-blue-600">
+                        <Sparkles size={16} strokeWidth={2.5} />
+                      </div>
+                      Công cụ Khám phá
                     </h3>
                   </div>
-                  <div className="p-3 grid grid-cols-1 gap-2">
+                  <div className="p-3 grid grid-cols-1 gap-1.5">
                     <button
                       onClick={() => navigate('/plant-doctor')}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors text-gray-700 text-sm font-medium"
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 text-sm font-medium w-full text-left border border-transparent hover:border-slate-100"
                     >
-                      <span className="text-xl">🩺</span>
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Stethoscope size={16} strokeWidth={2.5} />
+                      </div>
                       Bác sĩ cây trồng
                     </button>
                     <button
                       onClick={() => navigate('/market-insights')}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-orange-50 transition-colors text-gray-700 text-sm font-medium"
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 text-sm font-medium w-full text-left border border-transparent hover:border-slate-100"
                     >
-                      <span className="text-xl">📈</span>
-                      Thị trường
+                      <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <LineChart size={16} strokeWidth={2.5} />
+                      </div>
+                      Thị trường & Giá cả
                     </button>
                     <button
                       onClick={() => navigate('/agri-map')}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors text-gray-700 text-sm font-medium"
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-700 text-sm font-medium w-full text-left border border-transparent hover:border-slate-100"
                     >
-                      <span className="text-xl">🗺️</span>
-                      Bản đồ nông vụ
+                      <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Map size={16} strokeWidth={2.5} />
+                      </div>
+                      Bản đồ Nông vụ
                     </button>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-orange-50/80 to-red-50/50">
+                    <h3 className="font-bold text-[15px] text-slate-800 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-orange-100/80 flex items-center justify-center text-orange-600">
+                        <Flame size={16} strokeWidth={2.5} />
+                      </div>
+                      Chủ đề hot
+                    </h3>
+                  </div>
+
+                  <div className="p-3 grid grid-cols-1 gap-1.5">
+                    {trendingTopics.length > 0 ? (
+                      trendingTopics.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleCategoryChange(item.topic)}
+                          className={`group w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${
+                            selectedCategory === item.topic
+                              ? 'bg-orange-500 text-white border-transparent'
+                              : 'bg-white hover:bg-slate-50 text-slate-700 border-transparent hover:border-slate-100'
+                          }`}
+                        >
+                          <span className="text-[13px] font-medium block truncate max-w-[70%] text-left">
+                            {item.topic}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
+                            selectedCategory === item.topic
+                              ? 'bg-white/20 text-white'
+                              : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                          }`}>
+                            {item.posts}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <span className="text-slate-400 text-sm italic">Chưa có chủ đề nào</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </Col>
 
             <Col xs={{ span: 24, order: 1 }} lg={{ span: 12, order: 2 }}>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {searchTerm && (
                   <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
                     <div className="flex items-center justify-between">
@@ -461,32 +512,35 @@ const HomePage = () => {
                 />
 
                 <div
-                  className={`sticky z-20 -mx-4 border-b border-gray-200 bg-gray-50/95 px-4 backdrop-blur transition-all duration-200 lg:hidden ${
-                    compactMobileFilter ? 'py-1' : 'py-2'
+                  className={`sticky z-20 pb-2 transition-all duration-200 lg:hidden ${
+                    compactMobileFilter ? 'pt-2' : 'pt-3'
                   }`}
                   style={{ top: mobileStickyTop }}
                 >
-                  <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className={`flex gap-2 ${compactMobileFilter ? 'pb-0.5' : 'pb-1'}`}>
-                      {POST_CATEGORIES.map((category) => {
-                        const isSelected = selectedCategory === category.value;
-                        return (
-                          <button
-                            key={category.key}
-                            type="button"
-                            onClick={() => handleCategoryChange(category.value)}
-                            className={`shrink-0 rounded-full border font-semibold transition ${
-                              compactMobileFilter ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
-                            } ${
-                              isSelected
-                                ? 'border-[#4CAF50] bg-[#4CAF50] text-white'
-                                : 'border-gray-200 bg-white text-gray-600'
-                            }`}
-                          >
-                            {category.label}
-                          </button>
-                        );
-                      })}
+                  <div className="bg-white border border-gray-200 shadow-sm p-1.5 flex overflow-hidden rounded-xl relative">
+                    <div className="pointer-events-none absolute right-1.5 top-1.5 bottom-1.5 w-10 bg-gradient-to-l from-white to-transparent z-10 rounded-r-xl" />
+                    <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-1 px-1">
+                      <div className={`flex gap-1.5 w-max items-center h-full`}>
+                        {POST_CATEGORIES.map((category) => {
+                          const isSelected = selectedCategory === category.value;
+                          return (
+                            <button
+                              key={category.key}
+                              type="button"
+                              onClick={() => handleCategoryChange(category.value)}
+                              className={`shrink-0 rounded-xl border border-transparent font-medium transition-all duration-200 active:scale-95 ${
+                                compactMobileFilter ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2 text-[14px]'
+                              } ${
+                                isSelected
+                                  ? 'bg-[#4CAF50] text-white shadow-md shadow-[#4CAF50]/20'
+                                  : 'bg-transparent text-slate-600 hover:bg-slate-100/70 border-slate-200/60'
+                              }`}
+                            >
+                              {category.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -503,13 +557,13 @@ const HomePage = () => {
                   onProductClick={handleProductClick}
                 />
 
-                <div className="lg:hidden">
+                <div className="lg:hidden mt-4 pb-20">
                   <button
                     type="button"
                     onClick={() => setShowMobileInsights((prev) => !prev)}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm"
+                    className="w-full rounded-2xl border-2 border-[#4CAF50]/20 bg-green-50/50 px-4 py-3.5 text-[15px] font-semibold text-[#388E3C] shadow-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
                   >
-                    {showMobileInsights ? 'Ẩn xu hướng và gợi ý ▲' : 'Xem xu hướng và gợi ý ▼'}
+                    {showMobileInsights ? 'Ẩn xu hướng và gợi ý' : 'Khám phá xu hướng'} {showMobileInsights ? '▲' : '▼'}
                   </button>
                 </div>
               </div>
@@ -529,24 +583,25 @@ const HomePage = () => {
 
       {showMobileInsights && (
         <div className="fixed inset-0 z-[120] lg:hidden">
-          <button
-            type="button"
-            aria-label="Đóng gợi ý"
-            className="absolute inset-0 bg-black/35"
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
             onClick={() => setShowMobileInsights(false)}
           />
-          <div className="absolute inset-x-0 bottom-0 max-h-[78vh] rounded-t-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <h3 className="text-base font-bold text-gray-900">Xu hướng và gợi ý</h3>
+          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] rounded-t-[32px] bg-white shadow-[0_-8px_30px_rgba(0,0,0,0.12)] transform transition-transform duration-300">
+            <div className="flex flex-col items-center pt-3 pb-2">
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 pt-1 pb-4">
+              <h3 className="text-xl font-bold text-slate-800 tracking-tight">Xu hướng & Gợi ý</h3>
               <button
                 type="button"
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600"
+                className="rounded-full bg-slate-100 p-2.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                 onClick={() => setShowMobileInsights(false)}
               >
-                Đóng
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
-            <div className="max-h-[calc(78vh-56px)] overflow-y-auto p-4">
+            <div className="max-h-[calc(85vh-88px)] overflow-y-auto p-5 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <RightSidebar
                 trendingTopics={trendingTopics}
                 topContributors={topContributors}

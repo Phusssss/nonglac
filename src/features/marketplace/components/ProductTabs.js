@@ -97,10 +97,14 @@ const ProductTabs = ({ product }) => {
       label: 'Mô tả sản phẩm',
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Paragraph>{product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}</Paragraph>
+          <Paragraph style={{ color: '#475569', fontSize: 15, lineHeight: 1.6 }}>
+            {product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
+          </Paragraph>
 
-          <Title level={5}>Thông tin chi tiết:</Title>
-          <ul style={{ paddingLeft: 20 }}>
+          <Title level={4} className="elegant-title" style={{ marginTop: 24, marginBottom: 16 }}>
+            Thông tin chi tiết
+          </Title>
+          <ul style={{ paddingLeft: 20, color: '#475569', fontSize: 15, lineHeight: 1.8 }}>
             <li>Danh mục: {product.category}</li>
             {product.quantity && <li>Số lượng: {product.quantity} {product.unit}</li>}
             {!!resolvedLocation && <li>Khu vực: {resolvedLocation}</li>}
@@ -118,9 +122,11 @@ const ProductTabs = ({ product }) => {
           </ul>
 
           {hasCoordinates && (
-            <div style={{ marginTop: 20 }}>
-              <Title level={5}>Vị trí trên bản đồ:</Title>
-              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+            <div style={{ marginTop: 32 }}>
+              <Title level={4} className="elegant-title" style={{ marginBottom: 16 }}>
+                Vị trí trên bản đồ
+              </Title>
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                 <iframe
                   title="product-location-map"
                   src={mapEmbedUrl}
@@ -198,8 +204,8 @@ const ProductTabs = ({ product }) => {
   ];
 
   return (
-    <Card style={{ marginTop: 24 }}>
-      <Tabs defaultActiveKey="description" items={tabItems} />
+    <Card className="elegant-detail-card" style={{ marginTop: 24, padding: '8px 4px' }}>
+      <Tabs defaultActiveKey="description" items={tabItems} size="large" />
     </Card>
   );
 };
